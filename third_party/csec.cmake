@@ -1,0 +1,115 @@
+# -----------------------------------------------------------------------------------------------------------
+# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+# -----------------------------------------------------------------------------------------------------------
+
+include(ExternalProject)
+set(ABL_CSEC ${RUNTIME_DIR}/../abl/libc_sec)
+if (EXISTS "${ABL_CSEC}" AND IS_DIRECTORY "${ABL_CSEC}")
+    message(STATUS "abl/libc_sec detected")
+    add_subdirectory(${ABL_CSEC} ${CMAKE_BINARY_DIR}/libc_sec)
+    target_compile_options(static_c_sec PRIVATE -fstack-protector-strong)
+    target_link_options(static_c_sec PRIVATE -Wl,-z,now)
+    target_link_options(static_c_sec PRIVATE -s)
+    target_compile_options(shared_c_sec PRIVATE -fstack-protector-strong)
+    target_link_options(shared_c_sec PRIVATE -Wl,-z,now)
+    target_link_options(shared_c_sec PRIVATE -s)
+    set(LIBC_SEC_HEADER ${ABL_CSEC}/include)
+    add_library(c_sec ALIAS shared_c_sec)
+    install(TARGETS static_c_sec OPTIONAL DESTINATION runtime/lib)
+    if(PRODUCT_SIDE STREQUAL "device")
+        install(TARGETS shared_c_sec DESTINATION ${DEVICE_LIBRARY_PATH} COMPONENT npu-runtime)
+    endif()
+else()
+    set(LOCAL_SRC_DIR "${OPEN_SOURCE_DIR}/libboundscheck-v1.1.16")
+    if(EXISTS "${OPEN_SOURCE_DIR}/libboundscheck-v1.1.16.tar.gz")
+        set(REQ_URL "${OPEN_SOURCE_DIR}/libboundscheck-v1.1.16.tar.gz")
+    else()
+        set(REQ_URL "https://gitcode.com/cann-src-third-party/libboundscheck/releases/download/v1.1.16/libboundscheck-v1.1.16.tar.gz")
+    endif()
+    set(SO_NEW_NAME libc_sec.so)
+    set(STATIC_NEW_NAME libc_sec.a)
+    set(CSEC_DOWNLOAD_DIR ${CMAKE_BINARY_DIR}/libc_sec)
+    set(CSEC_SOURCE_DIR ${CMAKE_BINARY_DIR}/libc_sec/source)
+    set(CSEC_EXTRA_CFLAGS "-fstack-protector-strong")
+    set(CSEC_EXTRA_LDFLAGS "-Wl,-z,now -s")
+
+    if(EXISTS "${LOCAL_SRC_DIR}" AND IS_DIRECTORY "${LOCAL_SRC_DIR}")
+        message(STATUS "using local csec source: ${LOCAL_SRC_DIR}")
+        if(NOT EXISTS "${CSEC_SOURCE_DIR}/Makefile")
+            message(STATUS "Copying source to build directory: ${CSEC_SOURCE_DIR}")
+            file(REMOVE_RECURSE "${CSEC_SOURCE_DIR}")
+            file(MAKE_DIRECTORY "${CSEC_SOURCE_DIR}")
+            file(COPY "${LOCAL_SRC_DIR}/" DESTINATION "${CSEC_SOURCE_DIR}")
+        endif()
+        ExternalProject_Add(csec_src
+            SOURCE_DIR        ${CSEC_SOURCE_DIR}
+            CONFIGURE_COMMAND ""
+            BUILD_IN_SOURCE   1
+            BUILD_COMMAND
+                ${CMAKE_MAKE_PROGRAM} -C <SOURCE_DIR> lib
+                CC=${CMAKE_C_COMPILER}
+                AR=${CMAKE_AR}
+                LINK=${CMAKE_C_COMPILER}
+                CFLAGS="${CSEC_EXTRA_CFLAGS}" 
+                LDFLAGS="${CSEC_EXTRA_LDFLAGS}"
+            INSTALL_COMMAND ""
+            # 禁用更新和下载
+            UPDATE_DISCONNECTED 1
+            PATCH_COMMAND ${CMAKE_COMMAND}
+                -D CSEC_SOURCE_DIR=<SOURCE_DIR>
+                -P ${CMAKE_CURRENT_LIST_DIR}/csec_patch.cmake
+        )
+    else()
+        message(STATUS "download csec from gitcode")
+        ExternalProject_Add(csec_src
+            URL               ${REQ_URL}
+            DOWNLOAD_DIR      ${CSEC_DOWNLOAD_DIR}
+            SOURCE_DIR        ${CSEC_SOURCE_DIR}
+            PATCH_COMMAND ${CMAKE_COMMAND}
+                -D CSEC_SOURCE_DIR=<SOURCE_DIR> 
+                -P ${CMAKE_CURRENT_LIST_DIR}/csec_patch.cmake
+            CONFIGURE_COMMAND ""
+            BUILD_IN_SOURCE 1
+            BUILD_COMMAND 
+                ${CMAKE_MAKE_PROGRAM} -C <SOURCE_DIR> lib
+                CC=${CMAKE_C_COMPILER}
+                AR=${CMAKE_AR}
+                LINK=${CMAKE_C_COMPILER}
+                CFLAGS="${CSEC_EXTRA_CFLAGS}" 
+                LDFLAGS="${CSEC_EXTRA_LDFLAGS}"
+            INSTALL_COMMAND ""
+        )
+    endif()
+    add_library(shared_c_sec_lib SHARED IMPORTED)
+    set_property(TARGET shared_c_sec_lib PROPERTY
+        IMPORTED_LOCATION ${CSEC_SOURCE_DIR}/lib/${SO_NEW_NAME}
+    )
+
+    add_library(shared_c_sec INTERFACE)
+    target_link_libraries(shared_c_sec INTERFACE shared_c_sec_lib)
+    add_dependencies(shared_c_sec csec_src)
+    add_custom_target(csec_build DEPENDS csec_src)
+    add_library(c_sec ALIAS shared_c_sec)
+    if(PRODUCT_SIDE STREQUAL "device")
+        install(FILES
+            ${CSEC_SOURCE_DIR}/lib/${SO_NEW_NAME}
+            DESTINATION ${DEVICE_LIBRARY_PATH} COMPONENT npu-runtime
+        )
+    else()
+        install(FILES
+            ${CSEC_SOURCE_DIR}/lib/${SO_NEW_NAME} ${CSEC_SOURCE_DIR}/lib/${STATIC_NEW_NAME}
+            DESTINATION runtime/lib
+        )
+    endif()    
+    set(LIBC_SEC_HEADER ${CSEC_SOURCE_DIR}/include)
+endif()
+add_library(c_sec_headers INTERFACE)
+target_include_directories(c_sec_headers INTERFACE
+    $<BUILD_INTERFACE:${LIBC_SEC_HEADER}>
+)
