@@ -57,11 +57,11 @@ cmake/
         else()
             include(FetchContent)
     
-            set(CANN_CMAKE_TAG "1.0.0")
-            if(CANN_3RD_LIB_PATH AND EXISTS "${CANN_3RD_LIB_PATH}/cann-cmake-${CANN_CMAKE_TAG}.tar.gz")
+            set(CANN_CMAKE_TAG "master-001")
+            if(CANN_3RD_LIB_PATH AND EXISTS "${CANN_3RD_LIB_PATH}/cmake-${CANN_CMAKE_TAG}.tar.gz")
                 FetchContent_Declare(
                     cann-cmake
-                    URL "${CANN_3RD_LIB_PATH}/cann-cmake-${CANN_CMAKE_TAG}.tar.gz"
+                    URL "${CANN_3RD_LIB_PATH}/cmake-${CANN_CMAKE_TAG}.tar.gz"
                 )
             else()
                 FetchContent_Declare(
