@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------------------------------------
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
-# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
@@ -18,11 +18,11 @@ unset(boost_FOUND CACHE)
 unset(boost_INCLUDE CACHE)
 
 if(NOT OPEN_PKG_PATH) 
-    set(OPEN_PKG_PATH ${OPEN_SOURCE_DIR}/pkg) 
+    set(OPEN_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg) 
 endif() 
 
-set(BOOST_DOWNLOAD_PATH ${OPEN_SOURCE_DIR}/pkg) 
-set(BOOST_SRC_PATH ${OPEN_SOURCE_DIR}/boost)
+set(BOOST_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg) 
+set(BOOST_SRC_PATH ${CANN_3RD_LIB_PATH}/boost-1.87.0)
 set(BOOST_URL "https://gitcode.com/cann-src-third-party/boost/releases/download/v1.87.0/${BOOST_FILE}")
 set(BOOST_FILE "boost_1_87_0.tar.gz")
 set(BOOST_PKG_PATH ${BOOST_DOWNLOAD_PATH}/${BOOST_FILE})
@@ -32,7 +32,6 @@ find_path(BOOST_INCLUDE
         NO_CMAKE_SYSTEM_PATH 
         NO_CMAKE_FIND_ROOT_PATH 
         PATHS ${BOOST_SRC_PATH}) 
-
 
 include(FindPackageHandleStandardArgs) 
 find_package_handle_standard_args(boost 

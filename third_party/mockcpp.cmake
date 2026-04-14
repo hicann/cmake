@@ -41,17 +41,17 @@ else()
 endif()
 
 #依赖蓝区二进制仓mockcpp
-set(mockcpp_SRC_DIR ${OPEN_SOURCE_DIR}/mockcpp_src)
-set(DOWNLOAD_FILE_DIR ${OPEN_SOURCE_DIR}/mockcpp-2.7)
+set(mockcpp_SRC_DIR ${CANN_3RD_LIB_PATH}/mockcpp_src)
+set(DOWNLOAD_FILE_DIR ${CANN_3RD_LIB_PATH}/mockcpp-2.7)
 set(URL_FILE ${DOWNLOAD_FILE_DIR}/mockcpp-2.7.tar.gz)
-set(BOOST_INCLUDE_DIRS ${OPEN_SOURCE_DIR}/boost-1.87.0)
+set(BOOST_INCLUDE_DIRS ${CANN_3RD_LIB_PATH}/boost-1.87.0)
 
 message(STATUS "mock cmake install prefix ${CMAKE_INSTALL_PREFIX}")
-if (EXISTS "${OPEN_SOURCE_DIR}/mockcpp-2.7-h5.patch")
-    set(PATCH_FILE "${OPEN_SOURCE_DIR}/mockcpp-2.7-h5.patch")
+if (EXISTS "${CANN_3RD_LIB_PATH}/mockcpp-2.7-h5.patch")
+    set(PATCH_FILE "${CANN_3RD_LIB_PATH}/mockcpp-2.7-h5.patch")
     message(STATUS "mockcpp patch use cache: ${PATCH_FILE}")
 else()
-    set(PATCH_FILE ${OPEN_SOURCE_DIR}/mockcpp-2.7/mockcpp-2.7-h5.patch)
+    set(PATCH_FILE ${CANN_3RD_LIB_PATH}/mockcpp-2.7/mockcpp-2.7-h5.patch)
     message(STATUS "mockcpp patch not use cache.")
     file(DOWNLOAD
         "https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h5/mockcpp-2.7-h5.patch"
@@ -62,8 +62,8 @@ endif()
 include(ExternalProject)
 message(STATUS, "CMAKE_COMMAND is ${CMAKE_COMMAND}")
 if (NOT EXISTS "${URL_FILE}")
-    if(EXISTS "${OPEN_SOURCE_DIR}/mockcpp-2.7.tar.gz")
-        set(URL_FILE "${OPEN_SOURCE_DIR}/mockcpp-2.7.tar.gz")
+    if(EXISTS "${CANN_3RD_LIB_PATH}/mockcpp-2.7.tar.gz")
+        set(URL_FILE "${CANN_3RD_LIB_PATH}/mockcpp-2.7.tar.gz")
         message("mockcpp use local tar.gz: ${URL_FILE}")
     else()
         set(URL_FILE "https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h5/mockcpp-2.7.tar.gz")
@@ -84,7 +84,7 @@ ExternalProject_Add(mockcpp
         -DCMAKE_SHARED_LINKER_FLAGS=${mockcpp_LINKER_FLAGS}
         -DCMAKE_EXE_LINKER_FLAGS=${mockcpp_LINKER_FLAGS}
         -DBUILD_32_BIT_TARGET_BY_64_BIT_COMPILER=OFF
-        -DCMAKE_INSTALL_PREFIX=${OPEN_SOURCE_DIR}/mockcpp
+        -DCMAKE_INSTALL_PREFIX=${CANN_3RD_LIB_PATH}/mockcpp
         <SOURCE_DIR>
     BUILD_COMMAND ${${BUILD_TYPE}} $<$<BOOL:${IS_MAKE}>:$(MAKE)>
 )

@@ -7,68 +7,55 @@
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. 
 # See LICENSE in the root of the software repository for the full text of the License. 
 # ---------------------------------------------------------------------------- 
+unset(json_FOUND CACHE)
+unset(JSON_SOURCE CACHE)
 
-if(json_FOUND) 
-    return() 
-endif() 
-
-
-unset(json_FOUND CACHE) 
-unset(JSON_INCLUDE CACHE) 
-
-
-if(NOT OPEN_PKG_PATH) 
-  set(OPEN_PKG_PATH ${OPEN_SOURCE_DIR}/pkg) 
-endif() 
-
-
-set(JSON_DOWNLOAD_PATH ${OPEN_SOURCE_DIR}/pkg) 
-set(JSON_INSTALL_PATH ${OPEN_SOURCE_DIR}/json) 
-
-
-find_path(JSON_INCLUDE 
-        NAMES nlohmann/json.hpp 
-        NO_CMAKE_SYSTEM_PATH 
-        NO_CMAKE_FIND_ROOT_PATH 
-        PATHS ${JSON_INSTALL_PATH}/include) 
-
-
-include(FindPackageHandleStandardArgs) 
-find_package_handle_standard_args(json 
-        FOUND_VAR 
-        json_FOUND 
-        REQUIRED_VARS 
-        JSON_INCLUDE 
-        ) 
-
-
-if(json_FOUND AND NOT FORCE_REBUILD_CANN_3RD) 
-    message("json found in ${JSON_INSTALL_PATH}, and not force rebuild cann third_party") 
-    set(THIRD_PARTY_NLOHMANN_PATH ${JSON_INSTALL_PATH}/include) 
-else() 
-    set(REQ_URL "https://gitcode.com/cann-src-third-party/json/releases/download/v3.11.3/include.zip") 
-
-
-    include(ExternalProject) 
-    ExternalProject_Add(third_party_json 
-            URL ${REQ_URL} 
-            TLS_VERIFY OFF 
-            DOWNLOAD_DIR ${JSON_DOWNLOAD_PATH} 
-            DOWNLOAD_NO_EXTRACT TRUE 
-            SOURCE_DIR ${JSON_INSTALL_PATH} 
-            CONFIGURE_COMMAND "" 
-            BUILD_COMMAND "" 
-            INSTALL_COMMAND 
-                ${CMAKE_COMMAND} -E make_directory ${JSON_INSTALL_PATH} && 
-                ${CMAKE_COMMAND} -E chdir ${JSON_INSTALL_PATH} ${CMAKE_COMMAND} -E tar xf "${JSON_DOWNLOAD_PATH}/include.zip" --format=zip 
-            UPDATE_COMMAND "" 
-    ) 
-
-    ExternalProject_Get_Property(third_party_json SOURCE_DIR) 
-    ExternalProject_Get_Property(third_party_json BINARY_DIR)
-    set(THIRD_PARTY_NLOHMANN_PATH ${SOURCE_DIR}/include) 
+if(NOT OPEN_PKG_PATH)
+  set(OPEN_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg)
 endif()
 
-add_library(json INTERFACE) 
-target_include_directories(json INTERFACE ${JSON_INSTALL_PATH}/include) 
+set(JSON_INCLUDE ${CANN_3RD_LIB_PATH}/json/include)
+find_path(JSON_SOURCE
+    NAMES json.hpp
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH
+    PATHS ${JSON_INCLUDE}/nlohmann
+)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(json
+    FOUND_VAR
+    json_FOUND
+    REQUIRED_VARS
+    JSON_SOURCE
+)
+
+if(NOT json_FOUND OR FORCE_REBUILD_CANN_3RD)
+    if(EXISTS "${CANN_3RD_LIB_PATH}/include.zip")
+        # Users's offline scene.
+        message("[ThirdPartyLib][json] use local zip cache.")
+        set(REQ_URL ${CANN_3RD_LIB_PATH}/include.zip)
+    else()
+        message("[ThirdPartyLib][json] not use cache, download json source.")
+        set(REQ_URL "https://gitcode.com/cann-src-third-party/json/releases/download/v3.11.3/include.zip")
+    endif()
+
+    set(JSON_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
+    set(JSON_INSTALL_PATH ${CMAKE_BINARY_DIR}/json)
+    set(JSON_INCLUDE ${JSON_INSTALL_PATH}/include)
+    include(ExternalProject) 
+    ExternalProject_Add(third_party_json 
+            URL ${REQ_URL}
+            TLS_VERIFY OFF
+            DOWNLOAD_DIR ${JSON_DOWNLOAD_PATH}
+            SOURCE_DIR ${JSON_INSTALL_PATH}
+            CONFIGURE_COMMAND ""
+            BUILD_COMMAND ""
+            INSTALL_COMMAND ""
+            UPDATE_COMMAND ""
+    )
+endif()
+
+add_library(json INTERFACE)
 add_dependencies(json third_party_json)
+target_include_directories(json INTERFACE ${JSON_INCLUDE})
