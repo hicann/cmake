@@ -9,7 +9,20 @@
 # -----------------------------------------------------------------------------------------------------------
 
 include(ExternalProject)
-set(ABL_CSEC ${RUNTIME_DIR}/../abl/libc_sec)
+set(ABL_CSEC ${CMAKE_CURRENT_SOURCE_DIR}/../abl/libc_sec)
+
+if(CMAKE_GENERATOR MATCHES "Makefiles")
+    set(CSEC_BUILD_JOB_SERVER_AWARE TRUE)
+else()
+    set(CSEC_BUILD_JOB_SERVER_AWARE FALSE)
+endif()
+
+if (NOT ENABLE_OPEN_SRC)
+    set(LIBC_SEC_HEADER ${ABL_CSEC}/include)
+    return()
+endif()
+
+add_library(c_sec_headers INTERFACE)
 if (EXISTS "${ABL_CSEC}" AND IS_DIRECTORY "${ABL_CSEC}")
     message(STATUS "abl/libc_sec detected")
     add_subdirectory(${ABL_CSEC} ${CMAKE_BINARY_DIR}/libc_sec)
@@ -21,14 +34,15 @@ if (EXISTS "${ABL_CSEC}" AND IS_DIRECTORY "${ABL_CSEC}")
     target_link_options(shared_c_sec PRIVATE -s)
     set(LIBC_SEC_HEADER ${ABL_CSEC}/include)
     add_library(c_sec ALIAS shared_c_sec)
-    install(TARGETS static_c_sec OPTIONAL DESTINATION runtime/lib)
-    if(PRODUCT_SIDE STREQUAL "device")
+    if(PRODUCT_SIDE STREQUAL "host")
+        install(TARGETS static_c_sec DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64 COMPONENT npu-runtime)
+    else()
         install(TARGETS shared_c_sec DESTINATION ${DEVICE_LIBRARY_PATH} COMPONENT npu-runtime)
     endif()
 else()
-    set(LOCAL_SRC_DIR "${OPEN_SOURCE_DIR}/libboundscheck-v1.1.16")
-    if(EXISTS "${OPEN_SOURCE_DIR}/libboundscheck-v1.1.16.tar.gz")
-        set(REQ_URL "${OPEN_SOURCE_DIR}/libboundscheck-v1.1.16.tar.gz")
+    set(LOCAL_SRC_DIR "${CANN_3RD_LIB_PATH}/libboundscheck-v1.1.16")
+    if(EXISTS "${CANN_3RD_LIB_PATH}/libboundscheck-v1.1.16.tar.gz")
+        set(REQ_URL "${CANN_3RD_LIB_PATH}/libboundscheck-v1.1.16.tar.gz")
     else()
         set(REQ_URL "https://gitcode.com/cann-src-third-party/libboundscheck/releases/download/v1.1.16/libboundscheck-v1.1.16.tar.gz")
     endif()
@@ -51,6 +65,7 @@ else()
             SOURCE_DIR        ${CSEC_SOURCE_DIR}
             CONFIGURE_COMMAND ""
             BUILD_IN_SOURCE   1
+            BUILD_JOB_SERVER_AWARE ${CSEC_BUILD_JOB_SERVER_AWARE}
             BUILD_COMMAND
                 ${CMAKE_MAKE_PROGRAM} -C <SOURCE_DIR> lib
                 CC=${CMAKE_C_COMPILER}
@@ -76,6 +91,7 @@ else()
                 -P ${CMAKE_CURRENT_LIST_DIR}/csec_patch.cmake
             CONFIGURE_COMMAND ""
             BUILD_IN_SOURCE 1
+            BUILD_JOB_SERVER_AWARE ${CSEC_BUILD_JOB_SERVER_AWARE}
             BUILD_COMMAND 
                 ${CMAKE_MAKE_PROGRAM} -C <SOURCE_DIR> lib
                 CC=${CMAKE_C_COMPILER}
@@ -94,6 +110,7 @@ else()
     add_library(shared_c_sec INTERFACE)
     target_link_libraries(shared_c_sec INTERFACE shared_c_sec_lib)
     add_dependencies(shared_c_sec csec_src)
+    add_dependencies(c_sec_headers csec_src)
     add_custom_target(csec_build DEPENDS csec_src)
     add_library(c_sec ALIAS shared_c_sec)
     if(PRODUCT_SIDE STREQUAL "device")
@@ -104,12 +121,11 @@ else()
     else()
         install(FILES
             ${CSEC_SOURCE_DIR}/lib/${SO_NEW_NAME} ${CSEC_SOURCE_DIR}/lib/${STATIC_NEW_NAME}
-            DESTINATION runtime/lib
+            DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64 COMPONENT npu-runtime
         )
     endif()    
     set(LIBC_SEC_HEADER ${CSEC_SOURCE_DIR}/include)
 endif()
-add_library(c_sec_headers INTERFACE)
 target_include_directories(c_sec_headers INTERFACE
     $<BUILD_INTERFACE:${LIBC_SEC_HEADER}>
 )
