@@ -7,17 +7,17 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-message(STATUS "openssl libpath: ${OPEN_SOURCE_DIR}/lib_cache/openssl-3.0.9")
+message(STATUS "openssl libpath: ${CANN_3RD_LIB_PATH}/lib_cache/openssl-3.0.9")
 find_file(CRYPTO_LIB_PATH
     NAMES libcrypto.a
-    PATHS ${OPEN_SOURCE_DIR}/lib_cache/openssl-3.0.9
+    PATHS ${CANN_3RD_LIB_PATH}/lib_cache/openssl-3.0.9
     PATH_SUFFIXES lib lib64
     NO_DEFAULT_PATH)
 if (CRYPTO_LIB_PATH)
     message(STATUS "Use local libcrypto: ${CRYPTO_LIB_PATH}")
-    if (EXISTS "${OPEN_SOURCE_DIR}/lib_cache/openssl-3.0.9/include/openssl/sha.h")
-        message(STATUS "local sha.h: ${OPEN_SOURCE_DIR}/lib_cache/openssl-3.0.9/include/openssl/sha.h")
-        set(CRYPTO_INCLUDE_DIR "${OPEN_SOURCE_DIR}/lib_cache/openssl-3.0.9/include")
+    if (EXISTS "${CANN_3RD_LIB_PATH}/lib_cache/openssl-3.0.9/include/openssl/sha.h")
+        message(STATUS "local sha.h: ${CANN_3RD_LIB_PATH}/lib_cache/openssl-3.0.9/include/openssl/sha.h")
+        set(CRYPTO_INCLUDE_DIR "${CANN_3RD_LIB_PATH}/lib_cache/openssl-3.0.9/include")
     else()
         set(CRYPTO_INCLUDE_DIR)
     endif()
@@ -25,8 +25,8 @@ else()
     include(ExternalProject)
 
     # ========== 基本路径配置 ==========
-    if (EXISTS "${OPEN_SOURCE_DIR}/openssl-openssl-3.0.9.tar.gz")
-        set(OPENSSL_TARBALL ${OPEN_SOURCE_DIR}/openssl-openssl-3.0.9.tar.gz)
+    if (EXISTS "${CANN_3RD_LIB_PATH}/openssl-openssl-3.0.9.tar.gz")
+        set(OPENSSL_TARBALL ${CANN_3RD_LIB_PATH}/openssl-openssl-3.0.9.tar.gz)
     else()
         set(OPENSSL_TARBALL https://gitcode.com/cann-src-third-party/openssl/releases/download/openssl-3.0.9/openssl-openssl-3.0.9.tar.gz)
     endif()
@@ -75,7 +75,7 @@ else()
         list(APPEND OPENSSL_DOWNLOAD_TIMESTAMP_ARG DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
     endif()
     # ========== ExternalProject_Add ==========
-    if (NOT EXISTS "${OPEN_SOURCE_DIR}/openssl/Configure")
+    if (NOT EXISTS "${CANN_3RD_LIB_PATH}/openssl/Configure")
         message("openssl:not use cache")
         ExternalProject_Add(openssl_project
             URL ${OPENSSL_TARBALL}                        # 从本地 tar.gz 获取源码
@@ -100,7 +100,7 @@ else()
     else()
         message("compile openssl use cache")
         ExternalProject_Add(openssl_project
-            SOURCE_DIR ${OPEN_SOURCE_DIR}/openssl
+            SOURCE_DIR ${CANN_3RD_LIB_PATH}/openssl
             CONFIGURE_COMMAND
                 unset CROSS_COMPILE &&
                 export NO_OSSL_RENAME_VERSION=1 &&
@@ -124,5 +124,5 @@ message(STATUS "libcrypto: ${CRYPTO_LIB_PATH}")
 add_library(crypto_static STATIC IMPORTED)
 add_dependencies(crypto_static openssl_project)
 set_target_properties(crypto_static PROPERTIES
-        IMPORTED_LOCATION             "${CRYPTO_LIB_PATH}"
+    IMPORTED_LOCATION "${CRYPTO_LIB_PATH}"
 )

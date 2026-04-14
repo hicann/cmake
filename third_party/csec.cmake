@@ -62,9 +62,9 @@ else()
             file(COPY "${LOCAL_SRC_DIR}/" DESTINATION "${CSEC_SOURCE_DIR}")
         endif()
         ExternalProject_Add(csec_src
-            SOURCE_DIR        ${CSEC_SOURCE_DIR}
+            SOURCE_DIR ${CSEC_SOURCE_DIR}
             CONFIGURE_COMMAND ""
-            BUILD_IN_SOURCE   1
+            BUILD_IN_SOURCE 1
             BUILD_JOB_SERVER_AWARE ${CSEC_BUILD_JOB_SERVER_AWARE}
             BUILD_COMMAND
                 ${CMAKE_MAKE_PROGRAM} -C <SOURCE_DIR> lib
@@ -83,17 +83,17 @@ else()
     else()
         message(STATUS "download csec from gitcode")
         ExternalProject_Add(csec_src
-            URL               ${REQ_URL}
-            DOWNLOAD_DIR      ${CSEC_DOWNLOAD_DIR}
-            SOURCE_DIR        ${CSEC_SOURCE_DIR}
+            URL ${REQ_URL}
+            DOWNLOAD_DIR ${CSEC_DOWNLOAD_DIR}
+            SOURCE_DIR ${CSEC_SOURCE_DIR}
             PATCH_COMMAND ${CMAKE_COMMAND}
                 -D CSEC_SOURCE_DIR=<SOURCE_DIR> 
                 -P ${CMAKE_CURRENT_LIST_DIR}/csec_patch.cmake
             CONFIGURE_COMMAND ""
             BUILD_IN_SOURCE 1
             BUILD_JOB_SERVER_AWARE ${CSEC_BUILD_JOB_SERVER_AWARE}
-            BUILD_COMMAND 
-                ${CMAKE_MAKE_PROGRAM} -C <SOURCE_DIR> lib
+            BUILD_COMMAND ${CMAKE_MAKE_PROGRAM} 
+                -C <SOURCE_DIR> lib
                 CC=${CMAKE_C_COMPILER}
                 AR=${CMAKE_AR}
                 LINK=${CMAKE_C_COMPILER}

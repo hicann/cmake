@@ -16,37 +16,41 @@ unset(GTEST_LIBRARY CACHE)
 unset(GTEST_MAIN_LIBRARY CACHE)
 unset(GMOCK_LIBRARY CACHE)
 unset(GMOCK_MAIN_LIBRARY CACHE)
-set(GTEST_INSTALL_PATH ${OPEN_SOURCE_DIR}/gtest_shared)
+set(GTEST_INSTALL_PATH ${CANN_3RD_LIB_PATH}/gtest_shared)
 message("GTEST_INSTALL_PATH=${GTEST_INSTALL_PATH}")
 find_path(GTEST_INCLUDE
-        NAMES gtest/gtest.h
-        NO_CMAKE_SYSTEM_PATH
-        NO_CMAKE_FIND_ROOT_PATH
-        PATHS ${GTEST_INSTALL_PATH}/include)
+    NAMES gtest/gtest.h
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH
+    PATHS ${GTEST_INSTALL_PATH}/include)
+
 find_library(GTEST_LIBRARY
-        NAMES libgtest.so
-        PATH_SUFFIXES lib lib64
-        NO_CMAKE_SYSTEM_PATH
-        NO_CMAKE_FIND_ROOT_PATH
-        PATHS ${GTEST_INSTALL_PATH})
+    NAMES libgtest.so
+    PATH_SUFFIXES lib lib64
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH
+    PATHS ${GTEST_INSTALL_PATH})
+
 find_library(GTEST_MAIN_LIBRARY
-        NAMES libgtest_main.so
-        PATH_SUFFIXES lib lib64
-        NO_CMAKE_SYSTEM_PATH
-        NO_CMAKE_FIND_ROOT_PATH
-        PATHS ${GTEST_INSTALL_PATH})
+    NAMES libgtest_main.so
+    PATH_SUFFIXES lib lib64
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH
+    PATHS ${GTEST_INSTALL_PATH})
+
 find_library(GMOCK_LIBRARY
-        NAMES libgmock.so
-        PATH_SUFFIXES lib lib64
-        NO_CMAKE_SYSTEM_PATH
-        NO_CMAKE_FIND_ROOT_PATH
-        PATHS ${GTEST_INSTALL_PATH})
+    NAMES libgmock.so
+    PATH_SUFFIXES lib lib64
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH
+    PATHS ${GTEST_INSTALL_PATH})
+
 find_library(GMOCK_MAIN_LIBRARY
-        NAMES libgmock_main.so
-        PATH_SUFFIXES lib lib64
-        NO_CMAKE_SYSTEM_PATH
-        NO_CMAKE_FIND_ROOT_PATH
-        PATHS ${GTEST_INSTALL_PATH})
+    NAMES libgmock_main.so
+    PATH_SUFFIXES lib lib64
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH
+    PATHS ${GTEST_INSTALL_PATH})
 
 find_program(CCACHE_PROGRAM ccache)
 if(CCACHE_PROGRAM)
@@ -56,23 +60,22 @@ endif()
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(gtest
-        FOUND_VAR
-        GTEST_FOUND
-        REQUIRED_VARS
-        GTEST_INCLUDE
-        GTEST_LIBRARY
-        GTEST_MAIN_LIBRARY
-        GMOCK_LIBRARY
-        GMOCK_MAIN_LIBRARY
-        )
+    FOUND_VAR
+    GTEST_FOUND
+    REQUIRED_VARS
+    GTEST_INCLUDE
+    GTEST_LIBRARY
+    GTEST_MAIN_LIBRARY
+    GMOCK_LIBRARY
+    GMOCK_MAIN_LIBRARY)
 message("gtest shared FOUND found:${gtest_FOUND}")
 
 if(GTEST_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     message("gtest shared found in ${GTEST_INSTALL_PATH}, and not force rebuild cann third_party")
 else()
-    if (EXISTS "${OPEN_SOURCE_DIR}/googletest-1.14.0.tar.gz")
+    if (EXISTS "${CANN_3RD_LIB_PATH}/googletest-1.14.0.tar.gz")
         message("gtest use local tar.gz")
-        set(REQ_URL "${OPEN_SOURCE_DIR}/googletest-1.14.0.tar.gz")
+        set(REQ_URL "${CANN_3RD_LIB_PATH}/googletest-1.14.0.tar.gz")
     else()
         message("gtest not use cache, download the source code")
         set(REQ_URL "https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/googletest-1.14.0.tar.gz")
@@ -83,24 +86,23 @@ else()
     message("REQ_URL:${REQ_URL}")
     include(ExternalProject)
     ExternalProject_Add(gtest_shared_build
-            URL ${REQ_URL}
-            TLS_VERIFY OFF
-            DOWNLOAD_DIR ${gtest_DOWNLOAD_PATH}
-            SOURCE_DIR ${GTEST_INSTALL_PATH}
-            #DOWNLOAD_EXTRACT_TIMESTAMP true
-            CONFIGURE_COMMAND ${CMAKE_COMMAND}
-            -DCMAKE_CXX_FLAGS=${gtest_CXXFLAGS}
-            -DCMAKE_C_FLAGS=${gtest_CFLAGS}
-            -DCMAKE_INSTALL_PREFIX=${GTEST_INSTALL_PATH}
-            -DCMAKE_INSTALL_LIBDIR=lib64
-            -DBUILD_SHARED_LIBS=ON
-            -DCMAKE_C_COMPILER_LAUNCHER=${CCACHE_PROGRAM}
-            -DCMAKE_CXX_COMPILER_LAUNCHER=${CCACHE_PROGRAM}
-            <SOURCE_DIR>
-            BUILD_COMMAND $(MAKE)
-            INSTALL_COMMAND $(MAKE) install
-            EXCLUDE_FROM_ALL TRUE
-            )
+        URL ${REQ_URL}
+        TLS_VERIFY OFF
+        DOWNLOAD_DIR ${gtest_DOWNLOAD_PATH}
+        SOURCE_DIR ${GTEST_INSTALL_PATH}
+        CONFIGURE_COMMAND ${CMAKE_COMMAND}
+        -DCMAKE_CXX_FLAGS=${gtest_CXXFLAGS}
+        -DCMAKE_C_FLAGS=${gtest_CFLAGS}
+        -DCMAKE_INSTALL_PREFIX=${GTEST_INSTALL_PATH}
+        -DCMAKE_INSTALL_LIBDIR=lib64
+        -DBUILD_SHARED_LIBS=ON
+        -DCMAKE_C_COMPILER_LAUNCHER=${CCACHE_PROGRAM}
+        -DCMAKE_CXX_COMPILER_LAUNCHER=${CCACHE_PROGRAM}
+        <SOURCE_DIR>
+        BUILD_COMMAND $(MAKE)
+        INSTALL_COMMAND $(MAKE) install
+        EXCLUDE_FROM_ALL TRUE
+        )
 endif()
 
 add_library(GTest::gtest SHARED IMPORTED)
@@ -122,17 +124,17 @@ if (NOT EXISTS ${GTEST_INSTALL_PATH}/include)
 endif ()
 
 set_target_properties(GTest::gtest PROPERTIES
-        IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib64/libgtest.so.1.14.0
-        INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INSTALL_PATH}/include)
+    IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib64/libgtest.so.1.14.0
+    INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INSTALL_PATH}/include)
 
 set_target_properties(GTest::gmock PROPERTIES
-        IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib64/libgmock.so.1.14.0
-        INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INSTALL_PATH}/include)
+    IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib64/libgmock.so.1.14.0
+    INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INSTALL_PATH}/include)
 
 set_target_properties(GTest::gtest_main PROPERTIES
-        IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib64/libgtest_main.so.1.14.0
-        INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INSTALL_PATH}/include)
+    IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib64/libgtest_main.so.1.14.0
+    INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INSTALL_PATH}/include)
 
 set_target_properties(GTest::gmock_main PROPERTIES
-        IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib64/libgmock_main.so.1.14.0
-        INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INSTALL_PATH}/include)
+    IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib64/libgmock_main.so.1.14.0
+    INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INSTALL_PATH}/include)

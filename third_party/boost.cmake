@@ -7,42 +7,36 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-
 include_guard(GLOBAL)
 
-if(boost_FOUND) 
-    return() 
-endif()
-
-unset(boost_FOUND CACHE) 
+unset(boost_FOUND CACHE)
 unset(boost_INCLUDE CACHE)
 
-if(NOT OPEN_PKG_PATH) 
-    set(OPEN_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg) 
-endif() 
+if(NOT OPEN_PKG_PATH)
+    set(OPEN_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg)
+endif()
 
-set(BOOST_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg) 
+set(BOOST_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
 set(BOOST_SRC_PATH ${CANN_3RD_LIB_PATH}/boost-1.87.0)
 set(BOOST_URL "https://gitcode.com/cann-src-third-party/boost/releases/download/v1.87.0/${BOOST_FILE}")
 set(BOOST_FILE "boost_1_87_0.tar.gz")
 set(BOOST_PKG_PATH ${BOOST_DOWNLOAD_PATH}/${BOOST_FILE})
 
-find_path(BOOST_INCLUDE 
-        NAMES config.hpp
-        NO_CMAKE_SYSTEM_PATH 
-        NO_CMAKE_FIND_ROOT_PATH 
-        PATHS ${BOOST_SRC_PATH}) 
+find_path(BOOST_INCLUDE
+    NAMES config.hpp
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH
+    PATHS ${BOOST_SRC_PATH})
 
-include(FindPackageHandleStandardArgs) 
-find_package_handle_standard_args(boost 
-        FOUND_VAR 
-        boost_FOUND 
-        REQUIRED_VARS 
-        BOOST_INCLUDE 
-        )
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(boost
+    FOUND_VAR
+    boost_FOUND
+    REQUIRED_VARS
+    BOOST_INCLUDE)
 
-if(boost_FOUND AND NOT FORCE_REBUILD_CANN_3RD) 
-    message("boost found in ${BOOST_SRC_PATH}, and not force rebuild cann third_party") 
+if(boost_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
+    message("boost found in ${BOOST_SRC_PATH}, and not force rebuild cann third_party")
     add_library(boost INTERFACE)
 else()
     if(EXISTS ${BOOST_PKG_PATH})

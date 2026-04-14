@@ -17,22 +17,17 @@ if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
 endif()
 
-if(eigen_FOUND) 
-    return() 
-endif() 
+unset(eigen_FOUND CACHE)
+unset(eigen_INCLUDE CACHE)
 
-unset(eigen_FOUND CACHE) 
-unset(eigen_INCLUDE CACHE) 
-
-
-if(NOT OPEN_PKG_PATH) 
-  set(OPEN_PKG_PATH ${OPEN_SOURCE_DIR}/pkg) 
+if(NOT OPEN_PKG_PATH)
+  set(OPEN_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg) 
 endif() 
 
 
-set(EIGEN_DOWNLOAD_PATH ${OPEN_SOURCE_DIR}/pkg)
+set(EIGEN_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
 
-file(GLOB EIGEN_INSTALL_PATH "${OPEN_SOURCE_DIR}/eigen*")
+file(GLOB EIGEN_INSTALL_PATH "${CANN_3RD_LIB_PATH}/eigen*")
 
 if(EIGEN_INSTALL_PATH)
   find_path(EIGEN_INCLUDE 
@@ -50,14 +45,14 @@ if(EIGEN_INSTALL_PATH)
             EIGEN_INCLUDE 
             )
 else()
-  set(EIGEN_INSTALL_PATH ${OPEN_SOURCE_DIR}/eigen)
+  set(EIGEN_INSTALL_PATH ${CANN_3RD_LIB_PATH}/eigen)
 endif()
 
 if(eigen_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
   message("eigen found in ${EIGEN_INSTALL_PATH}, and not force rebuild cann third_party") 
 else()
-  if (IS_DIRECTORY "${OPEN_SOURCE_DIR}/eigen")
-    set(REQ_URL "${OPEN_SOURCE_DIR}/eigen")
+  if (IS_DIRECTORY "${CANN_3RD_LIB_PATH}/eigen")
+    set(REQ_URL "${CANN_3RD_LIB_PATH}/eigen")
   else()
     set(REQ_URL "https://gitcode.com/cann-src-third-party/eigen/releases/download/5.0.0-h0.trunk/eigen-5.0.0.tar.gz")
   endif()
