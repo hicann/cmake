@@ -22,7 +22,7 @@ include(GNUInstallDirs)
 # ==========================================================================================================
 # 1. Paths & Directories Setup
 # ==========================================================================================================
-set(PROTOBUF_LIB_CACHE_DIR ${CANN_3RD_LIB_PATH}/lib_cache/protobuf-25.1/)
+set(PROTOBUF_LIB_CACHE_DIR ${CANN_3RD_LIB_PATH}/lib_cache/protobuf-25.1)
 set(PROTOBUF_SRC_DIR ${CMAKE_BINARY_DIR}/protobuf-src)
 set(PROTOBUF_DL_DIR ${CMAKE_BINARY_DIR}/downloads)
 set(PROTOBUF_STATIC_PKG_DIR ${CMAKE_BINARY_DIR}/protobuf_static)
@@ -134,14 +134,14 @@ if(NEED_BUILD_PROTOBUF)
         set(PROTOBUF_PATH "https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz")
     endif()
     ExternalProject_Add(protobuf_src
-            URL ${PROTOBUF_PATH}
-            DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/protobuf
-            TLS_VERIFY OFF
-            SOURCE_DIR ${PROTOBUF_SRC_DIR}
-            PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/protobuf_25.1_change_version.patch
-            CONFIGURE_COMMAND ""
-            BUILD_COMMAND ""
-            INSTALL_COMMAND ""
+        URL ${PROTOBUF_PATH}
+        DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/protobuf
+        TLS_VERIFY OFF
+        SOURCE_DIR ${PROTOBUF_SRC_DIR}
+        PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/protobuf_25.1_change_version.patch
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ""
     )
     include(${CMAKE_CURRENT_LIST_DIR}/abseil-cpp.cmake)
     add_dependencies(protobuf_src abseil_build)

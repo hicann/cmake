@@ -17,8 +17,6 @@ unset(ABSL_SOURCE_DIR CACHE)
 # use for online pipeline building acceleration
 find_path(ABSL_SOURCE_DIR
     NAMES absl/log/absl_log.h
-    NO_CMAKE_SYSTEM_PATH
-    NO_CMAKE_FIND_ROOT_PATH
     PATHS ${ABS_INSTALL_DIR}
     NO_DEFAULT_PATH)
 
@@ -35,10 +33,10 @@ if(abseil-cpp_FOUND)
     return()
 endif()
 
-# 检查用户是否提供了 abseil-cpp 并复制到 pkg 目录
+# 检查用户是否提供了 abseil-cpp 并复制到 abseil-cpp 目录
 if(EXISTS "${CANN_3RD_LIB_PATH}/${ABSEIL_VERSION_PKG}")
-    message(STATUS "[ThirdPartyLib][abseil-cpp] Found abseil-cpp in ${CANN_3RD_LIB_PATH} and moving to ${ABSEIL_VERSION_PKG}/pkg/")
-    file(MAKE_DIRECTORY "${CANN_3RD_LIB_PATH}/pkg")
+    message(STATUS "[ThirdPartyLib][abseil-cpp] Found abseil-cpp in ${CANN_3RD_LIB_PATH} and moving to ${CANN_3RD_LIB_PATH}/abseil-cpp/")
+    file(MAKE_DIRECTORY "${CANN_3RD_LIB_PATH}/abseil-cpp")
     file(RENAME "${CANN_3RD_LIB_PATH}/${ABSEIL_VERSION_PKG}" "${CANN_3RD_LIB_PATH}/abseil-cpp/${ABSEIL_VERSION_PKG}")
 endif()
 

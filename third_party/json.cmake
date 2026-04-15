@@ -17,8 +17,6 @@ endif()
 set(JSON_INSTALL_PATH ${CANN_3RD_LIB_PATH}/json)
 find_path(JSON_SOURCE
     NAMES nlohmann/json.hpp
-    NO_CMAKE_SYSTEM_PATH
-    NO_CMAKE_FIND_ROOT_PATH
     PATHS ${JSON_INSTALL_PATH}/include
     NO_DEFAULT_PATH
 )

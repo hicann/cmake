@@ -24,9 +24,8 @@ set(BOOST_PKG_PATH ${BOOST_DOWNLOAD_PATH}/${BOOST_FILE})
 
 find_path(BOOST_INCLUDE
     NAMES config.hpp
-    NO_CMAKE_SYSTEM_PATH
-    NO_CMAKE_FIND_ROOT_PATH
-    PATHS ${BOOST_SRC_PATH})
+    PATHS ${BOOST_SRC_PATH}
+    NO_DEFAULT_PATH)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(boost
