@@ -21,7 +21,7 @@ from itertools import chain, repeat
 from operator import and_, attrgetter, contains, itemgetter, lt, methodcaller, ne, not_
 from typing import Callable, Iterator, List, NamedTuple, Set, Tuple
 
-from utils.pkg_utils import (TOP_DIR, FilelistError, GenerateFilelistError,
+from utils.pkg_utils import (FilelistError, GenerateFilelistError,
                               conditional_apply, pairwise, swap_args, config_feature_to_string)
 from utils.funcbase import (any_, constant, dispatch, identity, invoke, pipe, side_effect, star_apply)
 from utils.comm_log import CommLog

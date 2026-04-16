@@ -112,6 +112,45 @@ function(add_cann_subdirectories_relative base_dir)
     endforeach()
 endfunction()
 
+# 设置打包配置
+# 如果子包在share/info目录下的名字与component不一致，则需要设置SHARE_INFO_NAME参数
+function(set_cann_cpack_config component)
+    if(NOT TOPLEVEL_PROJECT AND NOT ENABLE_UNIFIED_BUILD)
+        return()
+    endif()
+
+    cmake_parse_arguments(CANN "" "ENABLE_DEVICE;COMPUTE_UNIT;SHARE_INFO_NAME" "" ${ARGN})
+
+    add_cann_third_party(makeself-fetch)
+
+    if(CANN_COMPUTE_UNIT)
+        set(CPACK_SOC "${CANN_COMPUTE_UNIT}")
+    endif()
+
+    if(CANN_SHARE_INFO_NAME)
+        set(CPACK_PACKAGE_PARAM_NAME "${CANN_SHARE_INFO_NAME}")
+    else()
+        set(CPACK_PACKAGE_PARAM_NAME "${component}")
+    endif()
+
+    set(CPACK_PACKAGE_NAME "${component}")
+    set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+    set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}")
+
+    set(CPACK_CANN_INSTALL_COMPONENT "${component}")
+    set(CPACK_CMAKE_SOURCE_DIR "${CMAKE_SOURCE_DIR}")
+    set(CPACK_CMAKE_BINARY_DIR "${CMAKE_BINARY_DIR}")
+    set(CPACK_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
+    set(CPACK_ENABLE_DEVICE "${CANN_ENABLE_DEVICE}")
+    set(CPACK_GENERATOR External)
+    set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CANN_CMAKE_DIR}/scripts/package/makeself.cmake")
+    set(CPACK_EXTERNAL_ENABLE_STAGING TRUE)
+    set(CPACK_PACKAGE_DIRECTORY "${CMAKE_BINARY_DIR}")
+    set(CPACK_MAKESELF_PATH "${MAKESELF_PATH}")
+    set(CPACK_BUILD_MODE "RUN_COPY")
+    include(CPack)
+endfunction()
+
 # 设置子工程打包
 function(set_cann_subprj_package)
     get_cmake_property(CPACK_COMPONENTS_ALL COMPONENTS)

@@ -40,7 +40,7 @@ from pkg_parser import (
 )
 from utils.pkg_utils import (
     CONFIG_SCRIPT_PATH, CompressError, ContainAsteriskError, DELIVERY_PATH, FAIL,
-    FilelistError, GenerateFilelistError, PackageNameEmptyError, SUCC, TOP_DIR,
+    FilelistError, GenerateFilelistError, PackageNameEmptyError, SUCC,
     UnknownOperateTypeError, path_join
 )
 from utils.funcbase import invoke, pipe
@@ -400,15 +400,16 @@ def validate_path_consistency(target_config, target_name):
         )
 
 
-def parse_install_info(infos: List,
+def parse_install_info(delivery_dir: str,
+                       infos: List,
                        operate_type,
                        filter_key) -> Iterator[FileItem]:
     """根据配置解析生成安装信息。"""
     for target_config in infos:
         target_name = get_target_name(target_config)
         if target_config.get("optional") == 'true' and operate_type in ('copy', 'move'):
-            path = os.path.join(TOP_DIR, DELIVERY_PATH, target_config.get('dst_path'))
-            vaule = os.path.join(TOP_DIR, DELIVERY_PATH, target_config.get('dst_path'), target_name)
+            path = os.path.join(delivery_dir, target_config.get('dst_path'))
+            vaule = os.path.join(delivery_dir, target_config.get('dst_path'), target_name)
             if not os.path.exists(path):
                 continue
             if not os.path.exists(vaule):
@@ -640,26 +641,27 @@ def check_add_dir(package_path, dirs, limit_list, ret=True):
     return ret
 
 
-def gen_file_install_list(xml_config: XmlConfig,
+def gen_file_install_list(delivery_dir: str,
+                          xml_config: XmlConfig,
                           filter_key) -> Tuple[FileList, FileList]:
     """生成filelist列表。"""
     file_install_list = []
 
     dir_filelist = parse_install_info(
-        xml_config.dir_install_list, 'mkdir', filter_key
+        delivery_dir, xml_config.dir_install_list, 'mkdir', filter_key
     )
     move_filelist = parse_install_info(
-        xml_config.move_content_list, 'move', filter_key
+        delivery_dir, xml_config.move_content_list, 'move', filter_key
     )
     pkg_filelist = parse_install_info(
-        xml_config.package_content_list, 'copy', filter_key
+        delivery_dir, xml_config.package_content_list, 'copy', filter_key
     )
     gen_filelist = parse_install_info(
-        xml_config.generate_infos, 'copy', filter_key
+        delivery_dir, xml_config.generate_infos, 'copy', filter_key
     )
     # file_info中配置为文件夹，这里是被展开的文件,则需要单独删除
     del_filelist = parse_install_info(
-        xml_config.expand_content_list, 'del', filter_key
+        delivery_dir, xml_config.expand_content_list, 'del', filter_key
     )
     collect_filelist = list(chain(dir_filelist, move_filelist, pkg_filelist, gen_filelist))
     collect_filelist = list(xml_config.packer_config.fill_is_common_path(collect_filelist))
@@ -679,7 +681,7 @@ def get_share_info_name(package_attr: dict) -> str:
 
 def generate_filelist_file_by_xml_config(xml_config: XmlConfig,
                                          filter_key: List[str],
-                                         build_dir: str,
+                                         delivery_dir: str,
                                          package_check: bool):
     """生成文件列表文件。"""
     check_move = xml_config.package_attr.get('use_move', False)
@@ -690,7 +692,7 @@ def generate_filelist_file_by_xml_config(xml_config: XmlConfig,
 
     file_install_list, [] = invoke(
         pipe(
-            gen_file_install_list,
+            partial(gen_file_install_list, delivery_dir),
             partial(map, transform_nested_path_func),
             tuple,
         ),
@@ -700,7 +702,7 @@ def generate_filelist_file_by_xml_config(xml_config: XmlConfig,
         file_install_list,
         'filelist.csv',
         os.path.join(
-            build_dir, 'share', 'info', get_share_info_name(xml_config.package_attr), 'script'
+            delivery_dir, 'share', 'info', get_share_info_name(xml_config.package_attr), 'script'
         )
     )
     # 先生成再检查，有利于问题定位
@@ -712,7 +714,6 @@ def get_pkg_xml_relative_path(pkg_args: Namespace) -> str:
     """获取包配置文件相对路径。"""
 
     def parts():
-        yield CONFIG_SCRIPT_PATH
         yield pkg_args.pkg_name
         if pkg_args.chip_scenes:
             yield pkg_args.chip_scenes
@@ -756,16 +757,6 @@ def generate_config_inc(package_attr: Dict, build_dir: str, ):
     os.chmod(config_inc, 0o500)
 
 
-def update_version_info(new_version: str):
-    version_path = os.path.join(pkg_utils.TOP_DIR, "version.info")
-    with open(version_path, 'r') as file:
-        content = file.read()
-        content = re.sub(r'Version=.*', f'Version={new_version}', content)
-        content = re.sub(r'vension_dir=.*', f'version_dir={new_version}', content)
-    with open(version_path, 'w') as file:
-        file.write(content)
-
-
 def get_filter_key(pkg_name):
     if pkg_name in ['driver', 'firmware']:
         return ['all', 'docker']
@@ -778,24 +769,23 @@ def main(pkg_name='', xml_file='', main_args=None):
     参数: pkg_name, os_arch, type
     返回值: SUCC/FAIL
     """
-    delivery_dir = os.path.join(TOP_DIR, DELIVERY_PATH)
-    build_dir = os.path.join(TOP_DIR, "build")
-    if main_args.delivery_dir and main_args.delivery_dir != "":
-        delivery_dir = os.path.join(main_args.delivery_dir, "_CPack_Packages/makeself_staging")
-        build_dir = main_args.delivery_dir
+    if not main_args.delivery_dir:
+        CommLog.cilog_error("Delivery dir is empty.")
+        return FAIL
+
+    delivery_dir = os.path.join(main_args.delivery_dir, "_CPack_Packages/makeself_staging")
+
     if not os.path.exists(delivery_dir):
-        CommLog.cilog_error(f"delivery dir not exist: {delivery_dir}")
+        CommLog.cilog_error(f"Delivery dir does not exist: {delivery_dir}")
         return FAIL
 
     config_relative_path = get_pkg_xml_relative_path(main_args)
-    pkg_xml_file = os.path.join(pkg_utils.TOP_SOURCE_DIR, config_relative_path)
     parse_option = make_parse_option(main_args)
-    if main_args.version_dir:
-        update_version_info(main_args.version_dir)
 
     try:
         ret, xml_config = parse_xml_config(
-            pkg_xml_file, delivery_dir, parse_option, main_args
+            os.path.join(main_args.source_dir, 'scripts', 'package'), config_relative_path,
+            delivery_dir, parse_option, main_args
         )
     except ContainAsteriskError as ex:
         CommLog.cilog_error(f"Value contain '*' in {config_relative_path}. value is '{ex.value}'.")
@@ -819,7 +809,7 @@ def main(pkg_name='', xml_file='', main_args=None):
         CommLog.cilog_error('check filelist error! %s', str(ex))
         return FAIL
 
-    generate_config_inc(xml_config.package_attr, build_dir)
+    generate_config_inc(xml_config.package_attr, main_args.delivery_dir)
 
     package_option = PackageOption(
         main_args.os_arch, main_args.package_suffix, main_args.not_in_name, main_args.pkg_version, main_args.ext_name,
@@ -881,8 +871,8 @@ def args_parse():
                         help='source root dir.')
     parser.add_argument('--makeself_dir', metavar='makeself_dir', required=False, dest='makeself_dir',
                         nargs='?', const='', help='makeself dir.')
-    parser.add_argument('--delivery_dir', metavar='delivery_dir', required=False, dest='delivery_dir',
-                        nargs='?', const='', help='delivery dir.')
+    parser.add_argument('--delivery_dir', metavar='delivery_dir', required=True, help='delivery dir.')
+    parser.add_argument('--source_dir', metavar='source_dir', required=True, help='source dir.')
     parser.add_argument('--independent_pkg', action='store_true', help='Independent pkg.')
     parser.add_argument('--pkg-output-dir', default='', help='Package dirpath.')
     parser.add_argument('--version_dir', nargs='?', const='', default='', help='Set version dir.')

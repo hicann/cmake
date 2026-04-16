@@ -101,8 +101,8 @@ class ParseEnv(NamedTuple):
     """解析上下文环境。"""
     env_dict: EnvDict
     parse_option: ParseOption
+    pkg_config_dir: str
     delivery_dir: str
-    top_dir: str
     package_attr: Dict
 
 
@@ -1152,15 +1152,8 @@ def parse_block_info(block_info: ET.Element) -> List[BlockElement]:
     return parse_block_elements(list(block_info))
 
 
-def get_block_filepath(block_element: BlockElement) -> str:
-    """获取块配置路径。"""
-    return os.path.join(
-        pkg_utils.TOP_SOURCE_DIR, BLOCK_CONFIG_PATH, block_element.block_conf_path,
-        f'{block_element.name}.xml'
-    )
-
-
-def load_block_element(package_attr: PackageAttr,
+def load_block_element(parse_env: ParseEnv,
+                       package_attr: PackageAttr,
                        block_element: BlockElement) -> LoadedBlockElement:
     """加载块配置。"""
 
@@ -1180,7 +1173,11 @@ def load_block_element(package_attr: PackageAttr,
         except Exception:
             raise BlockConfigError(f"dependent block configuration {block_xml} parse failed!")
 
-    return with_filepath(get_block_filepath(block_element))
+    return with_filepath(
+        os.path.join(
+            parse_env.pkg_config_dir, 'module', 'ascend', f'{block_element.name}.xml'
+        )
+    )
 
 
 def parse_blocks(root_ele: ET.Element,
@@ -1194,7 +1191,7 @@ def parse_blocks(root_ele: ET.Element,
         for loaded_block in itertools.chain(
             [make_loaded_block_element(root_ele)],
             map(
-                partial(load_block_element, package_attr),
+                partial(load_block_element, parse_env, package_attr),
                 chain.from_iterable(
                     map(parse_block_info, root_ele.findall("block_info"))
                 )
@@ -1240,11 +1237,13 @@ def get_version_version_dir(args: Namespace,
     return version, version_dir
 
 
-def parse_xml_config(filepath: str,
+def parse_xml_config(pkg_config_dir: str,
+                     config_relative_path: str,
                      delivery_dir: str,
                      parse_option: ParseOption,
                      args: Namespace) -> Tuple[bool, XmlConfig]:
     """解析打包xml配置。"""
+    filepath = os.path.join(pkg_config_dir, config_relative_path)
     try:
         tree = ET.parse(filepath)
         xml_root = tree.getroot()
@@ -1281,7 +1280,7 @@ def parse_xml_config(filepath: str,
         return False, None
 
     parse_env = ParseEnv(
-        env_dict, parse_option, delivery_dir, pkg_utils.TOP_SOURCE_DIR, package_attr
+        env_dict, parse_option, pkg_config_dir, delivery_dir, package_attr
     )
 
     blocks = parse_blocks(

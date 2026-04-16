@@ -100,7 +100,9 @@ class TestArgsParseExtended:
     @staticmethod
     def test_args_parse_help_flag(monkeypatch):
         """Test args_parse with --help flag."""
-        monkeypatch.setattr(sys, 'argv', ['script', '--help'])
+        monkeypatch.setattr(
+            sys, 'argv', ['script', '--help', '--source_dir', '', '--delivery_dir', '']
+        )
 
         # Use a mock to capture exit behavior without raising SystemExit
         exit_code = [None]

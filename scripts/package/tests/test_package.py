@@ -144,8 +144,6 @@ def setup_optional_file_not_exists_test(monkeypatch):
     Returns:
         list: infos list for parse_install_info.
     """
-    monkeypatch.setattr(package_module, 'TOP_DIR', '/tmp')
-    
     infos = [
         create_base_install_info(
             dst_path='/nonexistent',
@@ -675,25 +673,6 @@ class TestGenerateConfigInc:
         assert not config_file.exists()
 
 
-class TestUpdateVersionInfo:
-    """Test update_version_info function."""
-
-    def test_update_version_info(self, tmp_path, monkeypatch):
-        """Test updating version.info file."""
-        monkeypatch.setattr(package_module.pkg_utils, 'TOP_DIR', str(tmp_path))
-        version_file = tmp_path / 'version.info'
-        # Note: The code regex uses 'vensiOn_dir' (with typo) but replacement uses 'version_dir'
-        # So input needs 'vensiOn_dir' and output will have 'version_dir'
-        version_file.write_text('Version=old_version\nvension_dir=old_dir\n')
-        
-        package_module.update_version_info('new_version')
-        
-        content = version_file.read_text()
-        assert 'Version=new_version' in content
-        # The replacement string uses the correct spelling 'version_dir'
-        assert 'version_dir=new_version' in content
-
-
 class TestCheckPathIsConflict:
     """Test check_path_is_conflict function."""
 
@@ -800,7 +779,8 @@ class TestArgsParse:
 
     def test_args_parse_defaults(self):
         """Test args_parse with defaults."""
-        with mock.patch('sys.argv', ['package_module.py']):
+        test_args = ['package_module.py', '--source_dir', '', '--delivery_dir', '']
+        with mock.patch('sys.argv', test_args):
             args = package_module.args_parse()
             assert args.type == 'repack'
             assert args.build_type == 'debug'
@@ -812,7 +792,8 @@ class TestArgsParse:
             '-n', 'test_pkg',
             '-o', 'ubuntu20.04',
             '-v', '1.0.0',
-            '--package-check'
+            '--package-check',
+            '--source_dir', '', '--delivery_dir', ''
         ]
         with mock.patch('sys.argv', test_args):
             args = package_module.args_parse()
@@ -827,8 +808,6 @@ class TestMainFunction:
 
     def test_main_delivery_dir_not_exists(self, tmp_path, monkeypatch):
         """Test main with non-existent delivery dir."""
-        monkeypatch.setattr(package_module, 'TOP_DIR', str(tmp_path))
-        
         args = Namespace(
             delivery_dir=str(tmp_path / 'nonexistent'),
             pkg_name='test',
@@ -900,8 +879,6 @@ class TestParseInstallInfo:
 
     def test_parse_install_info_copy(self, monkeypatch):
         """Test parse_install_info with copy operation."""
-        monkeypatch.setattr(package_module, 'TOP_DIR', '/tmp')
-        
         infos = [
             {
                 'dst_path': '/install',
@@ -923,7 +900,7 @@ class TestParseInstallInfo:
         ]
         
         # Filter key 'all' matches install_type 'run' (contains 'all')
-        result = list(package_module.parse_install_info(infos, 'copy', ['all', 'run']))
+        result = list(package_module.parse_install_info(None, infos, 'copy', ['all', 'run']))
         assert len(result) == 1
         assert result[0].operation == 'copy'
         assert result[0].is_in_docker == 'TRUE'
@@ -947,7 +924,7 @@ class TestParseInstallInfo:
             }
         ]
         
-        result = list(package_module.parse_install_info(infos, 'mkdir', ['all']))
+        result = list(package_module.parse_install_info(None, infos, 'mkdir', ['all']))
         assert len(result) == 1
         assert result[0].operation == 'mkdir'
         assert result[0].relative_path_in_pkg == 'NA'
@@ -973,7 +950,7 @@ class TestParseInstallInfo:
             }
         ]
         
-        result = list(package_module.parse_install_info(infos, 'del', ['all']))
+        result = list(package_module.parse_install_info(None, infos, 'del', ['all']))
         assert len(result) == 1
         assert result[0].operation == 'del'
 
@@ -1000,14 +977,14 @@ class TestParseInstallInfo:
         
         # When install_path is None, validate_path_consistency raises GenerateFilelistError
         with pytest.raises(package_module.GenerateFilelistError):
-            list(package_module.parse_install_info(infos, 'copy', ['all']))
+            list(package_module.parse_install_info(None, infos, 'copy', ['all']))
 
     def test_parse_install_info_unknown_operation(self):
         """Test parse_install_info with unknown operation raises exception."""
         infos = [{'value': 'test'}]
         
         with pytest.raises(package_module.UnknownOperateTypeError):
-            list(package_module.parse_install_info(infos, 'unknown_op', []))
+            list(package_module.parse_install_info(None, infos, 'unknown_op', []))
 
 
 class TestGenerateHashList:
@@ -1116,8 +1093,6 @@ class TestGenFileInstallList:
 
     def test_gen_file_install_list_with_content(self, monkeypatch):
         """Test gen_file_install_list with actual content."""
-        monkeypatch.setattr(package_module, 'TOP_DIR', '/tmp')
-        
         class MockBlockConfig:
             dir_install_list = []
             move_files = []
@@ -1160,7 +1135,7 @@ class TestGenFileInstallList:
         
         xml_config = MockXmlConfig()
         # Filter key doesn't match 'run', so is_in_docker should be 'FALSE'
-        result, _ = package_module.gen_file_install_list(xml_config, ['docker'])
+        result, _ = package_module.gen_file_install_list(None, xml_config, ['docker'])
         assert len(result) == 1
         assert result[0].is_in_docker == 'FALSE'
 
@@ -1224,8 +1199,6 @@ class TestGenerateFilelistFileByXmlConfig:
 
     def test_generate_filelist_file_by_xml_config(self, monkeypatch, tmp_path):
         """Test generating filelist from XML config."""
-        monkeypatch.setattr(package_module, 'TOP_DIR', str(tmp_path))
-        
         class MockXmlConfig:
             package_attr = {'parallel': True, 'func_name': 'test_func'}
             packer_config = type('obj', (object,), {
@@ -1507,7 +1480,7 @@ class TestParseInstallInfoExtended:
         """Test parse_install_info with optional=true when file doesn't exist."""
         infos = setup_optional_file_not_exists_test(monkeypatch)
         
-        result = list(package_module.parse_install_info(infos, 'copy', ['all']))
+        result = list(package_module.parse_install_info('/', infos, 'copy', ['all']))
         # Should be skipped because path doesn't exist
         assert len(result) == 0
 
@@ -1516,7 +1489,6 @@ class TestParseInstallInfoExtended:
         """Test parse_install_info with optional=true when file exists."""
         delivery_path = tmp_path / 'delivery'
         delivery_path.mkdir()
-        monkeypatch.setattr(package_module, 'TOP_DIR', str(tmp_path))
         monkeypatch.setattr(package_module, 'DELIVERY_PATH', 'delivery')
         
         # Create the directory and file
@@ -1534,7 +1506,7 @@ class TestParseInstallInfoExtended:
             )
         ]
         
-        result = list(package_module.parse_install_info(infos, 'copy', ['all']))
+        result = list(package_module.parse_install_info(delivery_path, infos, 'copy', ['all']))
         assert len(result) == 1
 
     @staticmethod
@@ -1542,7 +1514,7 @@ class TestParseInstallInfoExtended:
         """Test parse_install_info with move operation and optional."""
         infos = setup_optional_file_not_exists_test(monkeypatch)
         
-        result = list(package_module.parse_install_info(infos, 'move', ['all']))
+        result = list(package_module.parse_install_info('/', infos, 'move', ['all']))
         # Should be skipped because path doesn't exist
         assert len(result) == 0
 
@@ -1559,7 +1531,7 @@ class TestParseInstallInfoExtended:
         
         # For 'del' operation, when install_path is None, path_join returns None
         # and then it continues at line 424-425
-        result = list(package_module.parse_install_info(infos, 'del', ['all']))
+        result = list(package_module.parse_install_info('/', infos, 'del', ['all']))
         assert len(result) == 0  # Should be skipped because relative_install_path is None
 
 
@@ -1949,7 +1921,7 @@ class TestGenFileInstallListExtended:
         """Test gen_file_install_list with copy operation."""
         
         # Mock parse_install_info to return test data
-        def mock_parse_install_info(infos, operate_type, filter_key):
+        def mock_parse_install_info(delivery_dir, infos, operate_type, filter_key):
             if operate_type == 'copy':
                 yield package_module.create_file_item(
                     'test_module', 'copy', 'path/in/pkg', 'install/path',
@@ -1968,7 +1940,7 @@ class TestGenFileInstallListExtended:
             expand_content_list = []
             packer_config = MockPackerConfig()
         
-        result, _ = package_module.gen_file_install_list(MockXmlConfigGenFile(), ['all'])
+        result, _ = package_module.gen_file_install_list(None, MockXmlConfigGenFile(), ['all'])
         assert len(result) >= 0  # May be empty depending on mock
 
     @staticmethod
@@ -1976,7 +1948,7 @@ class TestGenFileInstallListExtended:
         """Test gen_file_install_list when filter doesn't match."""
         
         # Mock parse_install_info to return empty (no matches)
-        def mock_parse_install_info(infos, operate_type, filter_key):
+        def mock_parse_install_info(delivery_dir, infos, operate_type, filter_key):
             return iter([])
         
         monkeypatch.setattr(package_module, 'parse_install_info', mock_parse_install_info)
@@ -1990,5 +1962,5 @@ class TestGenFileInstallListExtended:
             expand_content_list = []
             packer_config = MockPackerConfig()
         
-        result, _ = package_module.gen_file_install_list(MockXmlConfigGenFile(), ['run'])
+        result, _ = package_module.gen_file_install_list(None, MockXmlConfigGenFile(), ['run'])
         assert len(result) == 0
