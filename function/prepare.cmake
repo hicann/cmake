@@ -47,56 +47,54 @@ endfunction()
 # 设置cann工程公共参数
 macro(init_cann_project)
     # 联合构建时，init函数可能被调用多次，保证第一次调用时生效，忽略后续调用
-    if(CANN_PROJECT_INITED)
-        return()
-    endif()
-
-    if(POLICY CMP0135)
-        cmake_policy(SET CMP0135 NEW)
-    endif()
-
-    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-    set(CMAKE_CXX_STANDARD 17)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-    set(CMAKE_CXX_EXTENSIONS OFF)
-
-    set(CMAKE_CXX_COMPILE_OBJECT
-        "<CMAKE_CXX_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
-    )
-    set(CMAKE_C_COMPILE_OBJECT
-        "<CMAKE_C_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
-    )
-
-    option(ENABLE_CCACHE "Enable ccache" TRUE)
-    if(ENABLE_CCACHE)
-        find_program(CCACHE_PROGRAM ccache)
-        if (CCACHE_PROGRAM)
-            set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
-            set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
+    if(NOT CANN_PROJECT_INITED)
+        if(POLICY CMP0135)
+            cmake_policy(SET CMP0135 NEW)
         endif()
+
+        set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+        set(CMAKE_CXX_STANDARD 17)
+        set(CMAKE_CXX_STANDARD_REQUIRED ON)
+        set(CMAKE_CXX_EXTENSIONS OFF)
+
+        set(CMAKE_CXX_COMPILE_OBJECT
+            "<CMAKE_CXX_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
+        )
+        set(CMAKE_C_COMPILE_OBJECT
+            "<CMAKE_C_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
+        )
+
+        option(ENABLE_CCACHE "Enable ccache" TRUE)
+        if(ENABLE_CCACHE)
+            find_program(CCACHE_PROGRAM ccache)
+            if (CCACHE_PROGRAM)
+                set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
+                set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
+            endif()
+        endif()
+
+        if(TOPLEVEL_PROJECT OR ENABLE_UNIFIED_BUILD)
+            # install时不添加OPTIONAL选项，以保证打包产物完整
+            set(INSTALL_OPTIONAL)
+        endif()
+
+        set(TARGET_SYSTEM_NAME Linux)
+
+        set(INSTALL_LIBRARY_DIR lib)
+        set(INSTALL_RUNTIME_DIR bin)
+        set(INSTALL_INCLUDE_DIR include)
+        set(INSTALL_CONFIG_DIR cmake)
+
+        # 组件使用ASCEND_INSTALL_PATH或ASCEND_CANN_PACKAGE_PATH作为cann包安装路径
+        if(NOT ASCEND_INSTALL_PATH AND ASCEND_CANN_PACKAGE_PATH)
+            set(ASCEND_INSTALL_PATH "${ASCEND_CANN_PACKAGE_PATH}")
+        endif()
+
+        __cann_get_target_arch()
+
+        __cann_print_summary()
+        set(CANN_PROJECT_INITED TRUE)
     endif()
-
-    if(TOPLEVEL_PROJECT OR ENABLE_UNIFIED_BUILD)
-        # install时不添加OPTIONAL选项，以保证打包产物完整
-        set(INSTALL_OPTIONAL)
-    endif()
-
-    set(TARGET_SYSTEM_NAME Linux)
-
-    set(INSTALL_LIBRARY_DIR lib)
-    set(INSTALL_RUNTIME_DIR bin)
-    set(INSTALL_INCLUDE_DIR include)
-    set(INSTALL_CONFIG_DIR cmake)
-
-    # 组件使用ASCEND_INSTALL_PATH或ASCEND_CANN_PACKAGE_PATH作为cann包安装路径
-    if(NOT ASCEND_INSTALL_PATH AND ASCEND_CANN_PACKAGE_PATH)
-        set(ASCEND_INSTALL_PATH "${ASCEND_CANN_PACKAGE_PATH}")
-    endif()
-
-    __cann_get_target_arch()
-
-    __cann_print_summary()
-    set(CANN_PROJECT_INITED TRUE)
 endmacro()
 
 # 添加三方库
@@ -138,7 +136,7 @@ function(set_cann_cpack_config component)
     set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}")
 
     set(CPACK_CANN_INSTALL_COMPONENT "${component}")
-    set(CPACK_CMAKE_SOURCE_DIR "${CMAKE_SOURCE_DIR}")
+    set(CPACK_CMAKE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
     set(CPACK_CMAKE_BINARY_DIR "${CMAKE_BINARY_DIR}")
     set(CPACK_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
     set(CPACK_ENABLE_DEVICE "${CANN_ENABLE_DEVICE}")
