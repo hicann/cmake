@@ -146,6 +146,7 @@ function(set_cann_cpack_config component)
     set(CPACK_PACKAGE_DIRECTORY "${CMAKE_BINARY_DIR}")
     set(CPACK_MAKESELF_PATH "${MAKESELF_PATH}")
     set(CPACK_BUILD_MODE "RUN_COPY")
+    set(CPACK_TARGET_ARCH "${TARGET_ARCH}")
     include(CPack)
 endfunction()
 
