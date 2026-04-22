@@ -70,9 +70,8 @@ execute_process(
     RESULT_VARIABLE code
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-message(STATUS "package.py result: ${code}")
 if (NOT code EQUAL 0)
-    message(FATAL_ERROR "Filelist generation failed: ${result}")
+    message(FATAL_ERROR "Filelist generation failed: ${result} ${error}")
 else ()
     message(STATUS "Filelist generated successfully: ${result}")
 endif ()
