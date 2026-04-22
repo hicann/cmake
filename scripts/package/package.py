@@ -137,7 +137,9 @@ def do_copy(target_conf=None,
     pkg_softlink = target_conf.get('pkg_softlink')
     if pkg_softlink:
         rets = [
-            create_softlink(dst_fullpath, os.path.join(release_dir, link))
+            create_softlink(
+                dst_fullpath, os.path.join(release_dir, link), target_conf.get('optional') == 'true'
+            )
             for link in pkg_softlink
         ]
         if not all(rets):
@@ -173,7 +175,7 @@ def do_chmod(target_conf=None, release_dir=''):
     return SUCC
 
 
-def create_softlink(source, target) -> bool:
+def create_softlink(source: str, target: str, optional: bool) -> bool:
     '''
     功能描述：创建软连接
     参数：source, target
@@ -181,6 +183,11 @@ def create_softlink(source, target) -> bool:
     '''
     source = os.path.abspath(source.strip())
     target = os.path.abspath(target.strip())
+
+    if not os.path.exists(source):
+        if optional:
+            return True
+        return False
 
     link_target_path = os.path.dirname(target)
     link_target_name = os.path.basename(target)

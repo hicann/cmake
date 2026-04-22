@@ -1266,7 +1266,7 @@ class TestDoCopyExtended:
         }
         
         # Mock create_softlink to return True
-        def mock_create_softlink(source, target):
+        def mock_create_softlink(source, target, optional):
             return True
         
         monkeypatch.setattr(package_module, 'create_softlink', mock_create_softlink)
@@ -1284,7 +1284,7 @@ class TestDoCopyExtended:
         }
         
         # Mock create_softlink to return False
-        def mock_create_softlink(source, target):
+        def mock_create_softlink(source, target, optional):
             return False
         
         monkeypatch.setattr(package_module, 'create_softlink', mock_create_softlink)
@@ -1387,7 +1387,7 @@ class TestCreateSoftlink:
         
         monkeypatch.setattr(os, 'symlink', mock_symlink)
         
-        result = package_module.create_softlink(str(source), str(target))
+        result = package_module.create_softlink(str(source), str(target), True)
         assert result is True
         assert len(symlink_calls) == 1
 
@@ -1419,7 +1419,7 @@ class TestCreateSoftlink:
         
         monkeypatch.setattr(os, 'symlink', mock_symlink)
         
-        result = package_module.create_softlink(str(source), str(target))
+        result = package_module.create_softlink(str(source), str(target), True)
         assert result is True
 
     @staticmethod
@@ -1430,7 +1430,7 @@ class TestCreateSoftlink:
         target = tmp_path / 'target_dir'
         target.mkdir()
         
-        result = package_module.create_softlink(str(source), str(target))
+        result = package_module.create_softlink(str(source), str(target), True)
         assert result is True
 
     @staticmethod
@@ -1451,7 +1451,7 @@ class TestCreateSoftlink:
         
         monkeypatch.setattr(subprocess, 'run', mock_run)
         
-        result = package_module.create_softlink(str(source), str(target))
+        result = package_module.create_softlink(str(source), str(target), True)
         assert result is False
 
     @staticmethod
@@ -1468,7 +1468,16 @@ class TestCreateSoftlink:
         
         monkeypatch.setattr(subprocess, 'run', mock_run)
         
-        result = package_module.create_softlink(str(source), str(target))
+        result = package_module.create_softlink(str(source), str(target), True)
+        assert result is False
+
+    @staticmethod
+    def test_create_softlink_source_not_exists_fails(tmp_path, monkeypatch):
+        """Test create_softlink when rm command raises exception."""
+        source = tmp_path / 'source.txt'
+        target = tmp_path / 'target.txt'
+
+        result = package_module.create_softlink(str(source), str(target), False)
         assert result is False
 
 
