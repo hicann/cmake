@@ -143,20 +143,25 @@ endif()
 
 if(CPACK_BUILD_MODE STREQUAL "RUN_COPY")
     execute_process(
-        COMMAND find ${STAGING_DIR} -name "cann-*.run"
-        COMMAND xargs cp --target-directory=${CPACK_CMAKE_INSTALL_PREFIX}
-        WORKING_DIRECTORY ${STAGING_DIR}
-        RESULT_VARIABLE EXEC_RESULT
-        ERROR_VARIABLE  EXEC_ERROR
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CPACK_CMAKE_INSTALL_PREFIX}
+        RESULT_VARIABLE MKDIR_INSTALL_PREFIX
     )
-    if(NOT "${EXEC_RESULT}" STREQUAL "0")
-        message(FATAL_ERROR "Failed to copy run files: ${EXEC_ERROR}")
+
+    if(MKDIR_INSTALL_PREFIX EQUAL 0)
+        execute_process(
+            COMMAND find . -name "cann-*.run"
+            COMMAND xargs -I {} cp {} ${CPACK_CMAKE_INSTALL_PREFIX}/
+            WORKING_DIRECTORY ${STAGING_DIR}
+            RESULT_VARIABLE EXEC_RESULT
+            ERROR_VARIABLE  EXEC_ERROR
+        )
+
+        if(NOT "${EXEC_RESULT}" STREQUAL "0")	 
+            message(FATAL_ERROR "Failed to copy run files: ${EXEC_ERROR}")
+        else()
+            message(STATUS "Build pkg success: ${CPACK_CMAKE_INSTALL_PREFIX}/${package_name}")
+        endif()
+    else()
+        message(FATAL_ERROR "Failed to mkdir new directory: ${CPACK_CMAKE_INSTALL_PREFIX}")
     endif()
-elseif(CPACK_BUILD_MODE STREQUAL "DIR_MOVE")
-    execute_process(
-        COMMAND mkdir -p ${CPACK_PACKAGE_DIRECTORY}
-        COMMAND mv ${STAGING_DIR}/${package_name} ${CPACK_PACKAGE_DIRECTORY}/
-        COMMAND echo "build pkg success: ${CPACK_PACKAGE_DIRECTORY}/${package_name}"
-        WORKING_DIRECTORY ${STAGING_DIR}
-    )
 endif()
