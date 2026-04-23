@@ -118,13 +118,17 @@ function(add_cann_subdirectories_relative base_dir)
 endfunction()
 
 # 设置打包配置
-# 如果子包在share/info目录下的名字与component不一致，则需要设置SHARE_INFO_NAME参数
+# component: 组件名
+# NO_COMPONENT_INSTALL: 不带--component参数安装
+# ENABLE_DEVICE: 是否解压device-${component}.tar.gz
+# COMPUTE_UNIT: 芯片型号
+# SHARE_INFO_NAME: 如果子包在share/info目录下的名字与component不一致，则需要设置
 function(set_cann_cpack_config component)
     if(NOT TOPLEVEL_PROJECT AND NOT ENABLE_UNIFIED_BUILD)
         return()
     endif()
 
-    cmake_parse_arguments(CANN "" "ENABLE_DEVICE;COMPUTE_UNIT;SHARE_INFO_NAME" "" ${ARGN})
+    cmake_parse_arguments(CANN "NO_COMPONENT_INSTALL" "ENABLE_DEVICE;COMPUTE_UNIT;SHARE_INFO_NAME" "" ${ARGN})
 
     add_cann_third_party(makeself-fetch)
 
@@ -139,10 +143,12 @@ function(set_cann_cpack_config component)
     endif()
 
     set(CPACK_PACKAGE_NAME "${component}")
-    set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+    set(CPACK_PACKAGE_VERSION "${CANN_VERSION_${component}_VERSION}")
     set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}")
 
-    set(CPACK_CANN_INSTALL_COMPONENT "${component}")
+    if(NOT CANN_NO_COMPONENT_INSTALL)
+        set(CPACK_CANN_INSTALL_COMPONENT "${component}")
+    endif()
     set(CPACK_CMAKE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
     set(CPACK_CMAKE_BINARY_DIR "${CMAKE_BINARY_DIR}")
     set(CPACK_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
