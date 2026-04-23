@@ -97,6 +97,13 @@ macro(init_cann_project)
     endif()
 endmacro()
 
+# 包装 find_package，在联编/统一构建模式下跳过
+macro(find_cann_package)
+    if(TOPLEVEL_PROJECT)
+        find_package(${ARGN})
+    endif()
+endmacro()
+
 # 添加三方库
 macro(add_cann_third_party name)
     include(${CANN_CMAKE_DIR}/third_party/${name}.cmake)
