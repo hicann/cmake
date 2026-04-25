@@ -92,3 +92,37 @@ def test_main_full_flow(tmp_path: Path):
     merged = json.loads(out_file.read_text(encoding="utf-8"))
     assert merged["binList"] == [1, 2, 3]
 
+
+def test_merge_files_and_priority(tmp_path: Path):
+    f1 = tmp_path / "1.json"
+    f2 = tmp_path / "2.json"
+    f1.write_text(json.dumps({"binList": [1], "tag": "base"}), encoding="utf-8")
+    f2.write_text(json.dumps({"binList": [2]}), encoding="utf-8")
+
+    # 测试 priority='last'：结果应为 [1, 2]，保留第一个文件的 tag
+    result_last = json_merger.merge_files([str(f1), str(f2)], priority="last")
+    assert result_last["binList"] == [1, 2]
+    assert result_last["tag"] == "base"
+
+    # 测试 priority='first'：结果应为 [2, 1]，保留第二个文件的字段 (覆盖 if priority == "first" 分支)
+    result_first = json_merger.merge_files([str(f1), str(f2)], priority="first")
+    assert result_first["binList"] == [2, 1]
+
+
+def test_main_batch_mode(tmp_path: Path):
+    f1 = tmp_path / "batch1.json"
+    f2 = tmp_path / "batch2.json"
+    out = tmp_path / "batch_out.json"
+    f1.write_text(json.dumps({"binList": ["A"]}), encoding="utf-8")
+    f2.write_text(json.dumps({"binList": ["B"]}), encoding="utf-8")
+
+    # 模拟命令行：python json_merger.py --input-files f1 f2 --output-file out
+    ok = json_merger.main([
+        "--input-files", str(f1), str(f2),
+        "--output-file", str(out)
+    ])
+
+    assert ok is True
+    assert out.exists()
+    final_data = json.loads(out.read_text(encoding="utf-8"))
+    assert final_data["binList"] == ["A", "B"]

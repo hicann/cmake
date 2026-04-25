@@ -10,6 +10,7 @@
 
 import json
 from pathlib import Path
+import os
 
 from .. import merge_binary_info_config as mbic
 
@@ -80,3 +81,50 @@ def test_main_full_flow(tmp_path: Path):
     merged = json.loads(out_file.read_text(encoding="utf-8"))
     assert merged["op"]["binaryList"] == [1, 2]
 
+
+def test_merge_files_binary_list_combination(tmp_path: Path):
+    """测试多个文件的 binaryList 拼接功能"""
+    f1 = tmp_path / "f1.json"
+    f2 = tmp_path / "f2.json"
+    
+    # f1 有一个 bin, f2 有一个 bin
+    f1.write_text(json.dumps({"Add": {"binaryList": [{"id": 1}], "version": "1.0"}}), encoding="utf-8")
+    f2.write_text(json.dumps({"Add": {"binaryList": [{"id": 2}], "version": "2.0"}}), encoding="utf-8")
+
+    # 执行合并
+    result = mbic.merge_files([str(f1), str(f2)])
+    
+    # 验证 binaryList 是否成功拼接 (1 + 2)
+    assert len(result["Add"]["binaryList"]) == 2
+    assert result["Add"]["binaryList"][0]["id"] == 1
+    assert result["Add"]["binaryList"][1]["id"] == 2
+    # 验证非 binaryList 字段是否按“后来者居上”覆盖 (v2 覆盖 v1)
+    assert result["Add"]["version"] == "2.0"
+
+
+def test_merge_files_priority_first(tmp_path: Path):
+    """测试 priority='first' 分支，确保第一个文件优先级更高"""
+    f1 = tmp_path / "f1.json"
+    f2 = tmp_path / "f2.json"
+    
+    f1.write_text(json.dumps({"Sub": {"attr": "high"}}), encoding="utf-8")
+    f2.write_text(json.dumps({"Sub": {"attr": "low"}}), encoding="utf-8")
+
+    # 当 priority 为 first 时，内部执行 update_config(f2, f1)
+    # 结果应该是 f1 的值覆盖 f2 的值
+    result = mbic.merge_files([str(f1), str(f2)], priority="first")
+    
+    assert result["Sub"]["attr"] == "high"
+
+
+def test_main_with_input_files(tmp_path: Path):
+    """测试命令行 --input-files 参数，覆盖 main 函数分支"""
+    f1 = tmp_path / "f1.json"
+    out = tmp_path / "out.json"
+    f1.write_text(json.dumps({"Mul": {"binaryList": []}}), encoding="utf-8")
+
+    # 模拟批量输入
+    ok = mbic.main(["--input-files", str(f1), "--output-file", str(out)])
+    
+    assert ok is True
+    assert os.path.exists(out)

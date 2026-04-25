@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 # -----------------------------------------------------------------------------------------------------------
-# Copyright (c) 2025 Huawei Technologies Co., Ltd.
-# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# Copyright (c) 2026 Huawei Technologies Co., Ltd.
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of 
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
-# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
@@ -44,24 +44,37 @@ def merge_binlist(base_content: dict, update_content: dict) -> dict:
     binlist_base = base_content.get("binList", [])
     binlist_update = update_content.get("binList", [])
 
-    #复制base内容并合并binList
+    # 复制base内容并合并binList
     merged_content = base_content.copy()
     merged_content["binList"] = binlist_base + binlist_update
     return merged_content
 
 
+def merge_files(files: List[str], priority: str = "last") -> dict:
+    """批量合并多个文件。"""
+    if not files:
+        return {}
+    if len(files) == 1:
+        return load_json_file(files[0])
+    result = load_json_file(files[0])
+    for f in files[1:]:
+        other = load_json_file(f)
+        if priority == "first":
+            result = merge_binlist(other, result)
+        else:
+            result = merge_binlist(result, other)
+    return result
+
+
 def parse_args(argv: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--base-file',
-                        required=True,
-                        help='Path to the base JSON file')
-    parser.add_argument('--update-file',
-                        required=True,
-                        help='Path to the JSON file to be merged')
-    parser.add_argument('--output-file',
-                        required=True,
-                        type=os.path.realpath,
+    parser.add_argument('--base-file', help='Path to the base JSON file')
+    parser.add_argument('--update-file', help='Path to the JSON file to be merged')
+    parser.add_argument('--input-files', nargs='+', help='Batch merge multiple files')
+    parser.add_argument('--output-file', required=True, type=os.path.realpath,
                         help='Path to the output JSON file after merging')
+    parser.add_argument('--priority', choices=['first', 'last'], default='last',
+                        help='Merge priority')
     args = parser.parse_args(argv)
     return args
 
@@ -69,18 +82,19 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
 def main(argv: List[str]) -> bool:
     # 解析参数
     args = parse_args(argv)
-    # 加载基础文件和待合并文件
-    base_content = load_json_file(args.base_file)
-    update_content = load_json_file(args.update_file)
-    # 合并binList
-    merged_result = merge_binlist(base_content, update_content)
+    if args.input_files:
+        result = merge_files(args.input_files, args.priority)
+    else:
+        # 加载基础文件和待合并文件
+        base_content = load_json_file(args.base_file)
+        update_content = load_json_file(args.update_file)
+        # 合并binList
+        result = merge_binlist(base_content, update_content)
     # 保存结果
-    save_json_file(args.output_file, merged_result)
+    save_json_file(args.output_file, result)
     return True
 
 
 if __name__ == '__main__':
     if not main(sys.argv[1:]):
         sys.exit(1)
-
-
