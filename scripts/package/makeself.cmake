@@ -101,6 +101,9 @@ endif()
 if(EXISTS "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/include/version")
     execute_process(COMMAND find "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/include/version" -type f -exec chmod 440 {} +)
 endif()
+if(EXISTS "${STAGING_DIR}/opp/built-in/op_impl")
+    execute_process(COMMAND find "${STAGING_DIR}/opp/built-in/op_impl" -type f -exec chmod 440 {} +)
+endif()
 
 # makeself打包
 file(STRINGS ${CPACK_CMAKE_BINARY_DIR}/makeself.txt script_output)
