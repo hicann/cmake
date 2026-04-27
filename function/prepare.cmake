@@ -111,7 +111,9 @@ endmacro()
 
 # 添加三方库
 macro(add_cann_third_party name)
-    include(${CANN_CMAKE_DIR}/third_party/${name}.cmake)
+    if(TOPLEVEL_PROJECT OR ENABLE_UNIFIED_BUILD)
+        include(${CANN_CMAKE_DIR}/third_party/${name}.cmake)
+    endif()
 endmacro()
 
 # 通过相对父目录方式添加子目录

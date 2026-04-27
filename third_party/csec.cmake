@@ -9,7 +9,11 @@
 # -----------------------------------------------------------------------------------------------------------
 
 include(ExternalProject)
-set(ABL_CSEC ${CMAKE_CURRENT_SOURCE_DIR}/../abl/libc_sec)
+if(PRODUCT_SIDE STREQUAL "device")
+    set(ABL_CSEC ${CMAKE_CURRENT_SOURCE_DIR}/../../../abl/libc_sec)
+else()
+    set(ABL_CSEC ${CMAKE_CURRENT_SOURCE_DIR}/../abl/libc_sec)
+endif()
 
 if(CMAKE_GENERATOR MATCHES "Makefiles")
     set(CSEC_BUILD_JOB_SERVER_AWARE TRUE)
@@ -129,3 +133,4 @@ endif()
 target_include_directories(c_sec_headers INTERFACE
     $<BUILD_INTERFACE:${LIBC_SEC_HEADER}>
 )
+target_link_libraries(shared_c_sec INTERFACE c_sec_headers)

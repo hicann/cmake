@@ -7,6 +7,10 @@
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. 
 # See LICENSE in the root of the software repository for the full text of the License. 
 # ---------------------------------------------------------------------------- 
+if(TARGET json)
+    return()
+endif()
+
 unset(json_FOUND CACHE)
 unset(JSON_SOURCE CACHE)
 
@@ -61,3 +65,6 @@ message("[ThirdPartyLib][json] build json end, JSON_INSTALL_PATH: ${JSON_INSTALL
 add_library(json INTERFACE)
 add_dependencies(json third_party_json)
 target_include_directories(json INTERFACE ${JSON_INSTALL_PATH}/include)
+target_compile_definitions(json INTERFACE
+    nlohmann=ascend_nlohmann  # 如果需要命名空间重映射
+)
