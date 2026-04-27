@@ -44,6 +44,11 @@ function(__cann_get_target_arch)
     endif()
 endfunction()
 
+# 添加target公共编译和链接选项
+macro(add_cann_target_optinons)
+    include(${CANN_CMAKE_DIR}/intf_pub/intf_pub_linux.cmake)
+endmacro()
+
 # 设置cann工程公共参数
 macro(init_cann_project)
     # 联合构建时，init函数可能被调用多次，保证第一次调用时生效，忽略后续调用
