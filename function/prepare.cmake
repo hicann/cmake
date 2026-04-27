@@ -45,7 +45,7 @@ function(__cann_get_target_arch)
 endfunction()
 
 # 添加target公共编译和链接选项
-macro(add_cann_target_optinons)
+macro(add_cann_target_options)
     include(${CANN_CMAKE_DIR}/intf_pub/intf_pub_linux.cmake)
 endmacro()
 
