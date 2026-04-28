@@ -19,6 +19,7 @@ BUILD_PATH="${BASEPATH}/build"
 usage() {
   echo "Usage:"
   echo "  sh build.sh --pkg [-h | --help] [-v | --verbose] [-j<N>]"
+  echo "              [--p=<PATH> | --cann_path=<PATH>]"
   echo "              [--cann_3rd_lib_path=<PATH>]"
   echo "              [--asan] [--build_host_only] [--cov]"
   echo "              [--sign-script <PATH>] [--enable-sign]"
@@ -34,7 +35,7 @@ usage() {
   echo "                   Specify build type (TYPE options: Release/Debug), Default: Release"
   echo "    -v, --verbose  Display build command"
   echo "    -j<N>          Set the number of threads used for building, default is 8"
-  echo "    --ascend_install_path=<PATH>"
+  echo "    -p, --cann_path=<PATH>"
   echo "                   Set ascend package install path, default /usr/local/Ascend/cann"
   echo "    --cann_3rd_lib_path=<PATH>"
   echo "                   Set ascend third_party package install path, default ./output/third_party"
@@ -57,19 +58,8 @@ checkopts() {
   ENABLE_BUILD_DEVICE="ON"
   CANN_PACKAGES=""
 
-  if [ -z "$ASCEND_INSTALL_PATH" ]; then
-      ASCEND_INSTALL_PATH="/usr/local/Ascend/cann"
-  fi
-
-  if [[ -n "${ASCEND_HOME_PATH}" ]] && [[ -d "${ASCEND_HOME_PATH}/toolkit/toolchain/hcc" ]]; then
-    echo "env exists ASCEND_HOME_PATH : ${ASCEND_HOME_PATH}"
-    export TOOLCHAIN_DIR=${ASCEND_HOME_PATH}/toolkit/toolchain/hcc
-  else
-    echo "env ASCEND_HOME_PATH not exists: ${ASCEND_HOME_PATH}"
-  fi
-
   # Process the options
-  parsed_args=$(getopt -a -o j:hv -l help,pkgs:,verbose,cov,build_host_only,ascend_install_path:,build-type:,cann_3rd_lib_path:,asan,sign-script:,enable-sign -- "$@") || {
+  parsed_args=$(getopt -a -o j:hp:v -l help,pkgs:,verbose,cov,build_host_only,cann_path:,build-type:,cann_3rd_lib_path:,asan,sign-script:,enable-sign -- "$@") || {
     usage
     exit 1
   }
@@ -109,8 +99,8 @@ checkopts() {
         BUILD_TYPE=$2
         shift 2
         ;;
-      --ascend_install_path)
-        ASCEND_INSTALL_PATH="$(realpath $2)"
+      --cann_path | -p)
+        CANN_PATH="$(realpath $2)"
         shift 2
         ;;
       --cann_3rd_lib_path)
@@ -143,6 +133,31 @@ checkopts() {
   fi
 }
 
+set_env() {
+  if [ "${USER_ID}" != "0" ]; then
+    DEFAULT_TOOLKIT_INSTALL_DIR="${HOME}/Ascend/cann"
+    DEFAULT_INSTALL_DIR="${HOME}/Ascend/cann"
+  else
+    DEFAULT_TOOLKIT_INSTALL_DIR="/usr/local/Ascend/cann"
+    DEFAULT_INSTALL_DIR="/usr/local/Ascend/cann"
+  fi
+
+  if [ -n "${CANN_PATH}" ];then
+    ASCEND_CANN_PACKAGE_PATH=${CANN_PATH}
+  elif [ -n "${ASCEND_HOME_PATH}" ];then
+    ASCEND_CANN_PACKAGE_PATH=${ASCEND_HOME_PATH}
+  elif [ -n "${ASCEND_OPP_PATH}" ];then
+    ASCEND_CANN_PACKAGE_PATH=$(dirname ${ASCEND_OPP_PATH})
+  elif [ -d "${DEFAULT_TOOLKIT_INSTALL_DIR}" ];then
+    ASCEND_CANN_PACKAGE_PATH=${DEFAULT_TOOLKIT_INSTALL_DIR}
+  elif [ -d "${DEFAULT_INSTALL_DIR}" ];then
+    ASCEND_CANN_PACKAGE_PATH=${DEFAULT_INSTALL_DIR}
+  else
+    log "Error: Please set the cann package installation directory through parameter -p|--cann_path."
+    exit 1
+  fi
+}
+
 mk_dir() {
   local create_dir="$1"  # the target to make
   mkdir -pv "${create_dir}"
@@ -154,13 +169,16 @@ build_project() {
   echo "create build directory and build";
   mk_dir "${BUILD_PATH}"
   mk_dir "${OUTPUT_PATH}"
+  mkdir -p "$BUILD_PATH/.cmake/api/v1/query"
+  touch "$BUILD_PATH/.cmake/api/v1/query/codemodel-v2"
+
   cd "${BUILD_PATH}"
-  CMAKE_ARGS="-DENABLE_OPEN_SRC=True \
-              -DENABLE_UNIFIED_BUILD=True \
+  CMAKE_ARGS="-DENABLE_OPEN_SRC=TRUE \
+              -DENABLE_UNIFIED_BUILD=TRUE \
               -DCANN_PACKAGES=${CANN_PACKAGES} \
               -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
               -DCMAKE_INSTALL_PREFIX=${OUTPUT_PATH} \
-              -DASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH} \
+              -DASCEND_INSTALL_PATH=${ASCEND_CANN_PACKAGE_PATH} \
               -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH} \
               -DENABLE_GCOV=${ENABLE_GCOV} \
               -DENABLE_ASAN=${ENABLE_ASAN} \
@@ -191,6 +209,7 @@ build_project() {
 
 main() {
   checkopts "$@"
+  set_env
 
   # build start
   echo "---------------- build start ----------------"

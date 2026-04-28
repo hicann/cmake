@@ -135,7 +135,19 @@ function(set_cann_cpack_config component)
         return()
     endif()
 
+    if(ENABLE_UNIFIED_BUILD)
+        if(NOT component IN_LIST CANN_PACKAGES)
+            return()
+        endif()
+    endif()
+
     cmake_parse_arguments(CANN "NO_COMPONENT_INSTALL" "ENABLE_DEVICE;COMPUTE_UNIT;SHARE_INFO_NAME" "" ${ARGN})
+
+    if(ENABLE_UNIFIED_BUILD)
+        if(DEVICE_CANN_PACKAGES)
+            set(CANN_ENABLE_DEVICE TRUE)
+        endif()
+    endif()
 
     add_cann_third_party(makeself-fetch)
 
@@ -172,9 +184,18 @@ endfunction()
 
 # 设置子工程打包
 function(set_cann_subprj_package)
-    get_cmake_property(CPACK_COMPONENTS_ALL COMPONENTS)
-    list(REMOVE_ITEM CPACK_COMPONENTS_ALL "Unspecified")
+    cmake_parse_arguments(CANN "SUPERBUILD" "" "" ${ARGN})
 
+    if(NOT TOPLEVEL_PROJECT AND NOT CANN_SUPERBUILD)
+        return()
+    endif()
+
+    if(CANN_SUPERBUILD)
+        set(CPACK_COMPONENTS_ALL "${CANN_PACKAGES}")
+    else()
+        get_cmake_property(CPACK_COMPONENTS_ALL COMPONENTS)
+        list(REMOVE_ITEM CPACK_COMPONENTS_ALL "Unspecified")
+    endif()
     set(CPACK_GENERATOR TGZ)
     set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
     set(CPACK_ARCHIVE_FILE_NAME "${PRODUCT_SIDE}")

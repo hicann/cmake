@@ -103,6 +103,105 @@ function(get_build_targets_in_directory out_var dirpath)
     set("${out_var}" "${filter_targets}" PARENT_SCOPE)
 endfunction()
 
+function(get_build_pkg_deps out_var)
+    set(build_pkg_deps)
+    list(LENGTH ARGN len)
+    if(len GREATER 0)
+        math(EXPR stop "${len} - 1")
+        foreach(idx RANGE 0 ${stop} 2)
+            list(GET ARGN ${idx} pkg)
+            list(APPEND build_pkg_deps ${pkg})
+        endforeach()
+    endif()
+    set("${out_var}" "${build_pkg_deps}" PARENT_SCOPE)
+endfunction()
+
+function(do_get_pkg_dependencies pkgs pkg_dirs all_pkgs all_pkg_dirs)
+    set(pkgs_next)
+    set(pkg_dirs_next)
+
+    list(LENGTH pkgs len)
+    math(EXPR stop "${len} - 1")
+    foreach(idx RANGE ${stop})
+        list(GET pkgs ${idx} pkg)
+        list(GET pkg_dirs ${idx} pkg_dir)
+
+        include(${CANN_TOP_DIR}/${pkg_dir}/version.cmake)
+
+        get_build_pkg_deps(build_pkg_deps ${CANN_VERSION_${pkg}_BUILD_DEPS})
+        foreach(dep_pkg IN LISTS build_pkg_deps)
+            if(dep_pkg IN_LIST all_pkgs OR dep_pkg IN_LIST pkgs_next)
+                continue()
+            endif()
+            list(APPEND pkgs_next ${dep_pkg})
+            list(APPEND pkg_dirs_next ${dep_pkg})
+        endforeach()
+    endforeach()
+    if(pkgs_next)
+        list(APPEND all_pkgs ${pkgs_next})
+        list(APPEND all_pkg_dirs ${pkg_dirs_next})
+        do_get_pkg_dependencies("${pkgs_next}" "${pkg_dirs_next}" "${all_pkgs}" "${all_pkg_dirs}")
+    endif()
+    set(all_pkgs "${all_pkgs}" PARENT_SCOPE)
+    set(all_pkg_dirs "${all_pkg_dirs}" PARENT_SCOPE)
+endfunction()
+
+# 获取依赖包及目录
+function(get_pkg_dependencies pkgs pkg_dirs)
+    do_get_pkg_dependencies("${pkgs}" "${pkg_dirs}" "${pkgs}" "${pkg_dirs}")
+    set(CANN_DEPEND_PACKAGES "${all_pkgs}" PARENT_SCOPE)
+    set(CANN_DEPEND_PACKAGE_DIRS "${all_pkg_dirs}" PARENT_SCOPE)
+endfunction()
+
+# 1. 添加cann_all_targets目标
+# 2. 将其它目标标识为EXCLUDE_FROM_ALL，防止冗余编译
+function(set_cann_all_targets)
+    set(build_targets)
+    foreach(CANN_PACKAGE_DIR IN LISTS CANN_PACKAGE_DIRS)
+        get_build_targets_in_directory(pkg_targets ${CANN_TOP_DIR}/${CANN_PACKAGE_DIR})
+        list(APPEND build_targets ${pkg_targets})
+    endforeach()
+
+    get_build_targets_in_directory(all_targets "${CMAKE_SOURCE_DIR}")
+
+    foreach(target IN LISTS all_targets)
+        set_target_properties(${target} PROPERTIES EXCLUDE_FROM_ALL TRUE)
+    endforeach()
+
+    add_custom_target(cann_all_targets ALL)
+    add_dependencies(cann_all_targets ${build_targets})
+endfunction()
+
+# 计算device编译相关参数
+function(calc_device_packages)
+    set(DEVICE_CANN_PACKAGES)
+    set(DEVICE_CANN_PACKAGE_DIRS)
+    set(DEVICE_CANN_DEPEND_PACKAGES)
+    set(DEVICE_CANN_DEPEND_PACKAGE_DIRS)
+
+    list(LENGTH CANN_DEPEND_PACKAGE_DIRS len)
+    math(EXPR stop "${len} - 1")
+    foreach(idx RANGE ${stop})
+        list(GET CANN_DEPEND_PACKAGES ${idx} PKG)
+        list(GET CANN_DEPEND_PACKAGE_DIRS ${idx} PKG_DIR)
+
+        set(PKG_DIR "${PKG_DIR}/cmake/device")
+        if(IS_DIRECTORY "${CANN_TOP_DIR}/${PKG_DIR}")
+            list(APPEND DEVICE_CANN_DEPEND_PACKAGES ${PKG})
+            list(APPEND DEVICE_CANN_DEPEND_PACKAGE_DIRS ${PKG_DIR})
+            if(PKG IN_LIST CANN_PACKAGES)
+                list(APPEND DEVICE_CANN_PACKAGES ${PKG})
+                list(APPEND DEVICE_CANN_PACKAGE_DIRS ${PKG_DIR})
+            endif()
+        endif()
+    endforeach()
+
+    set(DEVICE_CANN_PACKAGES "${DEVICE_CANN_PACKAGES}" PARENT_SCOPE)
+    set(DEVICE_CANN_PACKAGE_DIRS "${DEVICE_CANN_PACKAGE_DIRS}" PARENT_SCOPE)
+    set(DEVICE_CANN_DEPEND_PACKAGES "${DEVICE_CANN_DEPEND_PACKAGES}" PARENT_SCOPE)
+    set(DEVICE_CANN_DEPEND_PACKAGE_DIRS "${DEVICE_CANN_DEPEND_PACKAGE_DIRS}" PARENT_SCOPE)
+endfunction()
+
 # 内部调用
 function(get_project_deps TARGET_PROJ PROJ_ROOT_DIR OUT_VAR)
     # -------------------------- 初始化变量 --------------------------
