@@ -90,6 +90,11 @@ ExternalProject_Add(mockcpp_static_build
     BUILD_COMMAND ${${BUILD_TYPE}} $<$<BOOL:${IS_MAKE}>:$(MAKE)>
 )
 
+# use for fix the bug of not exists the include directory
+if(NOT EXISTS ${MOCK_INSTALL_PATH}/include)
+    file(MAKE_DIRECTORY ${MOCK_INSTALL_PATH}/include)
+endif()
+
 # use for asc_devkit service
 set(MOCKCPP_INCLUDE_ONE ${MOCK_INSTALL_PATH}/include)
 set(MOCKCPP_INCLUDE_TWO ${BOOST_INCLUDE_DIRS})

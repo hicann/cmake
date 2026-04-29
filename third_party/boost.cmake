@@ -36,7 +36,6 @@ find_package_handle_standard_args(boost
 
 if(boost_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     message("[ThirdParty][boost] found in ${BOOST_SRC_PATH}, and not force rebuild cann third_party")
-    add_library(boost INTERFACE)
 else()
     if(EXISTS ${BOOST_PKG_PATH})
         # 离线编译场景，优先使用已下载的包
@@ -61,3 +60,10 @@ else()
         INSTALL_COMMAND ""
     )
 endif()
+
+# use for dvpp service
+add_library(boost INTERFACE)
+add_dependencies(boost third_party_boost)
+set_property(TARGET boost PROPERTY
+    INTERFACE_INCLUDE_DIRECTORIES "${BOOST_SRC_PATH}"
+)

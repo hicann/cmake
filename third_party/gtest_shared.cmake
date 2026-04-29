@@ -104,17 +104,17 @@ else()
         )
 endif()
 
-add_library(GTestShare::gtest SHARED IMPORTED)
-add_dependencies(GTestShare::gtest gtest_shared_build)
+add_library(GTestShared::gtest SHARED IMPORTED)
+add_dependencies(GTestShared::gtest gtest_shared_build)
 
-add_library(GTestShare::gmock SHARED IMPORTED)
-add_dependencies(GTestShare::gmock gtest_shared_build)
+add_library(GTestShared::gmock SHARED IMPORTED)
+add_dependencies(GTestShared::gmock gtest_shared_build)
 
-add_library(GTestShare::gtest_main SHARED IMPORTED)
-add_dependencies(GTestShare::gtest_main gtest_shared_build)
+add_library(GTestShared::gtest_main SHARED IMPORTED)
+add_dependencies(GTestShared::gtest_main gtest_shared_build)
 
-add_library(GTestShare::gmock_main SHARED IMPORTED)
-add_dependencies(GTestShare::gmock_main gtest_shared_build)
+add_library(GTestShared::gmock_main SHARED IMPORTED)
+add_dependencies(GTestShared::gmock_main gtest_shared_build)
 
 message("[ThirdParty][gtest_shared] GTEST_INSTALL_PATH = ${GTEST_INSTALL_PATH}")
 
@@ -122,18 +122,18 @@ if (NOT EXISTS ${GTEST_INSTALL_PATH}/include)
     file(MAKE_DIRECTORY "${GTEST_INSTALL_PATH}/include")
 endif ()
 
-set_target_properties(GTestShare::gtest PROPERTIES
+set_target_properties(GTestShared::gtest PROPERTIES
     IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib64/libgtest.so.1.14.0
     INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INSTALL_PATH}/include)
 
-set_target_properties(GTestShare::gmock PROPERTIES
+set_target_properties(GTestShared::gmock PROPERTIES
     IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib64/libgmock.so.1.14.0
     INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INSTALL_PATH}/include)
 
-set_target_properties(GTestShare::gtest_main PROPERTIES
+set_target_properties(GTestShared::gtest_main PROPERTIES
     IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib64/libgtest_main.so.1.14.0
     INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INSTALL_PATH}/include)
 
-set_target_properties(GTestShare::gmock_main PROPERTIES
+set_target_properties(GTestShared::gmock_main PROPERTIES
     IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib64/libgmock_main.so.1.14.0
     INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INSTALL_PATH}/include)
