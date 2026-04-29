@@ -7,6 +7,7 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------------------------------------
+include_guard(GLOBAL)
 
 set(MAKESELF_NAME "makeself")
 set(MAKESELF_PATH "${CANN_3RD_LIB_PATH}/${MAKESELF_NAME}")
@@ -18,7 +19,7 @@ endif()
 
 # 新增：检查本地 tar.gz 包是否存在
 if (EXISTS "${MAKESELF_TAR_PATH}")
-    message(STATUS "Found local tar.gz package: ${MAKESELF_TAR_PATH}, extracting...")
+    message(STATUS "[ThirdPartyLib][makeself] found local tar.gz package: ${MAKESELF_TAR_PATH}, extracting...")
     
     # 创建目标目录（如果不存在）
     file(MAKE_DIRECTORY "${MAKESELF_PATH}")
@@ -31,15 +32,15 @@ if (EXISTS "${MAKESELF_TAR_PATH}")
     )
     
     if(NOT EXTRACT_RESULT EQUAL 0)
-        message(FATAL_ERROR "Failed to extract local tar.gz: ${EXTRACT_ERROR}")
+        message(FATAL_ERROR "[ThirdPartyLib][makeself] failed to extract local tar.gz: ${EXTRACT_ERROR}")
     endif()
     
-    message(STATUS "Local tar.gz extracted successfully to ${MAKESELF_PATH}")
+    message(STATUS "[ThirdPartyLib][makeself] local tar.gz extracted successfully to ${MAKESELF_PATH}")
     
 # 如果本地包不存在，再检查解压后的目录是否存在
 elseif (NOT EXISTS "${MAKESELF_PATH}/makeself-header.sh" OR NOT EXISTS "${MAKESELF_PATH}/makeself.sh")
     set(MAKESELF_URL "https://gitcode.com/cann-src-third-party/makeself/releases/download/release-2.5.0-patch1.0/makeself-release-2.5.0-patch1.tar.gz")
-    message(STATUS "Downloading ${MAKESELF_NAME} from ${MAKESELF_URL}")
+    message(STATUS "[ThirdPartyLib][makeself] downloading ${MAKESELF_NAME} from ${MAKESELF_URL}")
 
     include(FetchContent)
     FetchContent_Declare(
@@ -58,3 +59,7 @@ execute_process(
     RESULT_VARIABLE CHMOD_RESULT
     ERROR_VARIABLE CHMOD_ERROR
 )
+
+# 用于devkit流水线编译
+install(DIRECTORY ${MAKESELF_PATH}
+    DESTINATION .)

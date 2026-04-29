@@ -17,7 +17,7 @@ unset(GTEST_MAIN_LIBRARY CACHE)
 unset(GMOCK_LIBRARY CACHE)
 unset(GMOCK_MAIN_LIBRARY CACHE)
 set(GTEST_INSTALL_PATH ${CANN_3RD_LIB_PATH}/gtest_shared)
-message("GTEST_INSTALL_PATH=${GTEST_INSTALL_PATH}")
+
 find_path(GTEST_INCLUDE
     NAMES gtest/gtest.h
     NO_CMAKE_SYSTEM_PATH
@@ -68,22 +68,21 @@ find_package_handle_standard_args(gtest
     GTEST_MAIN_LIBRARY
     GMOCK_LIBRARY
     GMOCK_MAIN_LIBRARY)
-message("gtest shared FOUND found:${gtest_FOUND}")
+message("[ThirdParty][gtest_shared] shared FOUND found:${gtest_FOUND}")
 
 if(GTEST_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
-    message("gtest shared found in ${GTEST_INSTALL_PATH}, and not force rebuild cann third_party")
+    message("[ThirdParty][gtest_shared] shared found in ${GTEST_INSTALL_PATH}, and not force rebuild cann third_party")
 else()
     if (EXISTS "${CANN_3RD_LIB_PATH}/googletest-1.14.0.tar.gz")
-        message("gtest use local tar.gz")
+        message("[ThirdParty][gtest_shared] use local tar.gz")
         set(REQ_URL "${CANN_3RD_LIB_PATH}/googletest-1.14.0.tar.gz")
     else()
-        message("gtest not use cache, download the source code")
+        message("[ThirdParty][gtest_shared] not use cache, download the source code")
         set(REQ_URL "https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/googletest-1.14.0.tar.gz")
     endif()
     set (gtest_CXXFLAGS "-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
     set (gtest_CFLAGS   "-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
 
-    message("REQ_URL:${REQ_URL}")
     include(ExternalProject)
     ExternalProject_Add(gtest_shared_build
         URL ${REQ_URL}
@@ -105,36 +104,36 @@ else()
         )
 endif()
 
-add_library(GTest::gtest SHARED IMPORTED)
-add_dependencies(GTest::gtest gtest_shared_build)
+add_library(GTestShare::gtest SHARED IMPORTED)
+add_dependencies(GTestShare::gtest gtest_shared_build)
 
-add_library(GTest::gmock SHARED IMPORTED)
-add_dependencies(GTest::gmock gtest_shared_build)
+add_library(GTestShare::gmock SHARED IMPORTED)
+add_dependencies(GTestShare::gmock gtest_shared_build)
 
-add_library(GTest::gtest_main SHARED IMPORTED)
-add_dependencies(GTest::gtest_main gtest_shared_build)
+add_library(GTestShare::gtest_main SHARED IMPORTED)
+add_dependencies(GTestShare::gtest_main gtest_shared_build)
 
-add_library(GTest::gmock_main SHARED IMPORTED)
-add_dependencies(GTest::gmock_main gtest_shared_build)
+add_library(GTestShare::gmock_main SHARED IMPORTED)
+add_dependencies(GTestShare::gmock_main gtest_shared_build)
 
-message("GTEST_INSTALL_PATH = ${GTEST_INSTALL_PATH}")
+message("[ThirdParty][gtest_shared] GTEST_INSTALL_PATH = ${GTEST_INSTALL_PATH}")
 
 if (NOT EXISTS ${GTEST_INSTALL_PATH}/include)
-  file(MAKE_DIRECTORY "${GTEST_INSTALL_PATH}/include")
+    file(MAKE_DIRECTORY "${GTEST_INSTALL_PATH}/include")
 endif ()
 
-set_target_properties(GTest::gtest PROPERTIES
+set_target_properties(GTestShare::gtest PROPERTIES
     IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib64/libgtest.so.1.14.0
     INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INSTALL_PATH}/include)
 
-set_target_properties(GTest::gmock PROPERTIES
+set_target_properties(GTestShare::gmock PROPERTIES
     IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib64/libgmock.so.1.14.0
     INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INSTALL_PATH}/include)
 
-set_target_properties(GTest::gtest_main PROPERTIES
+set_target_properties(GTestShare::gtest_main PROPERTIES
     IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib64/libgtest_main.so.1.14.0
     INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INSTALL_PATH}/include)
 
-set_target_properties(GTest::gmock_main PROPERTIES
+set_target_properties(GTestShare::gmock_main PROPERTIES
     IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib64/libgmock_main.so.1.14.0
     INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INSTALL_PATH}/include)

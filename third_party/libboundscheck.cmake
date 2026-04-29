@@ -7,12 +7,13 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+include_guard(GLOBAL)
 
 if(BUILD_WITH_CANN AND DEFINED ENV{LD_LIBRARY_PATH})
     set(LD_LIBRARY_PATH $ENV{LD_LIBRARY_PATH})
     string(REPLACE ":" ";" LIBRARY_PATHS "${LD_LIBRARY_PATH}")
     if(NOT LIBRARY_PATHS)
-        message(FATAL_ERROR "BUILD_WITH_CANN but ENV{LD_LIBRARY_PATH} empty.")
+        message(FATAL_ERROR "[ThirdPartyLib][boundscheck] BUILD_WITH_CANN but ENV{LD_LIBRARY_PATH} empty.")
         return()
     endif()
     find_library(c_sec_LIBRARY
@@ -25,7 +26,7 @@ if(BUILD_WITH_CANN AND DEFINED ENV{LD_LIBRARY_PATH})
         NO_CMAKE_SYSTEM_PATH
     )
     if(NOT c_sec_LIBRARY)
-        message(WARNING "Can't find c_sec from ENV{LD_LIBRARY_PATH}=$ENV{LD_LIBRARY_PATH}")
+        message(WARNING "[ThirdPartyLib][boundscheck] Can't find c_sec from ENV{LD_LIBRARY_PATH}=$ENV{LD_LIBRARY_PATH}")
         return()
     endif()
     get_filename_component(c_sec_LIBRARY "${c_sec_LIBRARY}" REALPATH)
@@ -37,7 +38,7 @@ if(BUILD_WITH_CANN AND DEFINED ENV{LD_LIBRARY_PATH})
     set_target_properties(c_sec_include PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${ASCEND_CANN_PACKAGE_PATH}/include"
     )
-    message(STATUS "Use c_sec from binary, c_sec_shared: ${c_sec_LIBRARY}")
+    message(STATUS "[ThirdPartyLib][boundscheck] Use c_sec from binary, c_sec_shared: ${c_sec_LIBRARY}")
     return()
 endif()
 
@@ -92,7 +93,7 @@ get_filename_component(_TargetTarGzFile "${PYPTO_THIRD_PARTY_PATH}/libboundschec
 get_filename_component(_TargetInstallPrefix "${PYPTO_THIRD_PARTY_PATH}/${CMAKE_BUILD_TYPE}" REALPATH)
 TryAdd_c_sec(PREFIX ${_TargetInstallPrefix})
 if(TARGET c_sec)
-    message(STATUS "Use c_sec from binary, c_sec_Install_Prefix=${_TargetInstallPrefix}")
+    message(STATUS "[ThirdPartyLib][boundscheck] Use c_sec from binary, c_sec_Install_Prefix=${_TargetInstallPrefix}")
     return()
 endif()
 
@@ -134,4 +135,4 @@ ExternalProject_Add(ExternalProject_c_sec   ${_ExtArgs}
         ${_TargetInstallPrefix}/lib/libc_sec.so
 )
 TryAdd_c_sec(PREFIX ${_TargetInstallPrefix} DEPENDS ExternalProject_c_sec SKIP_CHECK)
-message(STATUS "Use c_sec from source: ${_TargetSourceDir}")
+message(STATUS "[ThirdPartyLib][boundscheck] Use c_sec from source: ${_TargetSourceDir}")

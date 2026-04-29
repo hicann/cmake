@@ -7,6 +7,7 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+include_guard(GLOBAL)
 
 if(NOT ENABLE_OPEN_SRC)
     return()
@@ -130,7 +131,7 @@ if(NEED_BUILD_PROTOBUF)
     endif()
 
     if(NOT EXISTS ${ABSEIL_PATH} OR NOT EXISTS ${PROTOBUF_PATH})
-        message("[ThirdPartyLib]: ${PROTOBUF_PATH} not found, need download.")
+        message("[ThirdParty][protobuf] ${PROTOBUF_PATH} not found, need download.")
         set(PROTOBUF_PATH "https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz")
     endif()
     ExternalProject_Add(protobuf_src
@@ -177,7 +178,7 @@ add_library(ascend_protobuf_shared_lib UNKNOWN IMPORTED)
 add_library(ascend_protobuf INTERFACE)
 
 if(NOT PRODUCT_SIDE STREQUAL "device" AND ASCEND_PROTOBUF_SHARED_LIB AND EXISTS "${PROTOBUF_INCLUDE_DIRS}")
-    message("[ThirdPartyLib]: protobuf shared use cache.")
+    message("[ThirdParty][protobuf] shared use cache.")
     set_target_properties(ascend_protobuf_shared_lib PROPERTIES IMPORTED_LOCATION ${ASCEND_PROTOBUF_SHARED_LIB})
     set_target_properties(ascend_protobuf_shared_lib PROPERTIES IMPORTED_NO_SONAME TRUE)
     target_include_directories(ascend_protobuf INTERFACE ${PROTOBUF_INCLUDE_DIRS})
@@ -185,7 +186,7 @@ if(NOT PRODUCT_SIDE STREQUAL "device" AND ASCEND_PROTOBUF_SHARED_LIB AND EXISTS 
     get_filename_component(PROTOBUF_SHARED_LIB_DIR "${ASCEND_PROTOBUF_SHARED_LIB}" DIRECTORY)
     get_filename_component(PROTOBUF_SHARED_PKG_DIR "${PROTOBUF_SHARED_LIB_DIR}" DIRECTORY)
 elseif(NOT PRODUCT_SIDE STREQUAL "device" AND TARGET protobuf_headers_target AND ASCEND_PROTOBUF_SHARED_LIB)
-    message("[ThirdPartyLib]: protobuf shared depend protobuf_headers_target.")
+    message("[ThirdParty][protobuf] shared depend protobuf_headers_target.")
     set_target_properties(ascend_protobuf_shared_lib PROPERTIES IMPORTED_LOCATION ${ASCEND_PROTOBUF_SHARED_LIB})
     set_target_properties(ascend_protobuf_shared_lib PROPERTIES IMPORTED_NO_SONAME TRUE)
     target_include_directories(ascend_protobuf INTERFACE ${PROTOBUF_INCLUDE_DIRS})
@@ -194,7 +195,7 @@ elseif(NOT PRODUCT_SIDE STREQUAL "device" AND TARGET protobuf_headers_target AND
     get_filename_component(PROTOBUF_SHARED_PKG_DIR "${PROTOBUF_SHARED_LIB_DIR}" DIRECTORY)
     add_dependencies(ascend_protobuf protobuf_headers_target)
 else()
-    message("[ThirdPartyLib]: protobuf shared build.")
+    message("[ThirdParty][protobuf] shared build.")
     ExternalProject_Add(protobuf_shared_build
         DEPENDS protobuf_src
         SOURCE_DIR ${PROTOBUF_SRC_DIR}
@@ -266,20 +267,20 @@ add_library(ascend_protobuf_static_lib STATIC IMPORTED)
 add_library(ascend_protobuf_static INTERFACE)
 
 if(ASCEND_PROTOBUF_STATIC_LIB AND EXISTS "${PROTOBUF_INCLUDE_DIRS}")
-    message("[ThirdPartyLib]: protobuf static use cache.")
+    message("[ThirdParty][protobuf] static use cache.")
     set_target_properties(ascend_protobuf_static_lib PROPERTIES IMPORTED_LOCATION ${ASCEND_PROTOBUF_STATIC_LIB})
     target_include_directories(ascend_protobuf_static INTERFACE ${PROTOBUF_INCLUDE_DIRS})
     target_link_libraries(ascend_protobuf_static INTERFACE ascend_protobuf_static_lib)
     set(PROTOBUF_STATIC_FINAL_PATH ${ASCEND_PROTOBUF_STATIC_LIB})
 elseif(TARGET protobuf_headers_target AND ASCEND_PROTOBUF_STATIC_LIB)
-    message("[ThirdPartyLib]: protobuf static depend protobuf_headers_target.")
+    message("[ThirdParty][protobuf] static depend protobuf_headers_target.")
     set_target_properties(ascend_protobuf_static_lib PROPERTIES IMPORTED_LOCATION ${ASCEND_PROTOBUF_STATIC_LIB})
     target_include_directories(ascend_protobuf_static INTERFACE ${PROTOBUF_INCLUDE_DIRS})
     target_link_libraries(ascend_protobuf_static INTERFACE ascend_protobuf_static_lib)
     add_dependencies(ascend_protobuf_static protobuf_headers_target)
     set(PROTOBUF_STATIC_FINAL_PATH ${ASCEND_PROTOBUF_STATIC_LIB})
 else()
-    message("[ThirdPartyLib]: protobuf static build.")
+    message("[ThirdParty][protobuf] static build.")
     ExternalProject_Add(protobuf_static_build
         DEPENDS protobuf_src
         SOURCE_DIR ${PROTOBUF_SRC_DIR}
@@ -321,20 +322,20 @@ add_library(host_protobuf_static_lib STATIC IMPORTED)
 add_library(protobuf_static INTERFACE)
 
 if(HOST_PROTOBUF_STATIC_LIB AND EXISTS "${PROTOBUF_INCLUDE_DIRS}")
-    message("[ThirdPartyLib]: protobuf host static use cache.")
+    message("[ThirdParty][protobuf] host static use cache.")
     set_target_properties(host_protobuf_static_lib PROPERTIES IMPORTED_LOCATION ${HOST_PROTOBUF_STATIC_LIB})
     target_include_directories(protobuf_static INTERFACE ${PROTOBUF_INCLUDE_DIRS})
     target_link_libraries(protobuf_static INTERFACE host_protobuf_static_lib)
     set(PROTOBUF_HOST_STATIC_FINAL_PATH ${HOST_PROTOBUF_STATIC_LIB})
 elseif(TARGET protobuf_headers_target AND HOST_PROTOBUF_STATIC_LIB)
-    message("[ThirdPartyLib]: protobuf host static depend protobuf_headers_target.")
+    message("[ThirdParty][protobuf] host static depend protobuf_headers_target.")
     set_target_properties(host_protobuf_static_lib PROPERTIES IMPORTED_LOCATION ${HOST_PROTOBUF_STATIC_LIB})
     target_include_directories(protobuf_static INTERFACE ${PROTOBUF_INCLUDE_DIRS})
     target_link_libraries(protobuf_static INTERFACE host_protobuf_static_lib) 
     add_dependencies(protobuf_static protobuf_headers_target)
     set(PROTOBUF_HOST_STATIC_FINAL_PATH ${HOST_PROTOBUF_STATIC_LIB})
 else()
-    message("[ThirdPartyLib]: protobuf host static build.")
+    message("[ThirdParty][protobuf] host static build.")
     ExternalProject_Add(protobuf_host_static_build
         DEPENDS protobuf_src
         SOURCE_DIR ${PROTOBUF_SRC_DIR}

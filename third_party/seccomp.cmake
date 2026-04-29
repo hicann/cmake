@@ -7,39 +7,40 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+include_guard(GLOBAL)
 
 if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
 endif()
 
 set(seccomp_download_dependent FALSE)
-if (IS_DIRECTORY "${CANN_3RD_LIB_PATH}/../tools/minios/arm64/include/libseccomp")
-  message("seccomp use tools cache.")
-  set(LIB_SECCOMP_INCLUDE_PATH "${CANN_3RD_LIB_PATH}/../tools/minios/arm64/include/libseccomp")
+if(IS_DIRECTORY "${CANN_3RD_LIB_PATH}/../tools/minios/arm64/include/libseccomp")
+    message("[ThirdParty][seccomp] use tools cache.")
+    set(LIB_SECCOMP_INCLUDE_PATH "${CANN_3RD_LIB_PATH}/../tools/minios/arm64/include/libseccomp")
 elseif (EXISTS "${CANN_3RD_LIB_PATH}/lib_cache/libseccomp-2.5.4/include/seccomp.h")
-  message("seccomp use opensource cache.")
-  set(LIB_SECCOMP_INCLUDE_PATH "${CANN_3RD_LIB_PATH}/lib_cache/libseccomp-2.5.4/include")
+    message("[ThirdParty][seccomp] use opensource cache.")
+    set(LIB_SECCOMP_INCLUDE_PATH "${CANN_3RD_LIB_PATH}/lib_cache/libseccomp-2.5.4/include")
 else()
-  if (EXISTS "${CANN_3RD_LIB_PATH}/libseccomp-2.5.4.tar.gz")
-    message("seccomp use cache.")
-    set(REQ_URL "${CANN_3RD_LIB_PATH}/libseccomp-2.5.4.tar.gz")
-  elseif (NOT EXISTS "${CANN_3RD_LIB_PATH}/libseccomp-2.5.4/")
-    message("seccomp not use cache in ${CANN_3RD_LIB_PATH}, download seccomp.")
-    set(REQ_URL "https://gitcode.com/cann-src-third-party/libseccomp/releases/download/v2.5.4/libseccomp-2.5.4.tar.gz")
-  else ()
-    message("seccomp use cache.")
-    set(REQ_URL "${CANN_3RD_LIB_PATH}/libseccomp-2.5.4/")
-  endif ()
-  include(ExternalProject)
-  ExternalProject_Add(external_seccomp
-    URL               ${REQ_URL}
-    DOWNLOAD_DIR      download/seccomp
-    PREFIX            third_party
-    TLS_VERIFY OFF
-    CONFIGURE_COMMAND cd <SOURCE_DIR> && ./autogen.sh && ./configure --prefix=<INSTALL_DIR>
-    INSTALL_COMMAND   ""
-    BUILD_COMMAND     ""
-  )
+    if(EXISTS "${CANN_3RD_LIB_PATH}/libseccomp-2.5.4.tar.gz")
+        message("[ThirdParty][seccomp] use cache.")
+        set(REQ_URL "${CANN_3RD_LIB_PATH}/libseccomp-2.5.4.tar.gz")
+    elseif(NOT EXISTS "${CANN_3RD_LIB_PATH}/libseccomp-2.5.4/")
+        message("[ThirdParty][seccomp] not use cache in ${CANN_3RD_LIB_PATH}, download seccomp.")
+        set(REQ_URL "https://gitcode.com/cann-src-third-party/libseccomp/releases/download/v2.5.4/libseccomp-2.5.4.tar.gz")
+    else()
+        message("[ThirdParty][seccomp] use cache.")
+        set(REQ_URL "${CANN_3RD_LIB_PATH}/libseccomp-2.5.4/")
+    endif()
+    include(ExternalProject)
+    ExternalProject_Add(external_seccomp
+        URL ${REQ_URL}
+        DOWNLOAD_DIR download/seccomp
+        PREFIX third_party
+        TLS_VERIFY OFF
+        CONFIGURE_COMMAND cd <SOURCE_DIR> && ./autogen.sh && ./configure --prefix=<INSTALL_DIR>
+        INSTALL_COMMAND   ""
+        BUILD_COMMAND     ""
+    )
 
   ExternalProject_Get_Property(external_seccomp SOURCE_DIR)
   set(LIB_SECCOMP_INCLUDE_PATH ${SOURCE_DIR}/include)
@@ -48,8 +49,8 @@ endif()
 
 add_library(seccomp_headers INTERFACE)
 set_target_properties(seccomp_headers PROPERTIES
-  INTERFACE_INCLUDE_DIRECTORIES "${LIB_SECCOMP_INCLUDE_PATH}"
+    INTERFACE_INCLUDE_DIRECTORIES "${LIB_SECCOMP_INCLUDE_PATH}"
 )
-if (seccomp_download_dependent)
-  add_dependencies(seccomp_headers external_seccomp)
+if(seccomp_download_dependent)
+    add_dependencies(seccomp_headers external_seccomp)
 endif()

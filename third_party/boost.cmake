@@ -18,8 +18,8 @@ endif()
 
 set(BOOST_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
 set(BOOST_SRC_PATH ${CANN_3RD_LIB_PATH}/boost-1.87.0)
-set(BOOST_URL "https://gitcode.com/cann-src-third-party/boost/releases/download/v1.87.0/${BOOST_FILE}")
 set(BOOST_FILE "boost_1_87_0.tar.gz")
+set(BOOST_URL "https://gitcode.com/cann-src-third-party/boost/releases/download/v1.87.0/${BOOST_FILE}")
 set(BOOST_PKG_PATH ${BOOST_DOWNLOAD_PATH}/${BOOST_FILE})
 
 find_path(BOOST_INCLUDE
@@ -35,16 +35,16 @@ find_package_handle_standard_args(boost
     BOOST_INCLUDE)
 
 if(boost_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
-    message("boost found in ${BOOST_SRC_PATH}, and not force rebuild cann third_party")
+    message("[ThirdParty][boost] found in ${BOOST_SRC_PATH}, and not force rebuild cann third_party")
     add_library(boost INTERFACE)
 else()
     if(EXISTS ${BOOST_PKG_PATH})
         # 离线编译场景，优先使用已下载的包
-        message(STATUS "[ThirdParty] Found local boost package: ${BOOST_PKG_PATH}")
+        message(STATUS "[ThirdParty][boost] Found local boost package: ${BOOST_PKG_PATH}")
         set(BOOST_PROJECT_URL ${BOOST_PKG_PATH})
     else()
         # 下载并解压
-        message(STATUS "[ThirdParty] Downloading ${BOOST_NAME} from ${BOOST_URL}")
+        message(STATUS "[ThirdParty][boost] Downloading ${BOOST_NAME} from ${BOOST_URL}")
         set(BOOST_PROJECT_URL ${BOOST_URL})
     endif()
 

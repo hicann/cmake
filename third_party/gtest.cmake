@@ -18,7 +18,7 @@ unset(GMOCK_STATIC_LIBRARY CACHE)
 unset(GMOCK_MAIN_STATIC_LIBRARY CACHE)
 
 set(GTEST_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/gtest)
-set(GTEST_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/gtest)
+set(GTEST_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/third_party)
 message(STATUS "[ThirdPartyLib][gtest] GTEST_INSTALL_PATH=${GTEST_INSTALL_PATH}")
 message(STATUS "[ThirdPartyLib][gtest] GTEST_DOWNLOAD_PATH=${GTEST_DOWNLOAD_PATH}")
 
@@ -62,11 +62,11 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(gtest
     FOUND_VAR gtest_FOUND
     REQUIRED_VARS
-        GTEST_INCLUDE
-        GTEST_STATIC_LIBRARY
-        GTEST_MAIN_STATIC_LIBRARY
-        GMOCK_STATIC_LIBRARY
-        GMOCK_MAIN_STATIC_LIBRARY
+    GTEST_INCLUDE
+    GTEST_STATIC_LIBRARY
+    GTEST_MAIN_STATIC_LIBRARY
+    GMOCK_STATIC_LIBRARY
+    GMOCK_MAIN_STATIC_LIBRARY
 )
 
 message(STATUS "[ThirdPartyLib][gtest] Found GTest: ${gtest_FOUND}")
@@ -101,8 +101,8 @@ else()
         set(USE_CXX11_ABI 0)
     endif()
 
-    set(gtest_CXXFLAGS "-D_GLIBCXX_USE_CXX11_ABI=${USE_CXX11_ABI} -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
-    set(gtest_CFLAGS "-D_GLIBCXX_USE_CXX11_ABI=${USE_CXX11_ABI} -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
+    set(GTEST_CXXFLAGS "-D_GLIBCXX_USE_CXX11_ABI=${USE_CXX11_ABI} -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
+    set(GTEST_CFLAGS "-D_GLIBCXX_USE_CXX11_ABI=${USE_CXX11_ABI} -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
 
     include(ExternalProject)
     # adaptive the gtest upgrade scenario, reset the installation path.
@@ -112,15 +112,15 @@ else()
         TLS_VERIFY OFF
         DOWNLOAD_DIR ${GTEST_DOWNLOAD_PATH}
         CONFIGURE_COMMAND ${CMAKE_COMMAND}
-        -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
-        -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
-        -DCMAKE_CXX_FLAGS=${gtest_CXXFLAGS}
-        -DCMAKE_C_FLAGS=${gtest_CFLAGS}
-        -DCMAKE_INSTALL_PREFIX=${GTEST_INSTALL_PATH}
-        -DCMAKE_INSTALL_LIBDIR=lib
-        -DBUILD_TESTING=OFF
-        -DBUILD_SHARED_LIBS=OFF
-        <SOURCE_DIR>
+            -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+            -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+            -DCMAKE_CXX_FLAGS=${GTEST_CXXFLAGS}
+            -DCMAKE_C_FLAGS=${GTEST_CFLAGS}
+            -DCMAKE_INSTALL_PREFIX=${GTEST_INSTALL_PATH}
+            -DCMAKE_INSTALL_LIBDIR=lib
+            -DBUILD_TESTING=OFF
+            -DBUILD_SHARED_LIBS=OFF
+            <SOURCE_DIR>
         BUILD_COMMAND $(MAKE)
         INSTALL_COMMAND $(MAKE) install
         EXCLUDE_FROM_ALL TRUE

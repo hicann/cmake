@@ -7,8 +7,7 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-
-# function(create_opensource target_name suffix_name product_side install_prefix toolchain_file)
+include_guard(GLOBAL)
 
 set(open_source_target_name mockcpp)
 
@@ -46,13 +45,13 @@ set(DOWNLOAD_FILE_DIR ${CANN_3RD_LIB_PATH}/mockcpp-2.7)
 set(URL_FILE ${DOWNLOAD_FILE_DIR}/mockcpp-2.7.tar.gz)
 set(BOOST_INCLUDE_DIRS ${CANN_3RD_LIB_PATH}/boost-1.87.0)
 
-message(STATUS "mock cmake install prefix ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "[ThirdPartyLib][mockcpp] cmake install prefix ${CMAKE_INSTALL_PREFIX}")
 if (EXISTS "${CANN_3RD_LIB_PATH}/mockcpp-2.7-h5.patch")
     set(PATCH_FILE "${CANN_3RD_LIB_PATH}/mockcpp-2.7-h5.patch")
-    message(STATUS "mockcpp patch use cache: ${PATCH_FILE}")
+    message(STATUS "[ThirdPartyLib][mockcpp] patch use cache: ${PATCH_FILE}")
 else()
     set(PATCH_FILE ${CANN_3RD_LIB_PATH}/mockcpp-2.7/mockcpp-2.7-h5.patch)
-    message(STATUS "mockcpp patch not use cache.")
+    message(STATUS "[ThirdPartyLib][mockcpp] patch not use cache.")
     file(DOWNLOAD
         "https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h5/mockcpp-2.7-h5.patch"
         ${PATCH_FILE}
@@ -60,17 +59,19 @@ else()
     )
 endif()
 include(ExternalProject)
-message(STATUS, "CMAKE_COMMAND is ${CMAKE_COMMAND}")
+message(STATUS, "[ThirdPartyLib][mockcpp] CMAKE_COMMAND is ${CMAKE_COMMAND}")
 if (NOT EXISTS "${URL_FILE}")
     if(EXISTS "${CANN_3RD_LIB_PATH}/mockcpp-2.7.tar.gz")
         set(URL_FILE "${CANN_3RD_LIB_PATH}/mockcpp-2.7.tar.gz")
-        message("mockcpp use local tar.gz: ${URL_FILE}")
+        message("[ThirdPartyLib][mockcpp] use local tar.gz: ${URL_FILE}")
     else()
         set(URL_FILE "https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h5/mockcpp-2.7.tar.gz")
-        message("mockcpp not use cache, new url file: ${URL_FILE}")
+        message("[ThirdPartyLib][mockcpp] not use cache, new url file: ${URL_FILE}")
     endif()
 endif()
-ExternalProject_Add(mockcpp
+
+set(MOCK_INSTALL_PATH ${CMAKE_BINARY_DIR}/mockcpp)
+ExternalProject_Add(mockcpp_static_build
     URL ${URL_FILE}
     DOWNLOAD_DIR ${DOWNLOAD_FILE_DIR}
     SOURCE_DIR ${mockcpp_SRC_DIR}
@@ -84,8 +85,27 @@ ExternalProject_Add(mockcpp
         -DCMAKE_SHARED_LINKER_FLAGS=${mockcpp_LINKER_FLAGS}
         -DCMAKE_EXE_LINKER_FLAGS=${mockcpp_LINKER_FLAGS}
         -DBUILD_32_BIT_TARGET_BY_64_BIT_COMPILER=OFF
-        -DCMAKE_INSTALL_PREFIX=${CANN_3RD_LIB_PATH}/mockcpp
+        -DCMAKE_INSTALL_PREFIX=${MOCK_INSTALL_PATH}
         <SOURCE_DIR>
     BUILD_COMMAND ${${BUILD_TYPE}} $<$<BOOL:${IS_MAKE}>:$(MAKE)>
 )
-message(STATUS, "get mockcpp")
+
+# use for asc_devkit service
+set(MOCKCPP_INCLUDE_ONE ${MOCK_INSTALL_PATH}/include)
+set(MOCKCPP_INCLUDE_TWO ${BOOST_INCLUDE_DIRS})
+set(MOCKCPP_STATIC_LIBRARY ${MOCK_INSTALL_PATH}/lib/libmockcpp.a)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(mockcpp_static_build
+    REQUIRED_VARS MOCKCPP_INCLUDE_ONE MOCKCPP_INCLUDE_TWO MOCKCPP_STATIC_LIBRARY
+)
+
+set(MOCKCPP_INCLUDE_DIR ${MOCKCPP_INCLUDE_ONE} ${MOCKCPP_INCLUDE_TWO})
+get_filename_component(MOCKCPP_LIBRARY_DIR ${MOCKCPP_STATIC_LIBRARY} DIRECTORY)
+
+add_library(mockcpp STATIC IMPORTED)
+set_target_properties(mockcpp PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${MOCKCPP_INCLUDE_DIR}"
+    IMPORTED_LOCATION "${MOCKCPP_STATIC_LIBRARY}"
+)
+add_dependencies(mockcpp mockcpp_static_build)

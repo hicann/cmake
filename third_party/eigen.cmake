@@ -7,22 +7,23 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+include_guard(GLOBAL)
 
 if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
 endif()
 
 if(EXISTS "${CANN_3RD_LIB_PATH}/eigen-5.0.0.tar.gz")
-    message(STATUS "Eigen tar.gz found in cache: ${CANN_3RD_LIB_PATH}/eigen-5.0.0.tar.gz")
+    message(STATUS "[ThirdParty][eigen] tar.gz found in cache: ${CANN_3RD_LIB_PATH}/eigen-5.0.0.tar.gz")
     set(REQ_URL "${CANN_3RD_LIB_PATH}/eigen-5.0.0.tar.gz")
 elseif(IS_DIRECTORY "${CANN_3RD_LIB_PATH}/eigen-5.0.0")
-    message(STATUS "Eigen path found in cache: ${CANN_3RD_LIB_PATH}/eigen-5.0.0")
+    message(STATUS "[ThirdParty][eigen] path found in cache: ${CANN_3RD_LIB_PATH}/eigen-5.0.0")
     set(REQ_URL "${CANN_3RD_LIB_PATH}/eigen-5.0.0")
 elseif(IS_DIRECTORY "${CANN_3RD_LIB_PATH}/eigen")
-    message(STATUS "Eigen path found in cache: ${CANN_3RD_LIB_PATH}/eigen")
+    message(STATUS "[ThirdParty][eigen] path found in cache: ${CANN_3RD_LIB_PATH}/eigen")
     set(REQ_URL "${CANN_3RD_LIB_PATH}/eigen")
 else()
-  message("The eigen package needs to be downloaded.")
+  message("[ThirdParty][eigen] package needs to be downloaded.")
   set(REQ_URL "https://gitcode.com/cann-src-third-party/eigen/releases/download/5.0.0-h0.trunk/eigen-5.0.0.tar.gz")
 endif()
 
@@ -42,7 +43,7 @@ add_library(Eigen INTERFACE)
 target_compile_options(Eigen INTERFACE -w)
 
 set_target_properties(Eigen PROPERTIES
-  INTERFACE_INCLUDE_DIRECTORIES "${SOURCE_DIR}"
+    INTERFACE_INCLUDE_DIRECTORIES "${SOURCE_DIR}"
 )
 add_dependencies(Eigen external_eigen)
 

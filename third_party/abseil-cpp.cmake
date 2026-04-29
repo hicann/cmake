@@ -7,8 +7,8 @@
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
+include_guard(GLOBAL)
 
-include(ExternalProject)
 set(ABSEIL_VERSION_PKG abseil-cpp-20230802.1.tar.gz)
 set(ABS_INSTALL_DIR ${CANN_3RD_LIB_PATH}/lib_cache/abseil-cpp-20230802)
 unset(abseil-cpp_FOUND CACHE)
@@ -49,6 +49,7 @@ else()
     set(REQ_URL "https://gitcode.com/cann-src-third-party/abseil-cpp/releases/download/20230802.1/abseil-cpp-20230802.1.tar.gz")
 endif()
 
+include(ExternalProject)
 set(ABS_INSTALL_DIR ${CMAKE_BINARY_DIR}/abseil-cpp)
 ExternalProject_Add(abseil_build
     URL ${REQ_URL}

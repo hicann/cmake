@@ -7,7 +7,6 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-
 include_guard(GLOBAL)
 
 set(BENCHMARK_CMAKE_PATH ${CANN_3RD_LIB_PATH}/benchmark-1.8.3/lib/cmake/benchmark/benchmarkConfig.cmake)

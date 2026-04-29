@@ -7,32 +7,55 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-message(STATUS "openssl libpath: ${CANN_3RD_LIB_PATH}/lib_cache/openssl-3.0.9")
-find_file(CRYPTO_LIB_PATH
+include_guard(GLOBAL)
+
+unset(openssl_FOUND CACHE)
+unset(CRYPTO_LIB_PATH CACHE)
+set(LIB_CACHE_CACHE_PATH ${CANN_3RD_LIB_PATH}/lib_cache/openssl-3.0.9)
+find_path(CRYPTO_LIB_PATH
     NAMES libcrypto.a
-    PATHS ${CANN_3RD_LIB_PATH}/lib_cache/openssl-3.0.9
+    PATHS ${LIB_CACHE_CACHE_PATH}
     PATH_SUFFIXES lib lib64
-    NO_DEFAULT_PATH)
-if (CRYPTO_LIB_PATH)
-    message(STATUS "Use local libcrypto: ${CRYPTO_LIB_PATH}")
-    if (EXISTS "${CANN_3RD_LIB_PATH}/lib_cache/openssl-3.0.9/include/openssl/sha.h")
-        message(STATUS "local sha.h: ${CANN_3RD_LIB_PATH}/lib_cache/openssl-3.0.9/include/openssl/sha.h")
-        set(CRYPTO_INCLUDE_DIR "${CANN_3RD_LIB_PATH}/lib_cache/openssl-3.0.9/include")
+    NO_DEFAULT_PATH
+)
+
+# 在线编译查询 openssl 缓存
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(openssl
+    FOUND_VAR
+    openssl_FOUND 
+    REQUIRED_VARS
+    CRYPTO_LIB_PATH
+)
+
+if (openssl_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
+    message(STATUS "[ThirdPartyLib][openssl] use local libcrypto: ${CRYPTO_LIB_PATH}")
+    if (EXISTS "${LIB_CACHE_CACHE_PATH}/include/openssl/sha.h")
+        message(STATUS "[ThirdPartyLib][openssl] local sha.h: ${LIB_CACHE_CACHE_PATH}/include/openssl/sha.h")
+        set(CRYPTO_INCLUDE_DIR "${LIB_CACHE_CACHE_PATH}/include")
     else()
         set(CRYPTO_INCLUDE_DIR)
     endif()
-else()
-    include(ExternalProject)
 
+    # the key use for hcomm services online
+    set(OPENSSL_INCLUDE_DIR ${LIB_CACHE_CACHE_PATH}/include)
+else()
     # ========== 基本路径配置 ==========
-    if (EXISTS "${CANN_3RD_LIB_PATH}/openssl-openssl-3.0.9.tar.gz")
+    if (EXISTS ${CANN_3RD_LIB_PATH}/openssl-openssl-3.0.9.tar.gz)
+        # local offline
         set(OPENSSL_TARBALL ${CANN_3RD_LIB_PATH}/openssl-openssl-3.0.9.tar.gz)
     else()
         set(OPENSSL_TARBALL https://gitcode.com/cann-src-third-party/openssl/releases/download/openssl-3.0.9/openssl-openssl-3.0.9.tar.gz)
     endif()
-    set(OPENSSL_SRC_DIR ${CMAKE_BINARY_DIR}/openssl-src)        # 解压后的源码路径
-    set(OPENSSL_INSTALL_DIR ${CMAKE_BINARY_DIR}/openssl-install) # 安装路径
+    # adapt for hcomm services, use key of PRODUCT_SIDE
+    set(OPENSSL_SRC_DIR ${CMAKE_BINARY_DIR}/openssl${PRODUCT_SIDE}-src)
+    set(OPENSSL_INSTALL_DIR ${CMAKE_BINARY_DIR}/openssl${PRODUCT_SIDE}-install)
     set(OPENSSL_INSTALL_LIBDIR ${OPENSSL_INSTALL_DIR}/lib)
+    # the key use for hcomm services
+    set(OPENSSL_INCLUDE_DIR
+        ${OPENSSL_INSTALL_DIR}/include
+        ${OPENSSL_SRC_DIR}/include
+    )
 
     # ========== 工具链配置（根据系统架构判断） ==========
     if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
@@ -66,6 +89,27 @@ else()
 
     # ========== Perl 路径(OpenSSL 的 configure 依赖 Perl)==========
     find_program(PERL_PATH perl REQUIRED)
+    set(OPENSSL_CONFIGURE_PUB_COMMAND
+        ${PERL_PATH} <SOURCE_DIR>/Configure
+        ${OPENSSL_PLATFORM}
+        no-asm enable-shared threads enable-ssl3-method no-tests
+        ${OPENSSL_OPTION}
+        --prefix=${OPENSSL_INSTALL_DIR}
+    )
+    if(DEVICE_MODE)
+        message("[ThirdParty][openssl] set configure command in mode: ${DEVICE_MODE}.")
+        set(OPENSSL_CONFIGURE_COMMAND
+            unset CROSS_COMPILE &&
+            ${OPENSSL_CONFIGURE_PUB_COMMAND}
+        )
+    else()
+        message("[ThirdParty][openssl] set configure command in default.")
+        set(OPENSSL_CONFIGURE_COMMAND
+            unset CROSS_COMPILE &&
+            export NO_OSSL_RENAME_VERSION=1 &&
+            ${OPENSSL_CONFIGURE_PUB_COMMAND}
+        )
+    endif()
 
     # ========== 构建命令 ==========
     set(OPENSSL_MAKE_CMD $(MAKE))
@@ -75,8 +119,9 @@ else()
         list(APPEND OPENSSL_DOWNLOAD_TIMESTAMP_ARG DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
     endif()
     # ========== ExternalProject_Add ==========
+    include(ExternalProject)
     if (NOT EXISTS "${CANN_3RD_LIB_PATH}/openssl/Configure")
-        message("openssl:not use cache")
+        message("[ThirdPartyLib][openssl] compile not use cache")
         ExternalProject_Add(openssl_project
             URL ${OPENSSL_TARBALL}                        # 从本地 tar.gz 获取源码
             ${OPENSSL_DOWNLOAD_TIMESTAMP_ARG}
@@ -84,33 +129,23 @@ else()
             DOWNLOAD_DIR ${CMAKE_BINARY_DIR}/downloads
             SOURCE_DIR ${OPENSSL_SRC_DIR}                 # 解压后的源码目录
             CONFIGURE_COMMAND
-                unset CROSS_COMPILE &&
-                export NO_OSSL_RENAME_VERSION=1 &&
-                ${PERL_PATH} <SOURCE_DIR>/Configure
-                ${OPENSSL_PLATFORM}
-                no-asm enable-shared threads enable-ssl3-method no-tests
-                ${OPENSSL_OPTION}
+                ${OPENSSL_CONFIGURE_COMMAND}
                 CC=${OPENSSL_CC}
-                CXX=${OPENSSL_CXX}
-                --prefix=${OPENSSL_INSTALL_DIR}
+                CXX={OPENSSL_CXX}
             BUILD_COMMAND ${OPENSSL_MAKE_CMD}
             INSTALL_COMMAND ${OPENSSL_INSTALL_CMD}
             BUILD_IN_SOURCE TRUE                          # OpenSSL 不支持分离构建目录
         )
     else()
-        message("compile openssl use cache")
+        message("[ThirdPartyLib][openssl] compile use cache")
         ExternalProject_Add(openssl_project
-            SOURCE_DIR ${CANN_3RD_LIB_PATH}/openssl
+            URL ${OPENSSL_TARBALL}
+            ${OPENSSL_DOWNLOAD_TIMESTAMP_ARG}
+            SOURCE_DIR ${OPENSSL_SRC_DIR}                 # 解压后的源码目录
             CONFIGURE_COMMAND
-                unset CROSS_COMPILE &&
-                export NO_OSSL_RENAME_VERSION=1 &&
-                ${PERL_PATH} <SOURCE_DIR>/Configure
-                ${OPENSSL_PLATFORM}
-                no-asm enable-shared threads enable-ssl3-method no-tests
-                ${OPENSSL_OPTION}
+                ${OPENSSL_CONFIGURE_COMMAND}
                 CC=${OPENSSL_CC}
-                CXX=${OPENSSL_CXX}
-                --prefix=${OPENSSL_INSTALL_DIR}
+                CXX={OPENSSL_CXX}
             BUILD_COMMAND ${OPENSSL_MAKE_CMD}
             INSTALL_COMMAND ${OPENSSL_INSTALL_CMD}
             BUILD_IN_SOURCE TRUE                          # OpenSSL 不支持分离构建目录
@@ -120,7 +155,7 @@ else()
     set(CRYPTO_INCLUDE_DIR "${OPENSSL_INSTALL_DIR}/include")
 endif()
 
-message(STATUS "libcrypto: ${CRYPTO_LIB_PATH}")
+message("[ThirdPartyLib][openssl] libcrypto: ${CRYPTO_LIB_PATH}")
 add_library(crypto_static STATIC IMPORTED)
 add_dependencies(crypto_static openssl_project)
 set_target_properties(crypto_static PROPERTIES

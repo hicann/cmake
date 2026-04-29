@@ -1,13 +1,12 @@
 # ----------------------------------------------------------------------------
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
-# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
-
 include_guard(GLOBAL)
 
 unset(pybind11_FOUND CACHE)
@@ -31,7 +30,7 @@ find_package_handle_standard_args(pybind11
     PYBIND11_INCLUDE
 )
 if(pybind11_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
-    message("pybind11 found in ${PYBIND11_INSTALL_PATH}, and not force rebuild cann third_party")
+    message("[ThirdParty][pybind11] found in ${PYBIND11_INSTALL_PATH}, and not force rebuild cann third_party")
     set(pybind11_INCLUDE_DIR ${PYBIND11_INCLUDE})
     add_library(pybind11 INTERFACE IMPORTED)
     set_target_properties(pybind11 PROPERTIES
@@ -44,14 +43,14 @@ else()
 
     # Search in CANN_3RD_LIB_PATH and move to pkg if found
     if(EXISTS ${CANN_3RD_LIB_PATH}/pybind11-2.13.6.tar.gz AND NOT EXISTS ${PYBIND11_ARCHIVE})
-        message("Found pybind11 archive in ${CANN_3RD_LIB_PATH}, moving to pkg")
+        message("[ThirdParty][pybind11] found pybind11 archive in ${CANN_3RD_LIB_PATH}, moving to pkg")
         file(RENAME ${CANN_3RD_LIB_PATH}/pybind11-2.13.6.tar.gz ${PYBIND11_ARCHIVE})
     endif()
 
     if(EXISTS ${PYBIND11_ARCHIVE})
-        message("pybind11 not found in ${PYBIND11_INSTALL_PATH}, found archive at ${PYBIND11_ARCHIVE}")
+        message("[ThirdParty][pybind11] not found in ${PYBIND11_INSTALL_PATH}, found archive at ${PYBIND11_ARCHIVE}")
     else()
-        message("pybind11 not found in ${PYBIND11_INSTALL_PATH}, begin load from ${REQ_URL}")
+        message("[ThirdParty][pybind11] not found in ${PYBIND11_INSTALL_PATH}, begin load from ${REQ_URL}")
         file(DOWNLOAD
             ${REQ_URL}
             ${PYBIND11_ARCHIVE}
@@ -68,7 +67,7 @@ else()
     )
 
     if(NOT TAR_RESULT EQUAL 0)
-        message(FATAL_ERROR "Failed to tar xf ${PYBIND11_ARCHIVE}")
+        message(FATAL_ERROR "[ThirdParty][pybind11] failed to tar xf ${PYBIND11_ARCHIVE}")
     endif()
 
     set(pybind11_INCLUDE_DIR ${PYBIND11_INSTALL_PATH}/include)
