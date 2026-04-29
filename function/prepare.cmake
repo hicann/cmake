@@ -53,6 +53,12 @@ endmacro()
 macro(init_cann_project)
     # 联合构建时，init函数可能被调用多次，保证第一次调用时生效，忽略后续调用
     if(NOT CANN_PROJECT_INITED)
+        cmake_parse_arguments(CANN "" "PRODUCT_SIDE" "" ${ARGN})
+
+        if(CANN_PRODUCT_SIDE)
+            set(PRODUCT_SIDE "${CANN_PRODUCT_SIDE}")
+        endif()
+
         if(POLICY CMP0135)
             cmake_policy(SET CMP0135 NEW)
         endif()
