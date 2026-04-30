@@ -9,11 +9,6 @@
 # -----------------------------------------------------------------------------------------------------------
 include_guard(GLOBAL)
 include(ExternalProject)
-if(PRODUCT_SIDE STREQUAL "device")
-    set(ABL_CSEC ${CMAKE_CURRENT_SOURCE_DIR}/../../../abl/libc_sec)
-else()
-    set(ABL_CSEC ${CMAKE_CURRENT_SOURCE_DIR}/../abl/libc_sec)
-endif()
 
 if(CMAKE_GENERATOR MATCHES "Makefiles")
     set(CSEC_BUILD_JOB_SERVER_AWARE TRUE)
@@ -21,14 +16,11 @@ else()
     set(CSEC_BUILD_JOB_SERVER_AWARE FALSE)
 endif()
 
-if (NOT ENABLE_OPEN_SRC)
-    set(LIBC_SEC_HEADER ${ABL_CSEC}/include)
-    return()
-endif()
+set(ABL_CSEC ${CANN_3RD_LIB_PATH}/libc_sec)
 
 add_library(c_sec_headers INTERFACE)
 if (EXISTS "${ABL_CSEC}" AND IS_DIRECTORY "${ABL_CSEC}")
-    message(STATUS "abl/libc_sec detected")
+    message(STATUS "libc_sec detected")
     add_subdirectory(${ABL_CSEC} ${CMAKE_BINARY_DIR}/libc_sec)
     target_compile_options(static_c_sec PRIVATE -fstack-protector-strong)
     target_link_options(static_c_sec PRIVATE -Wl,-z,now)
