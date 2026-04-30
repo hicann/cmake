@@ -20,7 +20,7 @@ import subprocess
 import shutil
 from argparse import Namespace
 from pathlib import Path
-from unittest import mock
+from unittest.mock import Mock
 
 import pytest
 
@@ -288,24 +288,38 @@ class TestValidatePathConsistency:
     @staticmethod
     def test_validate_path_consistency_equal():
         """Test when dst_path equals install_path."""
-        target_config = {
-            'dst_path': 'same/path',
-            'install_path': 'same/path',
-            'value': 'file.txt'
-        }
+        fileitems = [
+            Mock(
+                operation='copy',
+                relative_path_in_pkg='x86_64-linux/include/version.h',
+                relative_install_path='x86_64-linux/include/version.h',
+            )
+        ]
         # Should not raise
-        package_module.validate_path_consistency(target_config, 'file.txt')
+        package_module.validate_path_consistency(fileitems)
 
     @staticmethod
     def test_validate_path_consistency_different():
         """Test when dst_path differs from install_path."""
-        target_config = {
-            'dst_path': 'dst/path',
-            'install_path': 'install/path',
-            'value': 'file.txt'
-        }
+        fileitems = [
+            Mock(
+                operation='copy',
+                relative_path_in_pkg='include/version.h',
+                relative_install_path='x86_64-linux/include/version.h',
+            )
+        ]
         with pytest.raises(package_module.GenerateFilelistError):
-            package_module.validate_path_consistency(target_config, 'file.txt')
+            package_module.validate_path_consistency(fileitems)
+
+    @staticmethod
+    def test_validate_path_consistency_do_nothing():
+        """Test do nothing."""
+        fileitems = [
+            Mock(
+                operation='mkdir',
+            )
+        ]
+        package_module.validate_path_consistency(fileitems)
 
 
 class TestModuleFunction:

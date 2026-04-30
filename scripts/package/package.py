@@ -390,20 +390,23 @@ def get_pkg_inner_softlink(target_config) -> List[str]:
     return softlink_str.split(';')
 
 
-def validate_path_consistency(target_config, target_name):
+def validate_path_consistency(filelist: FileList):
     """验证 dst_path 和 install_path 一致性，不一致则抛出异常。"""
-    dst_path_val = target_config.get('dst_path', '')
-    install_path_val = target_config.get('install_path', '')
+    succ = True
+    for fileitem in filelist:
+        if fileitem.operation not in ('copy', 'move', 'copy_entity'):
+            continue
+        if fileitem.relative_path_in_pkg != fileitem.relative_install_path:
+            CommLog.cilog_error(
+                f"Configuration Error: 'dst_path' MUST be equal to 'install_path'.\n"
+                f"  - Current dst_path: {fileitem.relative_path_in_pkg}\n"
+                f"  - Current install_path: {fileitem.relative_install_path}\n"
+            )
+            succ = False
 
-    if dst_path_val != install_path_val:
-        value_path = target_config.get('value', 'unknown')
-        CommLog.cilog_error(
-            f"Configuration Error: 'dst_path' MUST be equal to 'install_path'.\n"
-            f"  - Current dst_path: {dst_path_val}\n"
-            f"  - Current install_path: {install_path_val}\n"
-        )
+    if not succ:
         raise GenerateFilelistError(
-            f"dst_path ({dst_path_val}) does not match install_path ({install_path_val})"
+            f"dst_path does not match install_path!"
         )
 
 
@@ -425,8 +428,6 @@ def parse_install_info(delivery_dir: str,
             relative_path_in_pkg = os.path.join(target_config.get('dst_path'), target_name)
             relative_install_path = path_join(target_config.get('install_path'), target_name)
             is_dir = target_config.get('is_dir', False)
-            # 验证dst_path和install_path的一致性
-            validate_path_consistency(target_config, target_name)
         elif operate_type == 'mkdir':
             relative_path_in_pkg = 'NA'
             relative_install_path = target_config.get('value')
@@ -715,6 +716,10 @@ def generate_filelist_file_by_xml_config(xml_config: XmlConfig,
     # 先生成再检查，有利于问题定位
     if package_check:
         check_filelist(file_install_list, check_features, check_move)
+
+    if xml_config.package_attr.get('copy_all'):
+        # 验证dst_path和install_path的一致性
+        validate_path_consistency(file_install_list)
 
 
 def get_pkg_xml_relative_path(pkg_args: Namespace) -> str:

@@ -954,31 +954,6 @@ class TestParseInstallInfo:
         assert len(result) == 1
         assert result[0].operation == 'del'
 
-    def test_parse_install_info_none_install_path(self):
-        """Test parse_install_info with None install_path."""
-        infos = [
-            {
-                'dst_path': 'dst',
-                'value': 'path/file.txt',
-                'install_path': None,  # This causes error due to dst_path != install_path
-                'module': 'test',
-                'install_mod': '755',
-                'install_own': 'user:group',
-                'install_type': 'run',
-                'install_softlink': '',
-                'feature': {'all'},
-                'configurable': 'FALSE',
-                'hash': 'NA',
-                'name': 'block1',
-                'pkg_inner_softlink': '',
-                'chip': {'ascend910'}
-            }
-        ]
-        
-        # When install_path is None, validate_path_consistency raises GenerateFilelistError
-        with pytest.raises(package_module.GenerateFilelistError):
-            list(package_module.parse_install_info(None, infos, 'copy', ['all']))
-
     def test_parse_install_info_unknown_operation(self):
         """Test parse_install_info with unknown operation raises exception."""
         infos = [{'value': 'test'}]
