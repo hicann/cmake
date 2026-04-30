@@ -59,7 +59,3 @@ execute_process(
     RESULT_VARIABLE CHMOD_RESULT
     ERROR_VARIABLE CHMOD_ERROR
 )
-
-# 用于devkit流水线编译
-install(DIRECTORY ${MAKESELF_PATH}
-    DESTINATION .)

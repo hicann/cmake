@@ -145,7 +145,7 @@ else()
             CONFIGURE_COMMAND
                 ${OPENSSL_CONFIGURE_COMMAND}
                 CC=${OPENSSL_CC}
-                CXX={OPENSSL_CXX}
+                CXX=${OPENSSL_CXX}
             BUILD_COMMAND ${OPENSSL_MAKE_CMD}
             INSTALL_COMMAND ${OPENSSL_INSTALL_CMD}
             BUILD_IN_SOURCE TRUE                          # OpenSSL 不支持分离构建目录
