@@ -54,6 +54,13 @@ else ()
     message(WARNING "Unknown architecture: ${CMAKE_SYSTEM_PROCESSOR}")
 endif ()
 
+find_path(ERROR_MANAGER_INCLUDE_DIR
+    NAMES base/err_msg.h
+    PATH_SUFFIXES include
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH
+)
+
 find_library(ERROR_MANAGER_SHARED_LIBRARY
     NAMES liberror_manager.so
     PATH_SUFFIXES lib64
@@ -77,13 +84,20 @@ find_package_handle_standard_args(error_manager
     FOUND_VAR
         error_manager_FOUND
     REQUIRED_VARS
+        ERROR_MANAGER_INCLUDE_DIR
         ERROR_MANAGER_SHARED_LIBRARY
 )
 
 if(error_manager_FOUND)
+    add_library(error_manager_headers INTERFACE IMPORTED)
+    set_target_properties(error_manager_headers PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${ERROR_MANAGER_INCLUDE_DIR}"
+    )
+
     add_library(error_manager SHARED IMPORTED)
     set_target_properties(error_manager PROPERTIES
         IMPORTED_LOCATION "${ERROR_MANAGER_SHARED_LIBRARY}"
+        INTERFACE_LINK_LIBRARIES "error_manager_headers"
     )
 
     add_library(stub_error_manager SHARED IMPORTED)
