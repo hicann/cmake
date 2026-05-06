@@ -27,7 +27,9 @@ endif()
 
 # 创建临时安装目录
 set(STAGING_DIR "${CPACK_CMAKE_BINARY_DIR}/_CPack_Packages/makeself_staging")
-file(REMOVE_RECURSE "${STAGING_DIR}")
+if(NOT CPACK_CANN_NO_CLEAN)
+    file(REMOVE_RECURSE "${STAGING_DIR}")
+endif()
 file(MAKE_DIRECTORY "${STAGING_DIR}")
 
 # 执行安装到临时目录

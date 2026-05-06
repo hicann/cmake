@@ -147,7 +147,7 @@ function(set_cann_cpack_config component)
         endif()
     endif()
 
-    cmake_parse_arguments(CANN "NO_COMPONENT_INSTALL" "ENABLE_DEVICE;COMPUTE_UNIT;SHARE_INFO_NAME;OUTPUT" "" ${ARGN})
+    cmake_parse_arguments(CANN "NO_COMPONENT_INSTALL;NO_CLEAN" "ENABLE_DEVICE;COMPUTE_UNIT;SHARE_INFO_NAME;OUTPUT" "" ${ARGN})
 
     if(ENABLE_UNIFIED_BUILD)
         if(DEVICE_CANN_PACKAGES)
@@ -179,6 +179,9 @@ function(set_cann_cpack_config component)
 
     if(NOT CANN_NO_COMPONENT_INSTALL)
         set(CPACK_CANN_INSTALL_COMPONENT "${component}")
+    endif()
+    if(CANN_NO_CLEAN)
+        set(CPACK_CANN_NO_CLEAN True)
     endif()
     set(CPACK_CMAKE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
     set(CPACK_CMAKE_BINARY_DIR "${CMAKE_BINARY_DIR}")
