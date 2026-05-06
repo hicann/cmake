@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------------------------------------
-# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# Copyright (c) 2026 Huawei Technologies Co., Ltd.
 # This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -7,6 +7,25 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+
+# 获取包对应源码目录
+function(get_package_dir_by_package outvar package)
+    if(CANN_PACKAGE_DIR_${package})
+        set(${outvar} "${CANN_PACKAGE_DIR_${package}}" PARENT_SCOPE)
+    else()
+        set(${outvar} "${package}" PARENT_SCOPE)
+    endif()
+endfunction()
+
+# 计算CANN_PACKAGE_DIRS
+function(calc_cann_package_dirs)
+    set(CANN_PACKAGE_DIRS)
+    foreach(package IN LISTS CANN_PACKAGES)
+        get_package_dir_by_package(package_dir "${package}")
+        list(APPEND CANN_PACKAGE_DIRS "${package_dir}")
+    endforeach()
+    set(CANN_PACKAGE_DIRS "${CANN_PACKAGE_DIRS}" PARENT_SCOPE)
+endfunction()
 
 # 过滤目标列表
 function(filter_targets outvar)
@@ -103,6 +122,7 @@ function(get_build_targets_in_directory out_var dirpath)
     set("${out_var}" "${filter_targets}" PARENT_SCOPE)
 endfunction()
 
+# 获取依赖包列表
 function(get_build_pkg_deps out_var)
     set(build_pkg_deps)
     list(LENGTH ARGN len)
@@ -133,8 +153,12 @@ function(do_get_pkg_dependencies pkgs pkg_dirs all_pkgs all_pkg_dirs)
             if(dep_pkg IN_LIST all_pkgs OR dep_pkg IN_LIST pkgs_next)
                 continue()
             endif()
+            if(dep_pkg STREQUAL "bisheng-compiler")
+                continue()
+            endif()
             list(APPEND pkgs_next ${dep_pkg})
-            list(APPEND pkg_dirs_next ${dep_pkg})
+            get_package_dir_by_package(dep_pkg_dir ${dep_pkg})
+            list(APPEND pkg_dirs_next ${dep_pkg_dir})
         endforeach()
     endforeach()
     if(pkgs_next)

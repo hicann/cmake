@@ -15,11 +15,12 @@ include(../function/prepare.cmake)
 init_cann_project()
 
 include(../function/function.cmake)
+include(config.cmake)
 set(PRODUCT_SIDE "host")
 
 get_filename_component(CANN_TOP_DIR "../.." REALPATH)
 
-set(CANN_PACKAGE_DIRS ${CANN_PACKAGES})
+calc_cann_package_dirs()
 get_pkg_dependencies("${CANN_PACKAGES}" "${CANN_PACKAGE_DIRS}")
 calc_device_packages()
 
