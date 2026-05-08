@@ -11,17 +11,15 @@
 cmake_minimum_required(VERSION 3.16.3)
 project(cann_superbuild)
 
-include(../../function/prepare.cmake)
-init_cann_project()
-
 include(../../function/function.cmake)
-set(PRODUCT_SIDE "device")
+init_cann_superbuild_project(PRODUCT_SIDE "device")
 
-get_filename_component(CANN_TOP_DIR "../../.." REALPATH)
-
+get_package_dirs(CANN_DEPEND_PACKAGE_DIRS "${CANN_DEPEND_PACKAGES}" "cmake/device")
 foreach(CANN_DEPEND_PACKAGE_DIR IN LISTS CANN_DEPEND_PACKAGE_DIRS)
     add_subdirectory(${CANN_TOP_DIR}/${CANN_DEPEND_PACKAGE_DIR} ${CANN_DEPEND_PACKAGE_DIR})
 endforeach()
 
-set_cann_all_targets()
+get_package_dirs(CANN_PACKAGE_DIRS "${CANN_PACKAGES}" "cmake/device")
+set_cann_all_targets("${CANN_PACKAGE_DIRS}")
+
 set_cann_subprj_package(SUPERBUILD)

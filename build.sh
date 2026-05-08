@@ -18,20 +18,23 @@ BUILD_PATH="${BASEPATH}/build"
 # print usage message
 usage() {
   echo "Usage:"
-  echo "  sh build.sh --pkg [-h | --help] [-v | --verbose] [-j<N>]"
-  echo "              [--p=<PATH> | --cann_path=<PATH>]"
+  echo "  sh build.sh --pkgs=<PACKAGES> [-h | --help] [-v | --verbose] [-j<N>]"
+  echo "              [--superbuild-config=<PATH>] [--p=<PATH> | --cann_path=<PATH>]"
   echo "              [--cann_3rd_lib_path=<PATH>]"
   echo "              [--asan] [--build_host_only] [--cov]"
   echo "              [--sign-script <PATH>] [--enable-sign]"
   echo ""
   echo "Options:"
   echo "    -h, --help     Print usage"
-  echo "    --pkgs         Packages to be built, separate the package names with commas"
+  echo "    --pkgs=<PACKAGES>"
+  echo "                   Packages to be built, separate the package names with commas"
+  echo "    --superbuild-config=<PATH>"
+  echo "                   Config path for superbuild"
   echo "    --asan         Enable AddressSanitizer"
   echo "    --cov          Enable Coverage"
   echo "    --build_host_only
                            Only build host target"
-  echo "    -build-type=<TYPE>"
+  echo "    --build-type=<TYPE>"
   echo "                   Specify build type (TYPE options: Release/Debug), Default: Release"
   echo "    -v, --verbose  Display build command"
   echo "    -j<N>          Set the number of threads used for building, default is 8"
@@ -57,9 +60,10 @@ checkopts() {
   ENABLE_SIGN="OFF"
   ENABLE_BUILD_DEVICE="ON"
   CANN_PACKAGES=""
+  CANN_SUPERBUILD_CONFIG=""
 
   # Process the options
-  parsed_args=$(getopt -a -o j:hp:v -l help,pkgs:,verbose,cov,build_host_only,cann_path:,build-type:,cann_3rd_lib_path:,asan,sign-script:,enable-sign -- "$@") || {
+  parsed_args=$(getopt -a -o j:hp:v -l help,pkgs:,superbuild-config:,verbose,cov,build_host_only,cann_path:,build-type:,cann_3rd_lib_path:,asan,sign-script:,enable-sign -- "$@") || {
     usage
     exit 1
   }
@@ -81,6 +85,10 @@ checkopts() {
         ;;
       --pkgs)
         CANN_PACKAGES="$2"
+        shift 2
+        ;;
+      --superbuild-config)
+        CANN_SUPERBUILD_CONFIG="$2"
         shift 2
         ;;
       --asan)
@@ -176,6 +184,7 @@ build_project() {
   CMAKE_ARGS="-DENABLE_OPEN_SRC=TRUE \
               -DENABLE_UNIFIED_BUILD=TRUE \
               -DCANN_PACKAGES=${CANN_PACKAGES} \
+              -DCANN_SUPERBUILD_CONFIG=${CANN_SUPERBUILD_CONFIG} \
               -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
               -DCMAKE_INSTALL_PREFIX=${OUTPUT_PATH} \
               -DASCEND_INSTALL_PATH=${ASCEND_CANN_PACKAGE_PATH} \

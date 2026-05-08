@@ -10,7 +10,6 @@
 
 set(CANN_PACKAGE_DIR_asc-devkit "asc/asc-devkit")
 set(CANN_PACKAGE_DIR_asc-tools "asc/asc-tools")
-set(CANN_PACKAGE_DIR_ge-executor "air")
-set(CANN_PACKAGE_DIR_ge-compiler "air")
-set(CANN_PACKAGE_DIR_dflow-executor "air")
-set(CANN_PACKAGE_DIR_opbase "ops-base")
+set(CANN_PACKAGE_DIR_ge-executor "ge")
+set(CANN_PACKAGE_DIR_ge-compiler "ge")
+set(CANN_PACKAGE_DIR_dflow-executor "ge")
