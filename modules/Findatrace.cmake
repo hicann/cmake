@@ -8,15 +8,15 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-if (runtime_FOUND)
-    message(STATUS "Package runtime has been found.")
+if (atrace_FOUND)
+    message(STATUS "Package atrace has been found.")
     return()
 endif()
 
 set(_cmake_targets_defined "")
 set(_cmake_targets_not_defined "")
 set(_cmake_expected_targets "")
-foreach(_cmake_expected_target IN ITEMS runtime runtime_headers)
+foreach(_cmake_expected_target IN ITEMS atrace_share atrace atrace_headers)
     list(APPEND _cmake_expected_targets "${_cmake_expected_target}")
     if(TARGET "${_cmake_expected_target}")
         list(APPEND _cmake_targets_defined "${_cmake_expected_target}")
@@ -44,52 +44,58 @@ unset(_cmake_targets_defined)
 unset(_cmake_targets_not_defined)
 unset(_cmake_expected_targets)
 
-find_path(_INCLUDE_DIR
-    NAMES pkg_inc/runtime/rt_external.h
+find_path(atrace_INCLUDE_DIR
+    NAMES trace/atrace_pub.h
+    PATH_SUFFIXES pkg_inc
+    PATHS ${ASCEND_ROOT} ${ASCEND_INSTALL_PATH}
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH)
 
-find_library(runtime_SHARED_LIBRARY
-    NAMES libruntime.so
+message("Atrace cmake ASCEND_ROOT=" ${ASCEND_ROOT})
+message("Atrace cmake ASCEND_INSTALL_PATH=" ${ASCEND_INSTALL_PATH})
+find_library(atrace_SHARED_LIBRARY
+    NAMES libascend_trace.so
     PATH_SUFFIXES lib64
+    PATHS ${ASCEND_ROOT}
+          ${ASCEND_INSTALL_PATH}
     NO_CMAKE_SYSTEM_PATH
-    NO_CMAKE_FIND_ROOT_PATH)
+    NO_CMAKE_FIND_ROOT_PATH
+)
+message("Atrace cmake atrace_SHARED_LIBRARY=" ${atrace_SHARED_LIBRARY})
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(runtime
+find_package_handle_standard_args(atrace
     FOUND_VAR
-        runtime_FOUND
+        atrace_FOUND
     REQUIRED_VARS
-        _INCLUDE_DIR
-        runtime_SHARED_LIBRARY
+        atrace_INCLUDE_DIR
+        atrace_SHARED_LIBRARY
 )
 
-if(runtime_FOUND)
-    set(runtime_INCLUDE_DIR "${_INCLUDE_DIR}")
+if(atrace_FOUND)
     include(CMakePrintHelpers)
-    message(STATUS "Variables in runtime module:")
-    cmake_print_variables(runtime_INCLUDE_DIR)
-    cmake_print_variables(runtime_SHARED_LIBRARY)
+    message(STATUS "Variables in atrace module:")
+    cmake_print_variables(atrace_INCLUDE_DIR)
+    cmake_print_variables(atrace_SHARED_LIBRARY)
 
-    add_library(runtime SHARED IMPORTED)
-    set_target_properties(runtime PROPERTIES
-        INTERFACE_LINK_LIBRARIES "runtime_headers"
-        IMPORTED_LOCATION "${runtime_SHARED_LIBRARY}"
+    add_library(atrace_share SHARED IMPORTED)
+    set_target_properties(atrace_share PROPERTIES
+        INTERFACE_LINK_LIBRARIES "atrace_headers"
+        INTERFACE_COMPILE_DEFINITIONS "HOST_ALOG;ADX_LIB_C"
+        IMPORTED_LINK_DEPENDENT_LIBRARIES "mmpa;alog"
+        IMPORTED_LOCATION "${atrace_SHARED_LIBRARY}"
     )
 
-    add_library(runtime_headers INTERFACE IMPORTED)
-    set_target_properties(runtime_headers PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${runtime_INCLUDE_DIR};${runtime_INCLUDE_DIR}/pkg_inc;${runtime_INCLUDE_DIR}/pkg_inc/runtime;${runtime_INCLUDE_DIR}/pkg_inc/profiling"
+    add_library(atrace_headers INTERFACE IMPORTED)
+    set_target_properties(atrace_headers PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${atrace_INCLUDE_DIR};${atrace_INCLUDE_DIR}/trace"
     )
 
     include(CMakePrintHelpers)
-    cmake_print_properties(TARGETS runtime
-        PROPERTIES INTERFACE_LINK_LIBRARIES IMPORTED_LOCATION
+    cmake_print_properties(TARGETS atrace_share
+        PROPERTIES INTERFACE_LINK_LIBRARIES INTERFACE_COMPILE_DEFINITIONS IMPORTED_LINK_DEPENDENT_LIBRARIES IMPORTED_LOCATION
     )
-    cmake_print_properties(TARGETS runtime_headers
+    cmake_print_properties(TARGETS atrace_headers
         PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
     )
 endif()
-
-# Cleanup temporary variables.
-set(_INCLUDE_DIR)
