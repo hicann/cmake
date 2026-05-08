@@ -12,7 +12,7 @@ include_guard(GLOBAL)
 unset(openssl_FOUND CACHE)
 unset(CRYPTO_LIB_PATH CACHE)
 set(LIB_CACHE_CACHE_PATH ${CANN_3RD_LIB_PATH}/lib_cache/openssl-3.0.9)
-find_path(CRYPTO_LIB_PATH
+find_library(CRYPTO_LIB_PATH
     NAMES libcrypto.a
     PATHS ${LIB_CACHE_CACHE_PATH}
     PATH_SUFFIXES lib lib64
@@ -45,17 +45,13 @@ else()
         # local offline
         set(OPENSSL_TARBALL ${CANN_3RD_LIB_PATH}/openssl-openssl-3.0.9.tar.gz)
     else()
-        set(OPENSSL_TARBALL https://gitcode.com/cann-src-third-party/openssl/releases/download/openssl-3.0.9/openssl-openssl-3.0.9.tar.gz)
+        set(OPENSSL_TARBALL https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/openssl/openssl-openssl-3.0.9.tar.gz)
     endif()
+    
     # adapt for hcomm services, use key of PRODUCT_SIDE
     set(OPENSSL_SRC_DIR ${CMAKE_BINARY_DIR}/openssl${PRODUCT_SIDE}-src)
     set(OPENSSL_INSTALL_DIR ${CMAKE_BINARY_DIR}/openssl${PRODUCT_SIDE}-install)
     set(OPENSSL_INSTALL_LIBDIR ${OPENSSL_INSTALL_DIR}/lib)
-    # the key use for hcomm services
-    set(OPENSSL_INCLUDE_DIR
-        ${OPENSSL_INSTALL_DIR}/include
-        ${OPENSSL_SRC_DIR}/include
-    )
 
     # ========== 工具链配置（根据系统架构判断） ==========
     if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
@@ -137,10 +133,9 @@ else()
             BUILD_IN_SOURCE TRUE                          # OpenSSL 不支持分离构建目录
         )
     else()
+        set(OPENSSL_SRC_DIR ${CANN_3RD_LIB_PATH}/openssl)
         message("[ThirdPartyLib][openssl] compile use cache")
         ExternalProject_Add(openssl_project
-            URL ${OPENSSL_TARBALL}
-            ${OPENSSL_DOWNLOAD_TIMESTAMP_ARG}
             SOURCE_DIR ${OPENSSL_SRC_DIR}                 # 解压后的源码目录
             CONFIGURE_COMMAND
                 ${OPENSSL_CONFIGURE_COMMAND}
@@ -151,6 +146,13 @@ else()
             BUILD_IN_SOURCE TRUE                          # OpenSSL 不支持分离构建目录
         )
     endif()
+
+    # the key use for hcomm services
+    set(OPENSSL_INCLUDE_DIR
+        ${OPENSSL_INSTALL_DIR}/include
+        ${OPENSSL_SRC_DIR}/include
+    )
+
     set(CRYPTO_LIB_PATH "${OPENSSL_INSTALL_LIBDIR}/libcrypto.a")
     set(CRYPTO_INCLUDE_DIR "${OPENSSL_INSTALL_DIR}/include")
 endif()
