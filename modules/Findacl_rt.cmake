@@ -37,7 +37,7 @@ find_package_handle_standard_args(acl_rt
 if(acl_rt_FOUND)
     add_library(acl_rt_headers INTERFACE IMPORTED)
     set_target_properties(acl_rt_headers PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${_CANN_ACL_RT_INCLUDE_DIR}"
+        INTERFACE_INCLUDE_DIRECTORIES "${_CANN_ACL_RT_INCLUDE_DIR};${_CANN_ACL_RT_INCLUDE_DIR}/acl"
     )
 
     add_library(acl_rt SHARED IMPORTED)
