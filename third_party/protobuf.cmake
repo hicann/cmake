@@ -9,10 +9,6 @@
 # -----------------------------------------------------------------------------------------------------------
 include_guard(GLOBAL)
 
-if(NOT ENABLE_OPEN_SRC)
-    return()
-endif()
-
 if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
 endif()

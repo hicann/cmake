@@ -19,10 +19,16 @@ if(NOT OPEN_PKG_PATH)
   set(OPEN_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg)
 endif()
 
-set(JSON_INSTALL_PATH ${CANN_3RD_LIB_PATH}/json)
+if(NOT CANN_3RD_LIB_PATH)
+    set(CANN_3RD_LIB_PATH ${CMAKE_SOURCE_DIR}/third_party)
+endif()
+
+set(JSON_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
+set(JSON_SOURCE_PATH ${CANN_3RD_LIB_PATH}/json)
+
 find_path(JSON_SOURCE
     NAMES nlohmann/json.hpp
-    PATHS ${JSON_INSTALL_PATH}/include
+    PATHS ${JSON_SOURCE_PATH}/include
     NO_DEFAULT_PATH
 )
 
@@ -47,15 +53,13 @@ if(NOT json_FOUND OR FORCE_REBUILD_CANN_3RD)
         set(REQ_URL "https://gitcode.com/cann-src-third-party/json/releases/download/v3.11.3/json-3.11.3.tar.gz")
     endif()
 
-    set(JSON_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
-    set(JSON_INSTALL_PATH ${CMAKE_BINARY_DIR}/json)
     include(ExternalProject) 
     ExternalProject_Add(third_party_json 
         URL ${REQ_URL}
         URL_HASH SHA256=0d8ef5af7f9794e3263480193c491549b2ba6cc74bb018906202ada498a79406
         TLS_VERIFY OFF
         DOWNLOAD_DIR ${JSON_DOWNLOAD_PATH}
-        SOURCE_DIR ${JSON_INSTALL_PATH}
+        SOURCE_DIR ${JSON_SOURCE_PATH}
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
@@ -63,12 +67,12 @@ if(NOT json_FOUND OR FORCE_REBUILD_CANN_3RD)
     )
 endif()
 
-message("[ThirdPartyLib][json] build json end, JSON_INSTALL_PATH: ${JSON_INSTALL_PATH}.")
+message("[ThirdPartyLib][json] build json end, JSON_SOURCE_PATH: ${JSON_SOURCE_PATH}.")
 add_library(json INTERFACE)
 add_dependencies(json third_party_json)
 # use for transformer service's reference path
-set(JSON_INCLUDE_DIR ${JSON_INSTALL_PATH}/include)
-target_include_directories(json INTERFACE ${JSON_INSTALL_PATH}/include)
+set(JSON_INCLUDE_DIR ${JSON_SOURCE_PATH}/include)
+target_include_directories(json INTERFACE ${JSON_SOURCE_PATH}/include)
 target_compile_definitions(json INTERFACE
     nlohmann=ascend_nlohmann  # 如果需要命名空间重映射
 )

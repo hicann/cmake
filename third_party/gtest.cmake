@@ -17,8 +17,12 @@ unset(GTEST_MAIN_STATIC_LIBRARY CACHE)
 unset(GMOCK_STATIC_LIBRARY CACHE)
 unset(GMOCK_MAIN_STATIC_LIBRARY CACHE)
 
-set(GTEST_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/gtest)
-set(GTEST_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/third_party)
+if(NOT CANN_3RD_LIB_PATH)
+    set(CANN_3RD_LIB_PATH ${CMAKE_SOURCE_DIR}/third_party)
+endif()
+
+set(GTEST_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/gtest-1.14.0)
+set(GTEST_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
 message(STATUS "[ThirdPartyLib][gtest] GTEST_INSTALL_PATH=${GTEST_INSTALL_PATH}")
 message(STATUS "[ThirdPartyLib][gtest] GTEST_DOWNLOAD_PATH=${GTEST_DOWNLOAD_PATH}")
 
@@ -106,7 +110,6 @@ else()
 
     include(ExternalProject)
     # adaptive the gtest upgrade scenario, reset the installation path.
-    set(GTEST_INSTALL_PATH ${CMAKE_BINARY_DIR}/gtest)
     ExternalProject_Add(third_party_gtest
         URL ${GTEST_PROJECT_URL}
         TLS_VERIFY OFF
