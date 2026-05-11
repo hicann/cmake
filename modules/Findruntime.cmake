@@ -49,6 +49,12 @@ find_path(_INCLUDE_DIR
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH)
 
+find_path(_CANN_AICPU_INCLUDE_DIR
+    NAMES aicpu_engine_struct.h
+    PATH_SUFFIXES pkg_inc/aicpu
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH)
+
 find_library(runtime_SHARED_LIBRARY
     NAMES libruntime.so
     PATH_SUFFIXES lib64
@@ -61,6 +67,7 @@ find_package_handle_standard_args(runtime
         runtime_FOUND
     REQUIRED_VARS
         _INCLUDE_DIR
+        _CANN_AICPU_INCLUDE_DIR
         runtime_SHARED_LIBRARY
 )
 
@@ -69,6 +76,7 @@ if(runtime_FOUND)
     include(CMakePrintHelpers)
     message(STATUS "Variables in runtime module:")
     cmake_print_variables(runtime_INCLUDE_DIR)
+    cmake_print_variables(_CANN_AICPU_INCLUDE_DIR)
     cmake_print_variables(runtime_SHARED_LIBRARY)
 
     add_library(runtime SHARED IMPORTED)
@@ -79,7 +87,7 @@ if(runtime_FOUND)
 
     add_library(runtime_headers INTERFACE IMPORTED)
     set_target_properties(runtime_headers PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${runtime_INCLUDE_DIR};${runtime_INCLUDE_DIR}/pkg_inc;${runtime_INCLUDE_DIR}/pkg_inc/runtime;${runtime_INCLUDE_DIR}/pkg_inc/profiling"
+        INTERFACE_INCLUDE_DIRECTORIES "${runtime_INCLUDE_DIR};${runtime_INCLUDE_DIR}/pkg_inc;${runtime_INCLUDE_DIR}/pkg_inc/runtime;${runtime_INCLUDE_DIR}/pkg_inc/runtime/runtime;${runtime_INCLUDE_DIR}/pkg_inc/profiling;${_CANN_AICPU_INCLUDE_DIR}"
     )
 
     include(CMakePrintHelpers)
