@@ -126,3 +126,4 @@ target_include_directories(c_sec_headers INTERFACE
     $<BUILD_INTERFACE:${LIBC_SEC_HEADER}>
 )
 target_link_libraries(shared_c_sec INTERFACE c_sec_headers)
+target_link_libraries(static_c_sec INTERFACE c_sec_headers)

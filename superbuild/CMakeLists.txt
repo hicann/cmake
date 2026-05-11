@@ -13,6 +13,8 @@ project(cann_superbuild)
 
 include(../function/function.cmake)
 init_cann_superbuild_project(PRODUCT_SIDE "host")
+set(BUILD_OPEN_PROJECT TRUE)
+set(PACKAGE_OPEN_PROJECT TRUE)
 
 get_pkg_dependencies("${CANN_PACKAGES}")
 calc_device_packages()
@@ -39,11 +41,12 @@ if(DEVICE_CANN_PACKAGES)
         CMAKE_ARGS
             -DENABLE_OPEN_SRC=TRUE
             -DENABLE_UNIFIED_BUILD=TRUE
+            -DBUILD_OPEN_PROJECT=TRUE
             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
             -DCANN_SUPERBUILD_CONFIG=${CANN_SUPERBUILD_CONFIG}
             -DTOOLCHAIN_DIR=${TOOLCHAIN_DIR}
             -DCMAKE_TOOLCHAIN_FILE=${CANN_CMAKE_DIR}/toolchain/aarch64-hcc-toolchain.cmake
-            -DASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH}
+            -DASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}
             -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}
             -DCANN_PACKAGES=${EP_DEVICE_CANN_PACKAGES}
             -DCANN_DEPEND_PACKAGES=${EP_DEVICE_CANN_DEPEND_PACKAGES}
