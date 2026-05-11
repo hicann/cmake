@@ -50,11 +50,19 @@ find_path(mmpa_INCLUDE_DIR
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH)
 
-find_library(mmpa_SHARED_LIBRARY
-    NAMES libmmpa.so
-    PATH_SUFFIXES lib64
-    NO_CMAKE_SYSTEM_PATH
-    NO_CMAKE_FIND_ROOT_PATH)
+if(PRODUCT_SIDE STREQUAL "device")
+    find_library(mmpa_SHARED_LIBRARY
+        NAMES device/lib64/libmmpa.so
+        PATH_SUFFIXES lib64
+        NO_CMAKE_SYSTEM_PATH
+        NO_CMAKE_FIND_ROOT_PATH)
+else()
+    find_library(mmpa_SHARED_LIBRARY
+        NAMES libmmpa.so
+        PATH_SUFFIXES lib64
+        NO_CMAKE_SYSTEM_PATH
+        NO_CMAKE_FIND_ROOT_PATH)
+endif()
 
 find_library(mmpa_STATIC_LIBRARY
     NAMES libmmpa.a

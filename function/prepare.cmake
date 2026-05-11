@@ -53,7 +53,7 @@ endmacro()
 macro(init_cann_project)
     # 联合构建时，init函数可能被调用多次，保证第一次调用时生效，忽略后续调用
     if(NOT CANN_PROJECT_INITED)
-        cmake_parse_arguments(CANN "" "PRODUCT_SIDE" "" ${ARGN})
+        cmake_parse_arguments(CANN "PREPEND_MODULE_PATH" "PRODUCT_SIDE" "" ${ARGN})
 
         if(CANN_PRODUCT_SIDE)
             set(PRODUCT_SIDE "${CANN_PRODUCT_SIDE}")
@@ -103,8 +103,16 @@ macro(init_cann_project)
 
         __cann_get_target_arch()
 
+        if(CANN_PREPEND_MODULE_PATH)
+            list(PREPEND CMAKE_MODULE_PATH "${CANN_CMAKE_DIR}/modules")
+            list(PREPEND CMAKE_PREFIX_PATH "${ASCEND_INSTALL_PATH}")
+        endif()
+
         __cann_print_summary()
         set(CANN_PROJECT_INITED TRUE)
+
+        unset(CANN_PREPEND_MODULE_PATH)
+        unset(CANN_PRODUCT_SIDE)
     endif()
 endmacro()
 
