@@ -40,10 +40,11 @@ else()
 endif()
 
 #依赖蓝区二进制仓mockcpp
-set(mockcpp_SRC_DIR ${CANN_3RD_LIB_PATH}/mockcpp_src)
-set(DOWNLOAD_FILE_DIR ${CANN_3RD_LIB_PATH}/mockcpp-2.7)
-set(URL_FILE ${DOWNLOAD_FILE_DIR}/mockcpp-2.7.tar.gz)
-set(BOOST_INCLUDE_DIRS ${CANN_3RD_LIB_PATH}/boost-1.87.0)
+set(FILE_NAME mockcpp-2.7.tar.gz)
+set(BOOST_INCLUDE_DIR ${CANN_3RD_LIB_PATH}/boost-1.87.0)
+set(MOCKCPP_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
+set(MOCKCPP_SOURCE_PATH ${CANN_3RD_LIB_PATH}/mockcpp)
+set(MOCK_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/mockcpp)
 
 message(STATUS "[ThirdPartyLib][mockcpp] cmake install prefix ${CMAKE_INSTALL_PREFIX}")
 if (EXISTS "${CANN_3RD_LIB_PATH}/mockcpp-2.7-h5.patch")
@@ -60,9 +61,9 @@ else()
 endif()
 include(ExternalProject)
 message(STATUS, "[ThirdPartyLib][mockcpp] CMAKE_COMMAND is ${CMAKE_COMMAND}")
-if (NOT EXISTS "${URL_FILE}")
-    if(EXISTS "${CANN_3RD_LIB_PATH}/mockcpp-2.7.tar.gz")
-        set(URL_FILE "${CANN_3RD_LIB_PATH}/mockcpp-2.7.tar.gz")
+if (NOT EXISTS ${CANN_3RD_LIB_PATH}/mockcpp/${FILE_NAME})
+    if(EXISTS ${CANN_3RD_LIB_PATH}/${FILE_NAME})
+        set(URL_FILE ${CANN_3RD_LIB_PATH}/${FILE_NAME})
         message("[ThirdPartyLib][mockcpp] use local tar.gz: ${URL_FILE}")
     else()
         set(URL_FILE "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/mockcpp/mockcpp-2.7.tar.gz")
@@ -70,18 +71,16 @@ if (NOT EXISTS "${URL_FILE}")
     endif()
 endif()
 
-set(MOCK_INSTALL_PATH ${CMAKE_BINARY_DIR}/mockcpp)
 ExternalProject_Add(mockcpp_static_build
     URL ${URL_FILE}
-    DOWNLOAD_DIR ${DOWNLOAD_FILE_DIR}
-    SOURCE_DIR ${mockcpp_SRC_DIR}
-    TLS_VERIFY OFF
+    DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/pkg
+    SOURCE_DIR ${MOCKCPP_SOURCE_PATH}
     PATCH_COMMAND git init && git apply ${PATCH_FILE}
 
     CONFIGURE_COMMAND ${CMAKE_COMMAND} -G ${CMAKE_GENERATOR}
         -DCMAKE_CXX_FLAGS=${mockcpp_CXXFLAGS}
         -DCMAKE_C_FLAGS=${mockcpp_FLAGS}
-        -DBOOST_INCLUDE_DIRS=${BOOST_INCLUDE_DIRS}
+        -DBOOST_INCLUDE_DIRS=${BOOST_INCLUDE_DIR}
         -DCMAKE_SHARED_LINKER_FLAGS=${mockcpp_LINKER_FLAGS}
         -DCMAKE_EXE_LINKER_FLAGS=${mockcpp_LINKER_FLAGS}
         -DBUILD_32_BIT_TARGET_BY_64_BIT_COMPILER=OFF
@@ -94,10 +93,10 @@ ExternalProject_Add(mockcpp_static_build
 if(NOT EXISTS ${MOCK_INSTALL_PATH}/include)
     file(MAKE_DIRECTORY ${MOCK_INSTALL_PATH}/include)
 endif()
-
+message("111111111111111 test")
 # use for asc_devkit service
 set(MOCKCPP_INCLUDE_ONE ${MOCK_INSTALL_PATH}/include)
-set(MOCKCPP_INCLUDE_TWO ${BOOST_INCLUDE_DIRS})
+set(MOCKCPP_INCLUDE_TWO ${BOOST_INCLUDE_DIR})
 set(MOCKCPP_STATIC_LIBRARY ${MOCK_INSTALL_PATH}/lib/libmockcpp.a)
 
 include(FindPackageHandleStandardArgs)

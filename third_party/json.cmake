@@ -50,14 +50,13 @@ if(NOT json_FOUND OR FORCE_REBUILD_CANN_3RD)
         set(REQ_URL ${CANN_3RD_LIB_PATH}/json-3.11.3.tar.gz)
     else()
         message("[ThirdPartyLib][json] not use cache, download json source.")
-        set(REQ_URL "https://gitcode.com/cann-src-third-party/json/releases/download/v3.11.3/json-3.11.3.tar.gz")
+        set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/json/json-3.11.3.tar.gz")
     endif()
 
     include(ExternalProject) 
     ExternalProject_Add(third_party_json 
         URL ${REQ_URL}
         URL_HASH SHA256=0d8ef5af7f9794e3263480193c491549b2ba6cc74bb018906202ada498a79406
-        TLS_VERIFY OFF
         DOWNLOAD_DIR ${JSON_DOWNLOAD_PATH}
         SOURCE_DIR ${JSON_SOURCE_PATH}
         CONFIGURE_COMMAND ""
