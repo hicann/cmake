@@ -61,18 +61,21 @@ else()
 endif()
 include(ExternalProject)
 message(STATUS, "[ThirdPartyLib][mockcpp] CMAKE_COMMAND is ${CMAKE_COMMAND}")
-if (NOT EXISTS ${CANN_3RD_LIB_PATH}/mockcpp/${FILE_NAME})
+if (NOT EXISTS ${CANN_3RD_LIB_PATH}/mockcpp-2.7/${FILE_NAME})
     if(EXISTS ${CANN_3RD_LIB_PATH}/${FILE_NAME})
-        set(URL_FILE ${CANN_3RD_LIB_PATH}/${FILE_NAME})
-        message("[ThirdPartyLib][mockcpp] use local tar.gz: ${URL_FILE}")
+        set(REQ_URL ${CANN_3RD_LIB_PATH}/${FILE_NAME})
+        message("[ThirdPartyLib][mockcpp] use local tar.gz: ${REQ_URL}")
     else()
-        set(URL_FILE "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/mockcpp/mockcpp-2.7.tar.gz")
-        message("[ThirdPartyLib][mockcpp] not use cache, new url file: ${URL_FILE}")
+        set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/mockcpp/mockcpp-2.7.tar.gz")
+        message("[ThirdPartyLib][mockcpp] not use cache, new url file: ${REQ_URL}")
     endif()
+else()
+    set(REQ_URL ${CANN_3RD_LIB_PATH}/mockcpp-2.7/${FILE_NAME})
+    message("[ThirdPartyLib][mockcpp] use cache file: ${REQ_URL}")
 endif()
 
 ExternalProject_Add(mockcpp_static_build
-    URL ${URL_FILE}
+    URL ${REQ_URL}
     DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/pkg
     SOURCE_DIR ${MOCKCPP_SOURCE_PATH}
     PATCH_COMMAND git init && git apply ${PATCH_FILE}
@@ -93,7 +96,7 @@ ExternalProject_Add(mockcpp_static_build
 if(NOT EXISTS ${MOCK_INSTALL_PATH}/include)
     file(MAKE_DIRECTORY ${MOCK_INSTALL_PATH}/include)
 endif()
-message("111111111111111 test")
+
 # use for asc_devkit service
 set(MOCKCPP_INCLUDE_ONE ${MOCK_INSTALL_PATH}/include)
 set(MOCKCPP_INCLUDE_TWO ${BOOST_INCLUDE_DIR})

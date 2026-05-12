@@ -128,7 +128,7 @@ if(NEED_BUILD_PROTOBUF)
 
     if(NOT EXISTS ${ABSEIL_PATH} OR NOT EXISTS ${PROTOBUF_PATH})
         message("[ThirdParty][protobuf] ${PROTOBUF_PATH} not found, need download.")
-        set(PROTOBUF_PATH "https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz")
+        set(PROTOBUF_PATH "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/protobuf/protobuf-25.1.tar.gz")
     endif()
     ExternalProject_Add(protobuf_src
         URL ${PROTOBUF_PATH}
@@ -228,7 +228,7 @@ endif()
 # ---------------------------------------------------------
 # Target: host_protoc
 # ---------------------------------------------------------
-add_executable(host_protoc IMPORTED)
+add_executable(host_protoc IMPORTED GLOBAL)
 if(PROTOC_PATH)
     set_target_properties(host_protoc PROPERTIES IMPORTED_LOCATION ${PROTOC_PATH})
 else()
