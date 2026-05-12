@@ -19,11 +19,10 @@ endif()
 set(BOOST_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
 set(BOOST_SRC_PATH ${CANN_3RD_LIB_PATH}/boost-1.87.0)
 set(BOOST_FILE "boost_1_87_0.tar.gz")
-set(BOOST_URL "https://gitcode.com/cann-src-third-party/boost/releases/download/v1.87.0/${BOOST_FILE}")
-set(BOOST_PKG_PATH ${BOOST_DOWNLOAD_PATH}/${BOOST_FILE})
+set(DOWNLOAD_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/boost/${BOOST_FILE}")
 
 find_path(BOOST_INCLUDE
-    NAMES config.hpp
+    NAMES boost/config.hpp
     PATHS ${BOOST_SRC_PATH}
     NO_DEFAULT_PATH)
 
@@ -40,16 +39,16 @@ else()
     if(EXISTS ${BOOST_PKG_PATH})
         # 离线编译场景，优先使用已下载的包
         message(STATUS "[ThirdParty][boost] Found local boost package: ${BOOST_PKG_PATH}")
-        set(BOOST_PROJECT_URL ${BOOST_PKG_PATH})
+        set(REQ_URL ${BOOST_PKG_PATH})
     else()
         # 下载并解压
-        message(STATUS "[ThirdParty][boost] Downloading ${BOOST_NAME} from ${BOOST_URL}")
-        set(BOOST_PROJECT_URL ${BOOST_URL})
+        message(STATUS "[ThirdParty][boost] Downloading ${BOOST_NAME} from ${DOWNLOAD_URL}")
+        set(REQ_URL ${DOWNLOAD_URL})
     endif()
 
     include(ExternalProject)
     ExternalProject_Add(third_party_boost
-        URL ${BOOST_PROJECT_URL}
+        URL ${REQ_URL}
         URL_HASH SHA256=f55c340aa49763b1925ccf02b2e83f35fdcf634c9d5164a2acb87540173c741d
         DOWNLOAD_NO_EXTRACT FALSE
         DOWNLOAD_NO_PROGRESS TRUE

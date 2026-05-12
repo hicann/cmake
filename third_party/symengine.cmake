@@ -20,23 +20,23 @@ set(CMAKE_FILE "${CMAKE_THIRD_PARTY_LIB_DIR}/symengine/CMakeLists.txt") # 用于
 set(REQ_URL "${CMAKE_THIRD_PARTY_LIB_DIR}/symengine/symengine-0.12.0.tar.gz")
 set(SYMENGINE_EXTRA_ARGS "")
 if(EXISTS ${LIB_FILE})
-    message(STATUS "[symengine] ${LIB_FILE} found, symengine is ready after compile.")
+    message(STATUS "[ThirdParty][symengine] ${LIB_FILE} found, symengine is ready after compile.")
 else()
     if(EXISTS ${MOD_FILE})
-        message(STATUS "[symengine] ${MOD_FILE} found, symengine is ready with patch installed.")
+        message(STATUS "[ThirdParty][symengine] ${MOD_FILE} found, symengine is ready with patch installed.")
     elseif(EXISTS ${CMAKE_FILE})
-        message(STATUS "[symengine] ${CMAKE_FILE} found, symengine is ready without patch installed.")
+        message(STATUS "[ThirdParty][symengine] ${CMAKE_FILE} found, symengine is ready without patch installed.")
         list(APPEND SYMENGINE_EXTRA_ARGS
             PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/symengine_add_mod.patch
         )
     elseif(EXISTS ${REQ_URL})
-        message(STATUS "[symengine] ${REQ_URL} found.")
+        message(STATUS "[ThirdParty][symengine] ${REQ_URL} found.")
         list(APPEND SYMENGINE_EXTRA_ARGS
             URL ${REQ_URL}
             PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/symengine_add_mod.patch
         )
     else()
-        message(STATUS "[symengine] symengine not found, need download.")
+        message(STATUS "[ThirdParty][symengine] symengine not found, need download.")
         set(REQ_URL "https://gitcode.com/cann-src-third-party/symengine/releases/download/v0.12.0/symengine-0.12.0.tar.gz")
         list(APPEND SYMENGINE_EXTRA_ARGS
             URL ${REQ_URL}

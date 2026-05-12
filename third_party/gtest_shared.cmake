@@ -16,7 +16,7 @@ unset(GTEST_LIBRARY CACHE)
 unset(GTEST_MAIN_LIBRARY CACHE)
 unset(GMOCK_LIBRARY CACHE)
 unset(GMOCK_MAIN_LIBRARY CACHE)
-set(GTEST_INSTALL_PATH ${CANN_3RD_LIB_PATH}/gtest_shared)
+set(GTEST_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/gtest_shared)
 
 find_path(GTEST_INCLUDE
     NAMES gtest/gtest.h
@@ -78,7 +78,7 @@ else()
         set(REQ_URL "${CANN_3RD_LIB_PATH}/googletest-1.14.0.tar.gz")
     else()
         message("[ThirdParty][gtest_shared] not use cache, download the source code")
-        set(REQ_URL "https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/googletest-1.14.0.tar.gz")
+        set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/googletest/googletest-1.14.0.tar.gz")
     endif()
     set (gtest_CXXFLAGS "-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
     set (gtest_CFLAGS   "-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
@@ -87,7 +87,7 @@ else()
     ExternalProject_Add(gtest_shared_build
         URL ${REQ_URL}
         TLS_VERIFY OFF
-        DOWNLOAD_DIR ${gtest_DOWNLOAD_PATH}
+        DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/pkg
         SOURCE_DIR ${GTEST_INSTALL_PATH}
         CONFIGURE_COMMAND ${CMAKE_COMMAND}
         -DCMAKE_CXX_FLAGS=${gtest_CXXFLAGS}

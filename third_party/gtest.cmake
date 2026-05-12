@@ -21,7 +21,7 @@ if(NOT CANN_3RD_LIB_PATH)
     set(CANN_3RD_LIB_PATH ${CMAKE_SOURCE_DIR}/third_party)
 endif()
 
-set(GTEST_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/gtest-1.14.0)
+set(GTEST_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/gtest)
 set(GTEST_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
 message(STATUS "[ThirdPartyLib][gtest] GTEST_INSTALL_PATH=${GTEST_INSTALL_PATH}")
 message(STATUS "[ThirdPartyLib][gtest] GTEST_DOWNLOAD_PATH=${GTEST_DOWNLOAD_PATH}")
@@ -81,13 +81,11 @@ else()
     set(GTEST_ARCHIVE ${CANN_3RD_LIB_PATH}/gtest/googletest-1.14.0.tar.gz)
     if(EXISTS ${CANN_3RD_LIB_PATH}/googletest-1.14.0.tar.gz AND NOT EXISTS ${GTEST_ARCHIVE})
         message(STATUS "[ThirdPartyLib][gtest] Found googletest archive in ${CANN_3RD_LIB_PATH}, moving to ${CANN_3RD_LIB_PATH}/gtest")
-        file(MAKE_DIRECTORY ${CANN_3RD_LIB_PATH}/gtest)
         # adapt the user's offline scene.
-        file(RENAME ${CANN_3RD_LIB_PATH}/googletest-1.14.0.tar.gz ${GTEST_ARCHIVE})
+        file(COPY ${CANN_3RD_LIB_PATH}/googletest-1.14.0.tar.gz DESTINATION ${CANN_3RD_LIB_PATH}/gtest)
     endif()
 
-    # specific service logic in Yellow Zone
-    set(GTEST_LOCAL_TAR_SRC "${CANN_3RD_LIB_PATH}/googletest")    
+    # specific service logic in dev-kit service
     set(GTEST_LOCAL_SRC "${CANN_3RD_LIB_PATH}/../llt/third_party/gtest/googletest-1.10.x")
 
     if(EXISTS "${GTEST_ARCHIVE}")
@@ -98,7 +96,7 @@ else()
         set(GTEST_PROJECT_URL ${GTEST_LOCAL_SRC})
     else()
         message(STATUS "[ThirdPartyLib][gtest] Downloading GTest.")
-        set(GTEST_PROJECT_URL "https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/googletest-1.14.0.tar.gz")
+        set(GTEST_PROJECT_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/googletest/googletest-1.14.0.tar.gz")
     endif()
 
     if(NOT DEFINED USE_CXX11_ABI)
