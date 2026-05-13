@@ -15,7 +15,7 @@ unset(CRYPTO_LIB_PATH CACHE)
 set(OPENSSL_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/openssl${PRODUCT_SIDE})
 set(OPENSSL_SRC_PATH ${CANN_3RD_LIB_PATH}/openssl${PRODUCT_SIDE})
 
-find_path(SSL_FILE
+find_path(OPENSSL_INCLUDE
     NAMES openssl/ssl.h
     PATH_SUFFIXES include
     PATHS ${OPENSSL_INSTALL_PATH}
@@ -29,14 +29,22 @@ find_library(CRYPTO_LIB_PATH
     NO_DEFAULT_PATH
 )
 
+find_library(SSL_LIB_PATH
+    NAMES libssl.a
+    PATH_SUFFIXES lib lib64
+    PATHS ${OPENSSL_INSTALL_PATH}
+    NO_DEFAULT_PATH
+)
+
 # 在线编译查询 openssl 缓存
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(openssl
     FOUND_VAR
     openssl_FOUND 
     REQUIRED_VARS
-    SSL_FILE
+    OPENSSL_INCLUDE
     CRYPTO_LIB_PATH
+    SSL_LIB_PATH
 )
 
 if (openssl_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
@@ -146,12 +154,24 @@ else()
     )
 
     set(CRYPTO_LIB_PATH "${OPENSSL_INSTALL_LIBDIR}/libcrypto.a")
+    set(SSL_LIB_PATH "${OPENSSL_INSTALL_LIBDIR}/libssl.a")
+    set(OPENSSL_INCLUDE "${OPENSSL_INSTALL_PATH}/include")
     set(CRYPTO_INCLUDE_DIR "${OPENSSL_INSTALL_PATH}/include")
 endif()
 
-message("[ThirdPartyLib][openssl] libcrypto: ${CRYPTO_LIB_PATH}")
-add_library(crypto_static STATIC IMPORTED)
+message("[ThirdPartyLib][openssl] libcrypto: ${CRYPTO_LIB_PATH} libssl: ${SSL_LIB_PATH} include: ${OPENSSL_INCLUDE}")
+add_library(crypto_static STATIC IMPORTED GLOBAL)
 add_dependencies(crypto_static openssl_project)
 set_target_properties(crypto_static PROPERTIES
-    IMPORTED_LOCATION "${CRYPTO_LIB_PATH}"
+    INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INCLUDE}"
+    IMPORTED_LOCATION             "${CRYPTO_LIB_PATH}"
 )
+add_library(OpenSSL::Crypto ALIAS crypto_static)
+
+add_library(ssl_static STATIC IMPORTED GLOBAL)
+add_dependencies(ssl_static openssl_project)
+set_target_properties(ssl_static PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INCLUDE}"
+    IMPORTED_LOCATION             "${SSL_LIB_PATH}"
+)
+add_library(OpenSSL::SSL ALIAS ssl_static)

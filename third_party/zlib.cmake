@@ -15,26 +15,40 @@ endif()
 include(ExternalProject)
 include(FindPackageHandleStandardArgs)
 
+set(ZLIB_INSTALL_DIR ${CANN_3RD_LIB_PATH}/lib_cache/zlib)
 find_path(ZLIB_INCLUDE
     NAMES zlib.h
-    NO_CMAKE_SYSTEM_PATH
-    NO_CMAKE_FIND_ROOT_PATH)
+    PATHS ${ZLIB_INSTALL_DIR}
+    NO_DEFAULT_PATH)
 find_library(ZLIB_LIBRARY
     NAMES libz.a
     PATH_SUFFIXES lib lib64
-    NO_CMAKE_SYSTEM_PATH
-    NO_CMAKE_FIND_ROOT_PATH)
+    PATHS ${ZLIB_INSTALL_DIR}
+    NO_DEFAULT_PATH)
+find_path(MINIZIP_INCLUDE
+    NAMES minizip/zip.h minizip/unzip.h minizip/ioapi.h
+    PATH_SUFFIXES include
+    PATHS ${ZLIB_INSTALL_DIR}
+    NO_DEFAULT_PATH)
+find_library(MINIZIP_LIBRARY
+    NAMES libminizip.a
+    PATH_SUFFIXES lib lib64
+    PATHS ${ZLIB_INSTALL_DIR}
+    NO_DEFAULT_PATH)
 
-if(ZLIB_INCLUDE AND ZLIB_LIBRARY)
+if(ZLIB_INCLUDE AND ZLIB_LIBRARY AND MINIZIP_INCLUDE AND MINIZIP_LIBRARY)
     set(zlib_FOUND TRUE)
 else()
     set(zlib_FOUND FALSE)
 endif()
 
 if(zlib_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
-    message(STATUS "[zlib] zlib found.")
+    message(STATUS "[zlib] zlib inc found in ${ZLIB_INCLUDE}, zlib lib found in ${ZLIB_LIBRARY}.")
 else()
     message(STATUS "[zlib] zlib_FOUND:${zlib_FOUND}, FORCE_REBUILD_CANN_3RD:${FORCE_REBUILD_CANN_3RD}")
+    if(zlib_FOUND)
+        message(STATUS "[zlib] zlib inc found in ${ZLIB_INCLUDE}, zlib lib found in ${ZLIB_LIBRARY}.")
+    endif()
     set(REQ_URL "${CMAKE_THIRD_PARTY_LIB_DIR}/zlib/zlib-1.2.13.tar.xz")
     set(REQ_URL_BACK "${CMAKE_THIRD_PARTY_LIB_DIR}/zlib/zlib-1.2.13.tar.gz")
     if(EXISTS ${REQ_URL})
@@ -47,13 +61,43 @@ else()
         set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/zlib/zlib-1.2.13.tar.gz")
     endif()
 
-    ExternalProject_Add(zlib_build
+    set(ZLIB_C_FLAGS "-fPIC -fexceptions -O2")
+    ExternalProject_Add(zlib_bin_build
                         URL ${REQ_URL}
                         TLS_VERIFY OFF
-                        CONFIGURE_COMMAND ""
-                        BUILD_COMMAND ""
-                        INSTALL_COMMAND ""
+                        PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/zlib_add_minizip_static_lib.patch
+                        CONFIGURE_COMMAND ${CMAKE_COMMAND}
+                            -DCMAKE_INSTALL_PREFIX=${ZLIB_INSTALL_DIR}
+                            -DCMAKE_C_FLAGS=${ZLIB_C_FLAGS}
+                            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+                            -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+                            -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+                            -DLLVM_PATH=${LLVM_PATH}
+                            -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
+                            # -DUNZ_MAXFILENAMEINZIP 4096配置ZIP中文件名长度，默认值256偏短
+                            -DUNZ_MAXFILENAMEINZIP=4096
+                            <SOURCE_DIR>
+                        BUILD_COMMAND $(MAKE)
                         EXCLUDE_FROM_ALL TRUE
-                        DWONLOAD_NO_PROGRESS TRUE
     )
+    message(STATUS "zlib and minizip will be installed to: ${ZLIB_INSTALL_DIR}")
+    set(ZLIB_INCLUDE ${ZLIB_INSTALL_DIR}/include)
+    set(MINIZIP_INCLUDE ${ZLIB_INSTALL_DIR}/include)
+    set(ZLIB_LIBRARY ${ZLIB_INSTALL_DIR}/lib/libz.a)
+    set(MINIZIP_LIBRARY ${ZLIB_INSTALL_DIR}/lib/libminizip.a)
 endif()
+
+set(ZLIB_INCLUDE_DIR ${ZLIB_INCLUDE})
+add_library(zlib_static STATIC IMPORTED)
+set_target_properties(zlib_static PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${ZLIB_INCLUDE}"
+    IMPORTED_LOCATION             "${ZLIB_LIBRARY}"
+)
+
+add_library(minizip_static STATIC IMPORTED)
+set_target_properties(minizip_static PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${MINIZIP_INCLUDE}"
+    IMPORTED_LOCATION             "${MINIZIP_LIBRARY}"
+    # 自动添加libminizip.a对libz.a的依赖
+    INTERFACE_LINK_LIBRARIES ${ZLIB_LIBRARY}
+)
