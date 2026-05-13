@@ -54,21 +54,28 @@ else ()
     message(WARNING "Unknown architecture: ${CMAKE_SYSTEM_PROCESSOR}")
 endif ()
 
-find_path(ERROR_MANAGER_INCLUDE_DIR
+find_path(_CANN_ERROR_MANAGER_INCLUDE_DIR
     NAMES base/err_msg.h
     PATH_SUFFIXES include
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH
 )
 
-find_library(ERROR_MANAGER_SHARED_LIBRARY
+find_path(_CANN_ERROR_MANAGER_PKG_INCLUDE_DIR
+    NAMES base/err_mgr.h
+    PATH_SUFFIXES pkg_inc
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH
+)
+
+find_library(_CANN_ERROR_MANAGER_SHARED_LIBRARY
     NAMES liberror_manager.so
     PATH_SUFFIXES lib64
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH
 )
 
-find_library(STUB_ERROR_MANAGER_SHARED_LIBRARY
+find_library(_CANN_STUB_ERROR_MANAGER_SHARED_LIBRARY
         NAMES liberror_manager.so
         PATHS "${ASCEND_INSTALL_PATH}/devlib/linux/${TARGET_ARCH}"
         NO_CMAKE_SYSTEM_PATH
@@ -76,33 +83,34 @@ find_library(STUB_ERROR_MANAGER_SHARED_LIBRARY
 )
 
 include(CMakePrintHelpers)
-message(STATUS "Variables ERROR_MANAGER_SHARED_LIBRARY in error_manager module: ${ERROR_MANAGER_SHARED_LIBRARY}")
-message(STATUS "Variables STUB_ERROR_MANAGER_SHARED_LIBRARY in error_manager module: ${STUB_ERROR_MANAGER_SHARED_LIBRARY}")
+message(STATUS "Variables _CANN_ERROR_MANAGER_SHARED_LIBRARY in error_manager module: ${_CANN_ERROR_MANAGER_SHARED_LIBRARY}")
+message(STATUS "Variables _CANN_STUB_ERROR_MANAGER_SHARED_LIBRARY in error_manager module: ${_CANN_STUB_ERROR_MANAGER_SHARED_LIBRARY}")
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(error_manager
     FOUND_VAR
         error_manager_FOUND
     REQUIRED_VARS
-        ERROR_MANAGER_INCLUDE_DIR
-        ERROR_MANAGER_SHARED_LIBRARY
+        _CANN_ERROR_MANAGER_INCLUDE_DIR
+        _CANN_ERROR_MANAGER_PKG_INCLUDE_DIR
+        _CANN_ERROR_MANAGER_SHARED_LIBRARY
 )
 
 if(error_manager_FOUND)
     add_library(error_manager_headers INTERFACE IMPORTED)
     set_target_properties(error_manager_headers PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${ERROR_MANAGER_INCLUDE_DIR}"
+        INTERFACE_INCLUDE_DIRECTORIES "${_CANN_ERROR_MANAGER_INCLUDE_DIR};${_CANN_ERROR_MANAGER_PKG_INCLUDE_DIR}"
     )
 
     add_library(error_manager SHARED IMPORTED)
     set_target_properties(error_manager PROPERTIES
-        IMPORTED_LOCATION "${ERROR_MANAGER_SHARED_LIBRARY}"
+        IMPORTED_LOCATION "${_CANN_ERROR_MANAGER_SHARED_LIBRARY}"
         INTERFACE_LINK_LIBRARIES "error_manager_headers"
     )
 
     add_library(stub_error_manager SHARED IMPORTED)
     set_target_properties(stub_error_manager PROPERTIES
-            IMPORTED_LOCATION "${STUB_ERROR_MANAGER_SHARED_LIBRARY}"
+            IMPORTED_LOCATION "${_CANN_STUB_ERROR_MANAGER_SHARED_LIBRARY}"
     )
 
     cmake_print_properties(TARGETS error_manager
