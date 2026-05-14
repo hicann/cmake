@@ -31,6 +31,12 @@ find_library(_CANN_graph_base_SHARED_LIBRARY
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH)
 
+find_library(_CANN_register_SHARED_LIBRARY
+    NAMES libregister.so
+    PATH_SUFFIXES lib64
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH)
+
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(graph
     FOUND_VAR
@@ -39,6 +45,7 @@ find_package_handle_standard_args(graph
         _CANN_GRAPH_INCLUDE_DIR
         _CANN_graph_SHARED_LIBRARY
         _CANN_graph_base_SHARED_LIBRARY
+        _CANN_register_SHARED_LIBRARY
 )
 
 if(graph_FOUND)
@@ -60,11 +67,8 @@ if(graph_FOUND)
         IMPORTED_LOCATION "${_CANN_graph_base_SHARED_LIBRARY}"
     )
 
-    include(CMakePrintHelpers)
-    cmake_print_properties(TARGETS graph_headers
-        PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-    )
-    cmake_print_properties(TARGETS graph graph_base
-        PROPERTIES INTERFACE_LINK_LIBRARIES IMPORTED_LOCATION
+    add_library(register SHARED IMPORTED)
+    set_target_properties(register PROPERTIES
+        IMPORTED_LOCATION "${_CANN_register_SHARED_LIBRARY}"
     )
 endif()

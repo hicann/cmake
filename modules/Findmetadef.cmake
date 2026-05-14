@@ -45,7 +45,7 @@ unset(_cmake_targets_not_defined)
 unset(_cmake_expected_targets)
 
 find_path(_CANN_METADEF_INCLUDE_DIR
-    NAMES graph/graph.h
+    NAMES graph/types.h
     PATH_SUFFIXES include
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH)
@@ -58,12 +58,6 @@ find_path(_CANN_METADEF_PKG_INC_DIR
 
 find_library(_CANN_exe_graph_SHARED_LIBRARY
     NAMES libexe_graph.so
-    PATH_SUFFIXES lib64
-    NO_CMAKE_SYSTEM_PATH
-    NO_CMAKE_FIND_ROOT_PATH)
-
-find_library(_CANN_register_SHARED_LIBRARY
-    NAMES libregister.so
     PATH_SUFFIXES lib64
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH)
@@ -88,7 +82,6 @@ find_package_handle_standard_args(metadef
         _CANN_METADEF_INCLUDE_DIR
         _CANN_METADEF_PKG_INC_DIR
         _CANN_exe_graph_SHARED_LIBRARY
-        _CANN_register_SHARED_LIBRARY
         _CANN_metadef_SHARED_LIBRARY
         _CANN_opp_registry_SHARED_LIBRARY
 )
@@ -112,11 +105,6 @@ if(metadef_FOUND)
         IMPORTED_LOCATION "${_CANN_exe_graph_SHARED_LIBRARY}"
     )
 
-    add_library(register SHARED IMPORTED)
-    set_target_properties(register PROPERTIES
-        IMPORTED_LOCATION "${_CANN_register_SHARED_LIBRARY}"
-    )
-
     add_library(metadef SHARED IMPORTED)
     set_target_properties(metadef PROPERTIES
         INTERFACE_LINK_LIBRARIES "metadef_headers"
@@ -126,14 +114,5 @@ if(metadef_FOUND)
     add_library(opp_registry SHARED IMPORTED)
     set_target_properties(opp_registry PROPERTIES
         IMPORTED_LOCATION "${_CANN_opp_registry_SHARED_LIBRARY}"
-    )
-
-    include(CMakePrintHelpers)
-    cmake_print_properties(TARGETS metadef_headers exe_graph_headers
-        PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-    )
-    
-    cmake_print_properties(TARGETS exe_graph register metadef opp_registry
-        PROPERTIES INTERFACE_LINK_LIBRARIES IMPORTED_LOCATION
     )
 endif()
