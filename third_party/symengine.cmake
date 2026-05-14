@@ -7,23 +7,21 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-
-if (TARGET symengine_build)
-    return()
-endif ()
+include_guard(GLOBAL)
 
 add_library(symengine_static STATIC IMPORTED)
-if(NOT EXISTS ${CANN_3RD_LIB_PATH}/symengine/include)
-    file(MAKE_DIRECTORY "${CANN_3RD_LIB_PATH}/symengine/include")
+set(SYMENGINE_INSTALL_DIR "${CANN_3RD_LIB_PATH}/lib_cache/symengine")
+set(SYMENGINE_LIB_FILE "${SYMENGINE_INSTALL_DIR}/lib/libsymengine.a")
+set(SYMENGINE_INCLUDE_DIR "${SYMENGINE_INSTALL_DIR}/include")
+if(NOT EXISTS ${SYMENGINE_INCLUDE_DIR})
+    file(MAKE_DIRECTORY "${SYMENGINE_INCLUDE_DIR}")
 endif()
 set_target_properties(symengine_static PROPERTIES
-    IMPORTED_LOCATION "${CANN_3RD_LIB_PATH}/symengine/lib/libsymengine.a"
-    INTERFACE_INCLUDE_DIRECTORIES "${CANN_3RD_LIB_PATH}/symengine/include"
+    IMPORTED_LOCATION "${SYMENGINE_LIB_FILE}"
+    INTERFACE_INCLUDE_DIRECTORIES "${SYMENGINE_INCLUDE_DIR}"
 )
 
-include(ExternalProject)
-
-set(LIB_FILE "${CANN_3RD_LIB_PATH}/symengine/lib") # 编译之后才会有的文件，用于判断是否已经编译
+set(LIB_FILE "${SYMENGINE_LIB_FILE}") # 编译之后才会有的文件，用于判断是否已经编译
 set(MOD_FILE "${CANN_3RD_LIB_PATH}/symengine/symengine/mod.cpp") # 打上patch之后才会有的文件,用于判断是否打了patch
 set(CMAKE_FILE "${CANN_3RD_LIB_PATH}/symengine/CMakeLists.txt") # 用于判断是否已下载并解压
 set(REQ_URL "${CANN_3RD_LIB_PATH}/symengine/symengine-0.12.0.tar.gz")
@@ -54,28 +52,30 @@ else()
         )
     endif()
     set(SYMENGINE_CXXFLAGS "-fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -std=c++17")
+    include(ExternalProject)
     ExternalProject_Add(symengine_build
-            SOURCE_DIR ${CANN_3RD_LIB_PATH}/symengine
-            ${SYMENGINE_EXTRA_ARGS}
-            TLS_VERIFY OFF
-            CONFIGURE_COMMAND ${CMAKE_COMMAND}
-                -DINTEGER_CLASS:STRING=boostmp
-                -DBUILD_SHARED_LIBS:BOOL=OFF
-                -DBOOST_ROOT=${CANN_3RD_LIB_PATH}/boost-1.87.0
-                -DBUILD_TESTS=off
-                -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-                -DCMAKE_CXX_STANDARD=17
-                -DWITH_SYMENGINE_THREAD_SAFE:BOOL=ON
-                -DCMAKE_CXX_EXTENSIONS=OFF
-                -DCMAKE_CXX_FLAGS=${SYMENGINE_CXXFLAGS}
-                -DCMAKE_INSTALL_PREFIX=${CANN_3RD_LIB_PATH}/symengine
-                -DCMAKE_PREFIX_PATH=${CANN_3RD_LIB_PATH}/boost-1.87.0
-                <SOURCE_DIR>
-            BUILD_COMMAND $(MAKE)
-            INSTALL_COMMAND $(MAKE) install
-            EXCLUDE_FROM_ALL TRUE
-            )
+        SOURCE_DIR ${CANN_3RD_LIB_PATH}/symengine
+        ${SYMENGINE_EXTRA_ARGS}
+        TLS_VERIFY OFF
+        CONFIGURE_COMMAND ${CMAKE_COMMAND}
+            -DCMAKE_VERBOSE_MAKEFILE=ON
+            -DINTEGER_CLASS:STRING=boostmp
+            -DBUILD_SHARED_LIBS:BOOL=OFF
+            -DBOOST_ROOT=${CANN_3RD_LIB_PATH}/lib_cache/boost
+            -DBUILD_TESTS=off
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+            -DCMAKE_CXX_STANDARD=17
+            -DWITH_SYMENGINE_THREAD_SAFE:BOOL=ON
+            -DCMAKE_CXX_EXTENSIONS=OFF
+            -DCMAKE_CXX_FLAGS=${SYMENGINE_CXXFLAGS}
+            -DCMAKE_INSTALL_PREFIX=${SYMENGINE_INSTALL_DIR}
+            -DCMAKE_PREFIX_PATH=${CANN_3RD_LIB_PATH}/lib_cache/boost
+            <SOURCE_DIR>
+        BUILD_COMMAND $(MAKE)
+        INSTALL_COMMAND $(MAKE) install
+        EXCLUDE_FROM_ALL TRUE
+    )
     include(${CMAKE_CURRENT_LIST_DIR}/boost.cmake)
-    add_dependencies(symengine_build third_party_boost)
+    add_dependencies(symengine_build third_party_boost_headers)
     add_dependencies(symengine_static symengine_build)
 endif()

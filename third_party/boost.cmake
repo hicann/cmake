@@ -8,6 +8,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 include_guard(GLOBAL)
+include(ExternalProject)
 
 unset(boost_FOUND CACHE)
 unset(boost_INCLUDE CACHE)
@@ -17,7 +18,7 @@ if(NOT OPEN_PKG_PATH)
 endif()
 
 set(BOOST_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
-set(BOOST_SRC_PATH ${CANN_3RD_LIB_PATH}/boost-1.87.0)
+set(BOOST_SRC_PATH ${CANN_3RD_LIB_PATH}/boost)
 set(BOOST_FILE "boost_1_87_0.tar.gz")
 set(DOWNLOAD_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/boost/${BOOST_FILE}")
 
@@ -35,18 +36,22 @@ find_package_handle_standard_args(boost
 
 if(boost_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     message("[ThirdParty][boost] found in ${BOOST_SRC_PATH}, and not force rebuild cann third_party")
+    # depends by mockcpp
+    add_custom_target(third_party_boost)
 else()
-    if(EXISTS ${BOOST_PKG_PATH})
+    if(EXISTS ${CANN_3RD_LIB_PATH}/boost/${BOOST_FILE})
+        set(REQ_URL CANN_3RD_LIB_PATH/boost/${BOOST_FILE})
+        message(STATUS "[ThirdParty][boost] Found local boost package: ${REQ_URL}")
+    elseif(EXISTS ${CANN_3RD_LIB_PATH}/${BOOST_FILE})
         # 离线编译场景，优先使用已下载的包
-        message(STATUS "[ThirdParty][boost] Found local boost package: ${BOOST_PKG_PATH}")
-        set(REQ_URL ${BOOST_PKG_PATH})
+        set(REQ_URL ${CANN_3RD_LIB_PATH}/${BOOST_FILE})
+        message(STATUS "[ThirdParty][boost] Found local boost package: ${REQ_URL}")
     else()
         # 下载并解压
         message(STATUS "[ThirdParty][boost] Downloading ${BOOST_NAME} from ${DOWNLOAD_URL}")
         set(REQ_URL ${DOWNLOAD_URL})
     endif()
 
-    include(ExternalProject)
     ExternalProject_Add(third_party_boost
         URL ${REQ_URL}
         URL_HASH SHA256=f55c340aa49763b1925ccf02b2e83f35fdcf634c9d5164a2acb87540173c741d
@@ -60,9 +65,25 @@ else()
     )
 endif()
 
+# used for symengine_build
+ExternalProject_Add(third_party_boost_headers
+    SOURCE_DIR ${BOOST_SRC_PATH}
+    DOWNLOAD_COMMAND ""
+    UPDATE_COMMAND ""
+    CONFIGURE_COMMAND  cd <SOURCE_DIR> && sh bootstrap.sh --prefix=${CANN_3RD_LIB_PATH}/lib_cache/boost --with-libraries=headers
+    BUILD_COMMAND   cd <SOURCE_DIR> &&  ./b2 headers install
+    INSTALL_COMMAND ""
+    EXCLUDE_FROM_ALL TRUE
+)
+
 # use for dvpp service
 add_library(boost INTERFACE)
-add_dependencies(boost third_party_boost)
+
 set_property(TARGET boost PROPERTY
-    INTERFACE_INCLUDE_DIRECTORIES "${BOOST_SRC_PATH}"
+    INTERFACE_INCLUDE_DIRECTORIES ${BOOST_SRC_PATH}
 )
+
+if(TARGET third_party_boost)
+    add_dependencies(third_party_boost_headers third_party_boost)
+    add_dependencies(boost third_party_boost)
+endif()
