@@ -14,8 +14,8 @@ endif()
 
 include(ExternalProject)
 
-set(REQ_URL "${CMAKE_THIRD_PARTY_LIB_DIR}/re2/2024-02-01.tar.gz")
-set(REQ_URL_BACK "${CMAKE_THIRD_PARTY_LIB_DIR}/re2/re2-2024-02-01.tar.gz")
+set(REQ_URL "${CANN_3RD_LIB_PATH}/re2/2024-02-01.tar.gz")
+set(REQ_URL_BACK "${CANN_3RD_LIB_PATH}/re2/re2-2024-02-01.tar.gz")
 # 初始化可选参数列表
 set(RE2_EXTRA_ARGS "")
 if(EXISTS ${REQ_URL})
@@ -27,7 +27,7 @@ else()
   message(STATUS "[re2] ${REQ_URL} not found, need download.")
   set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/re2/re2-2024-02-01.tar.gz")
   list(APPEND RE2_EXTRA_ARGS
-      DOWNLOAD_DIR ${CMAKE_THIRD_PARTY_LIB_DIR}/re2
+      DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/re2
   )
 endif()
 

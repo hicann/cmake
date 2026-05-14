@@ -15,7 +15,7 @@ endif()
 
 include(ExternalProject)
 
-set(GRPC_CONFIG "${CMAKE_THIRD_PARTY_LIB_DIR}/grpc/lib/cmake/grpc/gRPCConfig.cmake") # 编译后的GRPC路径
+set(GRPC_CONFIG "${CANN_3RD_LIB_PATH}/grpc/lib/cmake/grpc/gRPCConfig.cmake") # 编译后的GRPC路径
 
 if(EXISTS ${GRPC_CONFIG})
   message(STATUS "[grpc] ${GRPC_CONFIG} found.")
@@ -30,7 +30,7 @@ if(protobuf_grpc_FOUND)
 else()
     message(STATUS "[grpc] protobuf_grpc not found, finding binary file.")
 
-    set(REQ_URL "${CMAKE_THIRD_PARTY_LIB_DIR}/grpc/grpc-1.60.0.tar.gz")
+    set(REQ_URL "${CANN_3RD_LIB_PATH}/grpc/grpc-1.60.0.tar.gz")
     # 初始化可选参数列表
     set(GRPC_EXTRA_ARGS "")
     if(EXISTS ${REQ_URL})
@@ -39,7 +39,7 @@ else()
         message(STATUS "[grpc] ${REQ_URL} not found, need download.")
         set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/grpc/grpc-1.60.0.tar.gz")
         list(APPEND GRPC_EXTRA_ARGS
-            DOWNLOAD_DIR ${CMAKE_THIRD_PARTY_LIB_DIR}/grpc
+            DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/grpc
         )
     endif()
     
@@ -71,7 +71,7 @@ else()
                             -Dprotobuf_BUILD_PROTOC_BINARIES=OFF
                             # ssl
                             -DgRPC_SSL_PROVIDER=package
-                            -DOPENSSL_ROOT_DIR=${CMAKE_THIRD_PARTY_LIB_DIR}/openssl
+                            -DOPENSSL_ROOT_DIR=${CANN_3RD_LIB_PATH}/openssl
                             -DOPENSSL_USE_STATIC_LIBS=TRUE
                             # grpc option
                             -DCMAKE_POLICY_VERSION_MINIMUM=3.5
@@ -87,10 +87,10 @@ else()
                             -DgRPC_BUILD_CSHARP_EXT=OFF
                             -DgRPC_BUILD_CODEGEN=OFF
                             -DgRPC_BUILD_GRPC_CPP_PLUGIN=OFF
-                            -DCMAKE_INSTALL_PREFIX=${CMAKE_THIRD_PARTY_LIB_DIR}/grpc
+                            -DCMAKE_INSTALL_PREFIX=${CANN_3RD_LIB_PATH}/grpc
                             <SOURCE_DIR>
                         BUILD_COMMAND $(MAKE)
-                        INSTALL_COMMAND $(MAKE) install && ${CMAKE_COMMAND} -E touch ${CMAKE_THIRD_PARTY_LIB_DIR}/grpc/lib/cmake/grpc/gRPCPluginTargets.cmake
+                        INSTALL_COMMAND $(MAKE) install && ${CMAKE_COMMAND} -E touch ${CANN_3RD_LIB_PATH}/grpc/lib/cmake/grpc/gRPCPluginTargets.cmake
                         EXCLUDE_FROM_ALL TRUE
     )
 
