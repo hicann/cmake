@@ -160,18 +160,26 @@ else()
 endif()
 
 message("[ThirdPartyLib][openssl] libcrypto: ${CRYPTO_LIB_PATH} libssl: ${SSL_LIB_PATH} include: ${OPENSSL_INCLUDE}")
-add_library(crypto_static STATIC IMPORTED GLOBAL)
-add_dependencies(crypto_static openssl_project)
-set_target_properties(crypto_static PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INCLUDE}"
-    IMPORTED_LOCATION             "${CRYPTO_LIB_PATH}"
-)
-add_library(OpenSSL::Crypto ALIAS crypto_static)
+if(NOT TARGET crypto_static)
+    add_library(crypto_static STATIC IMPORTED GLOBAL)
+    add_dependencies(crypto_static openssl_project)
+    set_target_properties(crypto_static PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INCLUDE}"
+        IMPORTED_LOCATION             "${CRYPTO_LIB_PATH}"
+    )
+    add_library(OpenSSL::Crypto ALIAS crypto_static)
+else()
+    message([ThirdParty][openssl] crypto_static already exist.)
+endif()
 
-add_library(ssl_static STATIC IMPORTED GLOBAL)
-add_dependencies(ssl_static openssl_project)
-set_target_properties(ssl_static PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INCLUDE}"
-    IMPORTED_LOCATION             "${SSL_LIB_PATH}"
-)
-add_library(OpenSSL::SSL ALIAS ssl_static)
+if(NOT TARGET ssl_static)
+    add_library(ssl_static STATIC IMPORTED GLOBAL)
+    add_dependencies(ssl_static openssl_project)
+    set_target_properties(ssl_static PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INCLUDE}"
+        IMPORTED_LOCATION             "${SSL_LIB_PATH}"
+    )
+    add_library(OpenSSL::SSL ALIAS ssl_static)
+else()
+    message([ThirdParty][openssl] ssl_static already exist.)
+endif()

@@ -67,11 +67,15 @@ if(NOT json_FOUND OR FORCE_REBUILD_CANN_3RD)
 endif()
 
 message("[ThirdPartyLib][json] build json end, JSON_SOURCE_PATH: ${JSON_SOURCE_PATH}.")
-add_library(json INTERFACE)
-add_dependencies(json third_party_json)
-# use for transformer service's reference path
-set(JSON_INCLUDE_DIR ${JSON_SOURCE_PATH}/include)
-target_include_directories(json INTERFACE ${JSON_SOURCE_PATH}/include)
-target_compile_definitions(json INTERFACE
-    nlohmann=ascend_nlohmann  # 如果需要命名空间重映射
-)
+if(NOT TARGET json)
+    add_library(json INTERFACE)
+    add_dependencies(json third_party_json)
+    # use for transformer service's reference path
+    set(JSON_INCLUDE_DIR ${JSON_SOURCE_PATH}/include)
+    target_include_directories(json INTERFACE ${JSON_SOURCE_PATH}/include)
+    target_compile_definitions(json INTERFACE
+        nlohmann=ascend_nlohmann  # 如果需要命名空间重映射
+    )
+else()
+    message([ThirdParty][json] json already exist.)
+endif()

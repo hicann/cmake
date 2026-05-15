@@ -43,21 +43,21 @@ else()
 endif()
 
 if(zlib_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
-    message(STATUS "[zlib] zlib inc found in ${ZLIB_INCLUDE}, zlib lib found in ${ZLIB_LIBRARY}.")
+    message(STATUS "[ThirdParty][zlib] zlib inc found in ${ZLIB_INCLUDE}, zlib lib found in ${ZLIB_LIBRARY}.")
 else()
-    message(STATUS "[zlib] zlib_FOUND:${zlib_FOUND}, FORCE_REBUILD_CANN_3RD:${FORCE_REBUILD_CANN_3RD}")
+    message(STATUS "[ThirdParty][zlib] zlib_FOUND:${zlib_FOUND}, FORCE_REBUILD_CANN_3RD:${FORCE_REBUILD_CANN_3RD}")
     if(zlib_FOUND)
-        message(STATUS "[zlib] zlib inc found in ${ZLIB_INCLUDE}, zlib lib found in ${ZLIB_LIBRARY}.")
+        message(STATUS "[ThirdParty][zlib] zlib inc found in ${ZLIB_INCLUDE}, zlib lib found in ${ZLIB_LIBRARY}.")
     endif()
     set(REQ_URL "${CANN_3RD_LIB_PATH}/zlib/zlib-1.2.13.tar.xz")
     set(REQ_URL_BACK "${CANN_3RD_LIB_PATH}/zlib/zlib-1.2.13.tar.gz")
     if(EXISTS ${REQ_URL})
-        message(STATUS "[zlib] ${REQ_URL} found.")
+        message(STATUS "[ThirdParty][zlib] ${REQ_URL} found.")
     elseif(EXISTS ${REQ_URL_BACK})
-        message(STATUS "[zlib] ${REQ_URL_BACK} found.")
+        message(STATUS "[ThirdParty][zlib] ${REQ_URL_BACK} found.")
         set(REQ_URL ${REQ_URL_BACK})
     else()
-        message(STATUS "[zlib] ${REQ_URL} not found, need download.")
+        message(STATUS "[ThirdParty][zlib] ${REQ_URL} not found, need download.")
         set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/zlib/zlib-1.2.13.tar.gz")
     endif()
 
@@ -80,7 +80,7 @@ else()
                         BUILD_COMMAND $(MAKE)
                         EXCLUDE_FROM_ALL TRUE
     )
-    message(STATUS "zlib and minizip will be installed to: ${ZLIB_INSTALL_DIR}")
+    message(STATUS "[ThirdParty][zlib] zlib and minizip will be installed to: ${ZLIB_INSTALL_DIR}")
     set(ZLIB_INCLUDE ${ZLIB_INSTALL_DIR}/include)
     set(MINIZIP_INCLUDE ${ZLIB_INSTALL_DIR}/include)
     set(ZLIB_LIBRARY ${ZLIB_INSTALL_DIR}/lib/libz.a)
@@ -88,16 +88,24 @@ else()
 endif()
 
 set(ZLIB_INCLUDE_DIR ${ZLIB_INCLUDE})
-add_library(zlib_static STATIC IMPORTED)
-set_target_properties(zlib_static PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${ZLIB_INCLUDE}"
-    IMPORTED_LOCATION             "${ZLIB_LIBRARY}"
-)
+if(NOT TARGET zlib_static)
+    add_library(zlib_static STATIC IMPORTED)
+    set_target_properties(zlib_static PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${ZLIB_INCLUDE}"
+        IMPORTED_LOCATION             "${ZLIB_LIBRARY}"
+    )
+else()
+    message(STATUS "[ThirdParty][zlib] zlib_static already exist.")
+endif()
 
-add_library(minizip_static STATIC IMPORTED)
-set_target_properties(minizip_static PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${MINIZIP_INCLUDE}"
-    IMPORTED_LOCATION             "${MINIZIP_LIBRARY}"
-    # 自动添加libminizip.a对libz.a的依赖
-    INTERFACE_LINK_LIBRARIES ${ZLIB_LIBRARY}
-)
+if(NOT TARGET minizip_static)
+    add_library(minizip_static STATIC IMPORTED)
+    set_target_properties(minizip_static PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${MINIZIP_INCLUDE}"
+        IMPORTED_LOCATION             "${MINIZIP_LIBRARY}"
+        # 自动添加libminizip.a对libz.a的依赖
+        INTERFACE_LINK_LIBRARIES ${ZLIB_LIBRARY}
+    )
+else()
+    message(STATUS "[ThirdParty][zlib] minizip_static already exist.")
+endif()
