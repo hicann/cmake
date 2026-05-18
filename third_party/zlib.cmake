@@ -7,11 +7,7 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-
-if (TARGET zlib_build)
-    return()
-endif()
-
+include_guard(GLOBAL)
 include(ExternalProject)
 include(FindPackageHandleStandardArgs)
 
@@ -42,13 +38,10 @@ else()
     set(zlib_FOUND FALSE)
 endif()
 
-if(zlib_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
+if(zlib_FOUND)
     message(STATUS "[ThirdParty][zlib] zlib inc found in ${ZLIB_INCLUDE}, zlib lib found in ${ZLIB_LIBRARY}.")
+    add_custom_target(zlib_bin_build)
 else()
-    message(STATUS "[ThirdParty][zlib] zlib_FOUND:${zlib_FOUND}, FORCE_REBUILD_CANN_3RD:${FORCE_REBUILD_CANN_3RD}")
-    if(zlib_FOUND)
-        message(STATUS "[ThirdParty][zlib] zlib inc found in ${ZLIB_INCLUDE}, zlib lib found in ${ZLIB_LIBRARY}.")
-    endif()
     set(REQ_URL "${CANN_3RD_LIB_PATH}/zlib/zlib-1.2.13.tar.xz")
     set(REQ_URL_BACK "${CANN_3RD_LIB_PATH}/zlib/zlib-1.2.13.tar.gz")
     if(EXISTS ${REQ_URL})
@@ -78,6 +71,8 @@ else()
                             -DUNZ_MAXFILENAMEINZIP=4096
                             <SOURCE_DIR>
                         BUILD_COMMAND $(MAKE)
+                        INSTALL_COMMAND $(MAKE) install
+                        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/zlib_bin_build-prefix/src/zlib_bin_build ${ZLIB_INSTALL_DIR}
                         EXCLUDE_FROM_ALL TRUE
     )
     message(STATUS "[ThirdParty][zlib] zlib and minizip will be installed to: ${ZLIB_INSTALL_DIR}")

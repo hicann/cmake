@@ -68,16 +68,16 @@ find_package_handle_standard_args(gtest
     GTEST_MAIN_LIBRARY
     GMOCK_LIBRARY
     GMOCK_MAIN_LIBRARY)
-message("[ThirdParty][gtest_shared] shared FOUND found:${gtest_FOUND}")
+message(STATUS "[ThirdParty][gtest_shared] shared FOUND found:${gtest_FOUND}")
 
 if(GTEST_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
-    message("[ThirdParty][gtest_shared] shared found in ${GTEST_INSTALL_PATH}, and not force rebuild cann third_party")
+    message(STATUS "[ThirdParty][gtest_shared] shared found in ${GTEST_INSTALL_PATH}, and not force rebuild cann third_party")
 else()
     if (EXISTS "${CANN_3RD_LIB_PATH}/googletest-1.14.0.tar.gz")
-        message("[ThirdParty][gtest_shared] use local tar.gz")
+        message(STATUS "[ThirdParty][gtest_shared] use local tar.gz")
         set(REQ_URL "${CANN_3RD_LIB_PATH}/googletest-1.14.0.tar.gz")
     else()
-        message("[ThirdParty][gtest_shared] not use cache, download the source code")
+        message(STATUS "[ThirdParty][gtest_shared] not use cache, download the source code")
         set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/googletest/googletest-1.14.0.tar.gz")
     endif()
     set (gtest_CXXFLAGS "-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
@@ -116,7 +116,7 @@ add_dependencies(GTestShared::gtest_main gtest_shared_build)
 add_library(GTestShared::gmock_main SHARED IMPORTED)
 add_dependencies(GTestShared::gmock_main gtest_shared_build)
 
-message("[ThirdParty][gtest_shared] GTEST_INSTALL_PATH = ${GTEST_INSTALL_PATH}")
+message(STATUS "[ThirdParty][gtest_shared] GTEST_INSTALL_PATH = ${GTEST_INSTALL_PATH}")
 
 if (NOT EXISTS ${GTEST_INSTALL_PATH}/include)
     file(MAKE_DIRECTORY "${GTEST_INSTALL_PATH}/include")

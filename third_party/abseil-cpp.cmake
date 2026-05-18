@@ -10,7 +10,7 @@
 include_guard(GLOBAL)
 
 set(ABSEIL_VERSION_PKG abseil-cpp-20230802.1.tar.gz)
-set(ABS_INSTALL_DIR ${CANN_3RD_LIB_PATH}/lib_cache/abseil-cpp-20230802)
+set(ABS_INSTALL_DIR ${CANN_3RD_LIB_PATH}/lib_cache/abseil-cpp)
 unset(abseil-cpp_FOUND CACHE)
 unset(ABSL_SOURCE_DIR CACHE)
 
@@ -46,7 +46,6 @@ else()
 endif()
 
 include(ExternalProject)
-set(ABS_INSTALL_DIR ${CMAKE_BINARY_DIR}/abseil-cpp)
 ExternalProject_Add(abseil_build
     URL ${REQ_URL}
     DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/pkg

@@ -35,7 +35,7 @@ find_package_handle_standard_args(boost
     BOOST_INCLUDE)
 
 if(boost_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
-    message("[ThirdParty][boost] found in ${BOOST_SRC_PATH}, and not force rebuild cann third_party")
+    message(STATUS "[ThirdParty][boost] found in ${BOOST_SRC_PATH}, and not force rebuild cann third_party")
     # depends by mockcpp
     add_custom_target(third_party_boost)
 else()

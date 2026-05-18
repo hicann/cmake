@@ -56,7 +56,7 @@ if (openssl_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     else()
         set(CRYPTO_INCLUDE_DIR)
     endif()
-
+    add_custom_target(openssl_project)
     # the key use for hcomm services online
     set(OPENSSL_INCLUDE_DIR ${OPENSSL_INSTALL_PATH}/include)
 else()
@@ -72,12 +72,10 @@ else()
         message(STATUS "[ThirdParty][openssl] Downloading openssl.")
         set(REQ_URL https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/openssl/openssl-openssl-3.0.9.tar.gz)
     endif()
-    
-    set(OPENSSL_INSTALL_LIBDIR ${OPENSSL_INSTALL_PATH}/lib)
+
     # ========== 工具链配置（根据系统架构判断） ==========
     if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
         set(OPENSSL_PLATFORM linux-x86_64)
-        set(OPENSSL_INSTALL_LIBDIR ${OPENSSL_INSTALL_PATH}/lib64)
     elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
         set(OPENSSL_PLATFORM linux-aarch64)
     elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "arm")
@@ -112,15 +110,16 @@ else()
         no-asm enable-shared threads enable-ssl3-method no-tests
         ${OPENSSL_OPTION}
         --prefix=${OPENSSL_INSTALL_PATH}
+        --libdir=lib64
     )
     if(DEVICE_MODE)
-        message("[ThirdParty][openssl] set configure command in mode: ${DEVICE_MODE}.")
+        message(STATUS "[ThirdParty][openssl] set configure command in mode: ${DEVICE_MODE}.")
         set(OPENSSL_CONFIGURE_COMMAND
             unset CROSS_COMPILE &&
             ${OPENSSL_CONFIGURE_PUB_COMMAND}
         )
     else()
-        message("[ThirdParty][openssl] set configure command in default.")
+        message(STATUS "[ThirdParty][openssl] set configure command in default.")
         set(OPENSSL_CONFIGURE_COMMAND
             unset CROSS_COMPILE &&
             export NO_OSSL_RENAME_VERSION=1 &&
@@ -146,6 +145,12 @@ else()
             INSTALL_COMMAND ${OPENSSL_INSTALL_CMD}
             BUILD_IN_SOURCE TRUE                          # OpenSSL 不支持分离构建目录
     )
+    ExternalProject_Add_Step(openssl_project extra_install
+        COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/include/crypto ${OPENSSL_INSTALL_PATH}/include/crypto
+        COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/include/internal ${OPENSSL_INSTALL_PATH}/include/internal
+        COMMAND ${CMAKE_COMMAND} -E chdir ${OPENSSL_INSTALL_PATH} ${CMAKE_COMMAND} -E create_symlink lib64 ${CMAKE_INSTALL_LIBDIR}
+        DEPENDEES install
+    )
 
     # the key use for hcomm services
     set(OPENSSL_INCLUDE_DIR
@@ -153,13 +158,13 @@ else()
         ${OPENSSL_SRC_PATH}/include
     )
 
-    set(CRYPTO_LIB_PATH "${OPENSSL_INSTALL_LIBDIR}/libcrypto.a")
-    set(SSL_LIB_PATH "${OPENSSL_INSTALL_LIBDIR}/libssl.a")
+    set(CRYPTO_LIB_PATH "${OPENSSL_INSTALL_PATH}/lib/libcrypto.a")
+    set(SSL_LIB_PATH "${OPENSSL_INSTALL_PATH}/lib/libssl.a")
     set(OPENSSL_INCLUDE "${OPENSSL_INSTALL_PATH}/include")
     set(CRYPTO_INCLUDE_DIR "${OPENSSL_INSTALL_PATH}/include")
 endif()
 
-message("[ThirdPartyLib][openssl] libcrypto: ${CRYPTO_LIB_PATH} libssl: ${SSL_LIB_PATH} include: ${OPENSSL_INCLUDE}")
+message(STATUS "[ThirdPartyLib][openssl] libcrypto: ${CRYPTO_LIB_PATH} libssl: ${SSL_LIB_PATH} include: ${OPENSSL_INCLUDE}")
 if(NOT TARGET crypto_static)
     add_library(crypto_static STATIC IMPORTED GLOBAL)
     add_dependencies(crypto_static openssl_project)
@@ -169,7 +174,7 @@ if(NOT TARGET crypto_static)
     )
     add_library(OpenSSL::Crypto ALIAS crypto_static)
 else()
-    message([ThirdParty][openssl] crypto_static already exist.)
+    message(STATUS "[ThirdParty][openssl] crypto_static already exist.")
 endif()
 
 if(NOT TARGET ssl_static)
@@ -181,5 +186,5 @@ if(NOT TARGET ssl_static)
     )
     add_library(OpenSSL::SSL ALIAS ssl_static)
 else()
-    message([ThirdParty][openssl] ssl_static already exist.)
+    message(STATUS "[ThirdParty][openssl] ssl_static already exist.")
 endif()
