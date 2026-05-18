@@ -577,3 +577,50 @@ function(add_cann_sign_file)
         set(${ARG_RESULT_VAR} "${output_sig}" PARENT_SCOPE)
     endif()
 endfunction()
+
+function(__cann_generate_stub_with_output_name name output_name)
+    string(FIND ${output_name} "::" temp)
+    if(temp EQUAL "-1")
+        set(target_plain_name ${output_name})
+    else()
+        string(REPLACE "::" ";" temp_list ${output_name})
+        list(GET temp_list 1 target_plain_name)
+    endif()
+
+    # 多个name可以对应一个output_name
+    if(NOT TARGET ${target_plain_name}_stub_tmp)
+        add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/stub/${target_plain_name}.c
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/stub
+            COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/stub/${target_plain_name}.c)
+        add_library(${target_plain_name}_stub_tmp SHARED ${CMAKE_CURRENT_BINARY_DIR}/stub/${target_plain_name}.c)
+        set_target_properties(${target_plain_name}_stub_tmp PROPERTIES
+            WINDOWS_EXPORT_ALL_SYMBOLS TRUE
+            LIBRARY_OUTPUT_NAME ${target_plain_name} 
+            RUNTIME_OUTPUT_NAME ${target_plain_name}
+            LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/stub
+            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/stub)
+    endif()
+
+    add_library(${name} SHARED IMPORTED GLOBAL)
+    if(UNIX)
+        set_target_properties(${name} PROPERTIES
+            IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/stub/lib${target_plain_name}.so")
+    endif()
+    if(WIN32)
+        set_target_properties(${name} PROPERTIES
+            IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/stub/${target_plain_name}.dll"
+            IMPORTED_IMPLIB "${CMAKE_CURRENT_BINARY_DIR}/stub/${target_plain_name}.lib")
+    endif()
+    add_dependencies(${name} ${target_plain_name}_stub_tmp)
+endfunction()
+
+# 生成打桩库
+function(generate_cann_stub_library name)
+    cmake_parse_arguments(CANN "" "OUTPUT_NAME" "" ${ARGN})
+
+    if(NOT CANN_OUTPUT_NAME)
+        set(CANN_OUTPUT_NAME ${name})
+    endif()
+
+    __cann_generate_stub_with_output_name(${name} ${CANN_OUTPUT_NAME})
+endfunction()
