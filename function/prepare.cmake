@@ -411,6 +411,13 @@ function(clone_cann_target)
     endif()
 endfunction()
 
+# 打包目标文件和普通文件
+# OUTPUT - 输出文件路径
+# MANIFEST - 可选，manifest文件名
+# OUTPUT_TARGET - 输出目标名
+# TARGETS - 目标列表
+# FILES - 文件列表
+# 说明：如果设置了 CANN_VERSION_CURRENT_PACKAGE，会自动生成 .ini 文件并打包
 function(cann_pack_targets_and_files)
     cmake_parse_arguments(ARG
         ""
@@ -436,6 +443,26 @@ function(cann_pack_targets_and_files)
     get_filename_component(tar_basename "${ARG_OUTPUT}" NAME_WE)
     string(MAKE_C_IDENTIFIER "pack_${tar_basename}" safe_name)
     set(staging_dir "${CMAKE_CURRENT_BINARY_DIR}/_${safe_name}_stage")
+    
+    # Generate .ini file if CANN_VERSION_CURRENT_PACKAGE is set
+    set(ini_file "")
+    set(ini_version "")
+    if(CANN_VERSION_CURRENT_PACKAGE)
+        set(pkg_version "${CANN_VERSION_${CANN_VERSION_CURRENT_PACKAGE}_VERSION}")
+        if(pkg_version)
+            get_filename_component(output_dir "${ARG_OUTPUT}" DIRECTORY)
+            get_filename_component(output_name "${ARG_OUTPUT}" NAME)
+            if(output_name MATCHES "(.+)\\.tar\\.gz$")
+                set(ini_basename "${CMAKE_MATCH_1}")
+            elseif(output_name MATCHES "(.+)\\.tgz$")
+                set(ini_basename "${CMAKE_MATCH_1}")
+            else()
+                get_filename_component(ini_basename "${output_name}" NAME_WE)
+            endif()
+            set(ini_file "${staging_dir}/${ini_basename}.ini")
+            set(ini_version "${pkg_version}")
+        endif()
+    endif()
 
     # --- Collect all source items (as generator expressions) ---
     set(src_items "")
@@ -451,7 +478,7 @@ function(cann_pack_targets_and_files)
     endforeach()
     list(APPEND src_items ${ARG_FILES})
 
-    if(NOT src_items)
+    if(NOT src_items AND NOT ini_file)
         message(FATAL_ERROR "[pack_targets_and_files] No targets or files specified to pack")
     endif()
 
@@ -472,8 +499,25 @@ function(cann_pack_targets_and_files)
         VERBATIM
     )
 
+    set(ini_output "")
+    set(ini_command "")
+    set(ini_depends "")
+    set(ini_copy_command "")
+    if(ini_file)
+        get_filename_component(output_dir "${ARG_OUTPUT}" DIRECTORY)
+        set(ini_output "${ini_file}")
+        set(ini_output_dir "${output_dir}/${ini_basename}.ini")
+        set(ini_command COMMAND python3 ${CANN_CMAKE_DIR}/scripts/version/generate_package_ini.py
+            "${ini_version}" --output "${ini_file}")
+        set(ini_copy_command COMMAND ${CMAKE_COMMAND} -E copy "${ini_file}" "${ini_output_dir}")
+        set(ini_depends ${CANN_CMAKE_DIR}/scripts/version/generate_package_ini.py)
+    endif()
+
     add_custom_command(
-        OUTPUT "${ARG_OUTPUT}"
+        OUTPUT "${ARG_OUTPUT}" ${ini_output}
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${staging_dir}"
+        ${ini_command}
+        ${ini_copy_command}
         COMMAND ${CMAKE_COMMAND}
             -D _STAGING_DIR=${staging_dir}
             ${manifest_arg}
@@ -482,7 +526,7 @@ function(cann_pack_targets_and_files)
         COMMAND tar "czf" "${ARG_OUTPUT}" .
                 "--mode=750"
         WORKING_DIRECTORY ${staging_dir}
-        DEPENDS ${ARG_TARGETS} ${staging_dir}
+        DEPENDS ${ARG_TARGETS} ${staging_dir} ${ini_depends}
         COMMENT "Packing with ${ARG_OUTPUT}"
         VERBATIM
     )
