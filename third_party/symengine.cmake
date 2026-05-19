@@ -9,14 +9,14 @@
 # -----------------------------------------------------------------------------------------------------------
 include_guard(GLOBAL)
 
-add_library(symengine_static STATIC IMPORTED)
+add_library(symengine STATIC IMPORTED)
 set(SYMENGINE_INSTALL_DIR "${CANN_3RD_LIB_PATH}/lib_cache/symengine")
 set(SYMENGINE_LIB_FILE "${SYMENGINE_INSTALL_DIR}/lib/libsymengine.a")
 set(SYMENGINE_INCLUDE_DIR "${SYMENGINE_INSTALL_DIR}/include")
 if(NOT EXISTS ${SYMENGINE_INCLUDE_DIR})
     file(MAKE_DIRECTORY "${SYMENGINE_INCLUDE_DIR}")
 endif()
-set_target_properties(symengine_static PROPERTIES
+set_target_properties(symengine PROPERTIES
     IMPORTED_LOCATION "${SYMENGINE_LIB_FILE}"
     INTERFACE_INCLUDE_DIRECTORIES "${SYMENGINE_INCLUDE_DIR}"
 )
@@ -77,5 +77,5 @@ else()
     )
     include(${CMAKE_CURRENT_LIST_DIR}/boost.cmake)
     add_dependencies(symengine_build third_party_boost_headers)
-    add_dependencies(symengine_static symengine_build)
+    add_dependencies(symengine symengine_build)
 endif()

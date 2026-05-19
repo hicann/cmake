@@ -78,11 +78,10 @@ ExternalProject_Add(third_party_boost_headers
 
 # use for dvpp service
 add_library(boost INTERFACE)
-
 set_property(TARGET boost PROPERTY
     INTERFACE_INCLUDE_DIRECTORIES ${BOOST_SRC_PATH}
 )
-
+add_library(Boost::boost ALIAS boost)
 if(TARGET third_party_boost)
     add_dependencies(third_party_boost_headers third_party_boost)
     add_dependencies(boost third_party_boost)
