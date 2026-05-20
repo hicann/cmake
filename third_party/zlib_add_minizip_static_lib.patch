@@ -1,8 +1,8 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index b412dc7..d931045 100644
+index b412dc7..07635d9 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -211,3 +211,42 @@ if(HAVE_OFF64_T)
+@@ -211,3 +211,43 @@ if(HAVE_OFF64_T)
      target_link_libraries(minigzip64 zlib)
      set_target_properties(minigzip64 PROPERTIES COMPILE_FLAGS "-D_FILE_OFFSET_BITS=64")
  endif()
@@ -22,6 +22,7 @@ index b412dc7..d931045 100644
 +
 +# Create the minizip static library
 +add_library(minizip_static STATIC ${MINIZIP_SRCS})
++target_compile_definitions(minizip_static PRIVATE UNZ_MAXFILENAMEINZIP=4096)
 +set_target_properties(minizip_static PROPERTIES OUTPUT_NAME minizip)
 +
 +# Add include directories for minizip_static

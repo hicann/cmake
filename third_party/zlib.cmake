@@ -67,8 +67,6 @@ else()
                             -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
                             -DLLVM_PATH=${LLVM_PATH}
                             -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
-                            # -DUNZ_MAXFILENAMEINZIP 4096配置ZIP中文件名长度，默认值256偏短
-                            -DUNZ_MAXFILENAMEINZIP=4096
                             <SOURCE_DIR>
                         BUILD_COMMAND $(MAKE)
                         INSTALL_COMMAND $(MAKE) install
