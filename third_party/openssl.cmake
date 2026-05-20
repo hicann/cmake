@@ -85,7 +85,7 @@ else()
     endif()
 
     # ========== 编译选项 ==========
-    set(OPENSSL_OPTION "-fstack-protector-all -D_FORTIFY_SOURCE=2 -O2 -Wl,-z,relro,-z,now,-z,noexecstack -Wl,--build-id=none -s")
+    set(OPENSSL_OPTION "-fstack-protector-all -D_FORTIFY_SOURCE=2 -fvisibility=hidden -O2 -Wl,-z,relro,-z,now,-z,noexecstack -Wl,--build-id=none -s")
 
     if("${DEVICE_TOOLCHAIN}" STREQUAL "arm-tiny-hcc-toolchain.cmake")
         set(OPENSSL_OPTION "-mcpu=cortex-a55 -mfloat-abi=hard ${OPENSSL_OPTION}")
@@ -107,7 +107,7 @@ else()
     set(OPENSSL_CONFIGURE_PUB_COMMAND
         ${PERL_PATH} <SOURCE_DIR>/Configure
         ${OPENSSL_PLATFORM}
-        no-asm enable-shared threads enable-ssl3-method no-tests
+        no-afalgeng no-asm no-shared threads enable-ssl3-method no-tests
         ${OPENSSL_OPTION}
         --prefix=${OPENSSL_INSTALL_PATH}
         --libdir=lib64
