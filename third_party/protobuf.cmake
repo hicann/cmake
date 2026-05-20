@@ -20,13 +20,12 @@ include(GNUInstallDirs)
 # 1. Paths & Directories Setup
 # ==========================================================================================================
 set(PROTOBUF_LIB_CACHE_DIR ${CANN_3RD_LIB_PATH}/lib_cache/protobuf-25.1)
-set(PROTOBUF_SRC_DIR ${CMAKE_BINARY_DIR}/protobuf-src)
-set(PROTOBUF_DL_DIR ${CMAKE_BINARY_DIR}/downloads)
-set(PROTOBUF_STATIC_PKG_DIR ${CMAKE_BINARY_DIR}/protobuf_static)
-set(PROTOBUF_SHARED_PKG_DIR ${CMAKE_BINARY_DIR}/protobuf_shared)
-set(PROTOBUF_HOST_STATIC_PKG_DIR ${CMAKE_BINARY_DIR}/protobuf_host_static)
+set(PROTOBUF_SRC_DIR ${CANN_3RD_LIB_PATH}/protobuf-src)
+set(PROTOBUF_DL_DIR ${CANN_3RD_LIB_PATH}/pkg)
+set(PROTOBUF_STATIC_PKG_DIR ${CANN_3RD_LIB_PATH}/lib_cache/protobuf_static)
+set(PROTOBUF_SHARED_PKG_DIR ${CANN_3RD_LIB_PATH}/lib_cache/protobuf_shared)
+set(PROTOBUF_HOST_STATIC_PKG_DIR ${CANN_3RD_LIB_PATH}/lib_cache/protobuf_host_static)
 
-set(SOURCE_DIR ${PROTOBUF_SRC_DIR})
 set(PROTOBUF_INCLUDE_DIRS ${PROTOBUF_LIB_CACHE_DIR}/include)
 set(PROTOBUF_HOST_DIR ${PROTOBUF_LIB_CACHE_DIR})
 
@@ -35,6 +34,13 @@ set(PROTOBUF_STATIC_FILE_NAME "libhost_ascend_protobuf.a")
 if(PRODUCT_SIDE STREQUAL "device")
     set(PROTOBUF_STATIC_FILE_NAME "libascend_protobuf.a")
     set(LIB_SUB_DIR "lib64/device/lib64")
+
+    # in device mode, need another path to save lib.
+    message("[ThirdParty][protobuf] device mode set protobuf lib path")
+    set(PROTOBUF_SRC_DIR ${CANN_3RD_LIB_PATH}/device/protobuf-src)
+    set(PROTOBUF_STATIC_PKG_DIR ${CANN_3RD_LIB_PATH}/lib_cache/device/protobuf_static)
+    set(PROTOBUF_SHARED_PKG_DIR ${CANN_3RD_LIB_PATH}/lib_cache/device/protobuf_shared)
+    set(PROTOBUF_HOST_STATIC_PKG_DIR ${CANN_3RD_LIB_PATH}/lib_cache/device/protobuf_host_static)
 endif()
 
 if(DEFINED ENV{ASCEND_HOME_PATH})
@@ -254,6 +260,9 @@ else()
     )
     set_target_properties(host_protoc PROPERTIES IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/bin/protoc)
     add_dependencies(host_protoc protobuf_host_build)
+    # use for math
+    set(HOST_PROTOC_SRC PROTOBUF_SRC_DIR/src)
+    set(HOST_PROTOC_PATH ${CMAKE_BINARY_DIR}/bin)
 endif()
 
 # ---------------------------------------------------------
