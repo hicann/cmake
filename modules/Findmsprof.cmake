@@ -16,7 +16,7 @@ endif()
 set(_cmake_targets_defined "")
 set(_cmake_targets_not_defined "")
 set(_cmake_expected_targets "")
-foreach(_cmake_expected_target IN ITEMS msprofiler_fwk_share profapi_share msprof_headers)
+foreach(_cmake_expected_target IN ITEMS msprofiler_fwk_share profapi profapi_share profimpl msprof_headers)
     list(APPEND _cmake_expected_targets "${_cmake_expected_target}")
     if(TARGET "${_cmake_expected_target}")
         list(APPEND _cmake_targets_defined "${_cmake_expected_target}")
@@ -44,20 +44,26 @@ unset(_cmake_targets_defined)
 unset(_cmake_targets_not_defined)
 unset(_cmake_expected_targets)
 
-find_path(msprof_INCLUDE_DIR
+find_path(_CANN_MSPROF_INCLUDE_DIR
     NAMES profiling/aprof_pub.h
     PATH_SUFFIXES pkg_inc
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH)
 
-find_library(msprofiler_SHARED_LIBRARY
+find_library(_CANN_MSPROFILER_SHARED_LIBRARY
     NAMES libmsprofiler.so
     PATH_SUFFIXES lib64
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH)
 
-find_library(profapi_SHARED_LIBRARY
+find_library(_CANN_PROFAPI_SHARED_LIBRARY
     NAMES libprofapi.so
+    PATH_SUFFIXES lib64
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH)
+
+find_library(_CANN_PROFIMPL_SHARED_LIBRARY
+    NAMES libprofimpl.so
     PATH_SUFFIXES lib64
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH)
@@ -67,43 +73,45 @@ find_package_handle_standard_args(msprof
     FOUND_VAR
         msprof_FOUND
     REQUIRED_VARS
-        msprof_INCLUDE_DIR
-        msprofiler_SHARED_LIBRARY
-        profapi_SHARED_LIBRARY
+        _CANN_MSPROF_INCLUDE_DIR
+        _CANN_MSPROFILER_SHARED_LIBRARY
+        _CANN_PROFAPI_SHARED_LIBRARY
+        _CANN_PROFIMPL_SHARED_LIBRARY
 )
 
 if(msprof_FOUND)
-    include(CMakePrintHelpers)
-    message(STATUS "Variables in msprof module:")
-    cmake_print_variables(msprof_INCLUDE_DIR)
-    cmake_print_variables(msprofiler_SHARED_LIBRARY)
-    cmake_print_variables(profapi_SHARED_LIBRARY)
-
     add_library(msprofiler_fwk_share SHARED IMPORTED)
     set_target_properties(msprofiler_fwk_share PROPERTIES
         INTERFACE_LINK_LIBRARIES "msprof_headers"
-        IMPORTED_LOCATION "${msprofiler_SHARED_LIBRARY}"
+        IMPORTED_LOCATION "${_CANN_MSPROFILER_SHARED_LIBRARY}"
+    )
+    # cmake 3.16 does not support ALIAS IMPLIED target
+    add_library(msprofiler SHARED IMPORTED)
+    set_target_properties(msprofiler PROPERTIES
+        INTERFACE_LINK_LIBRARIES "msprof_headers"
+        IMPORTED_LOCATION "${_CANN_MSPROFILER_SHARED_LIBRARY}"
     )
 
     add_library(profapi_share SHARED IMPORTED)
     set_target_properties(profapi_share PROPERTIES
         INTERFACE_LINK_LIBRARIES "msprof_headers"
-        IMPORTED_LOCATION "${profapi_SHARED_LIBRARY}"
+        IMPORTED_LOCATION "${_CANN_PROFAPI_SHARED_LIBRARY}"
+    )
+    # cmake 3.16 does not support ALIAS IMPLIED target
+    add_library(profapi SHARED IMPORTED)
+    set_target_properties(profapi PROPERTIES
+        INTERFACE_LINK_LIBRARIES "msprof_headers"
+        IMPORTED_LOCATION "${_CANN_PROFAPI_SHARED_LIBRARY}"
+    )
+
+    add_library(profimpl SHARED IMPORTED)
+    set_target_properties(profimpl PROPERTIES
+        INTERFACE_LINK_LIBRARIES "msprof_headers"
+        IMPORTED_LOCATION "${_CANN_PROFIMPL_SHARED_LIBRARY}"
     )
 
     add_library(msprof_headers INTERFACE IMPORTED)
     set_target_properties(msprof_headers PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${msprof_INCLUDE_DIR};${msprof_INCLUDE_DIR}/profiling;${msprof_INCLUDE_DIR}/toolchain"
-    )
-
-    include(CMakePrintHelpers)
-    cmake_print_properties(TARGETS msprofiler_fwk_share
-        PROPERTIES INTERFACE_LINK_LIBRARIES IMPORTED_LOCATION
-    )
-    cmake_print_properties(TARGETS profapi_share
-        PROPERTIES INTERFACE_LINK_LIBRARIES IMPORTED_LOCATION
-    )
-    cmake_print_properties(TARGETS msprof_headers
-        PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+        INTERFACE_INCLUDE_DIRECTORIES "${_CANN_MSPROF_INCLUDE_DIR};${_CANN_MSPROF_INCLUDE_DIR}/profiling;${_CANN_MSPROF_INCLUDE_DIR}/toolchain"
     )
 endif()

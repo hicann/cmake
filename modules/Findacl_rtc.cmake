@@ -8,27 +8,35 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-if(ascendc_runtime_FOUND)
+if(acl_rtc_FOUND)
     return()
 endif()
 
-find_library(_CANN_ASCENDC_RUNTIME_STATIC_LIBRARY
-    NAMES libascendc_runtime.a
+find_path(_CANN_ACL_RTC_INCLUDE_DIR
+    NAMES acl/acl_rt_compile.h
+    PATH_SUFFIXES include
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH)
+
+find_library(_CANN_ACL_RTC_SHARED_LIBRARY
+    NAMES libacl_rtc.so
     PATH_SUFFIXES lib64
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(ascendc_runtime
+find_package_handle_standard_args(acl_rtc
     FOUND_VAR
-        ascendc_runtime_FOUND
+        acl_rtc_FOUND
     REQUIRED_VARS
-        _CANN_ASCENDC_RUNTIME_STATIC_LIBRARY
+        _CANN_ACL_RTC_INCLUDE_DIR
+        _CANN_ACL_RTC_SHARED_LIBRARY
 )
 
-if(ascendc_runtime_FOUND)
-    add_library(ascendc_runtime STATIC IMPORTED)
-    set_target_properties(ascendc_runtime PROPERTIES
-        IMPORTED_LOCATION "${_CANN_ASCENDC_RUNTIME_STATIC_LIBRARY}"
+if(acl_rtc_FOUND)
+    add_library(acl_rtc SHARED IMPORTED)
+    set_target_properties(acl_rtc PROPERTIES
+        IMPORTED_LOCATION "${_CANN_ACL_RTC_SHARED_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${_CANN_ACL_RTC_INCLUDE_DIR}"
     )
 endif()
