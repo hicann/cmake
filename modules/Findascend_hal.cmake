@@ -46,14 +46,24 @@ unset(_cmake_expected_targets)
 
 find_path(_CANN_HAL_INCLUDE_DIR
     NAMES driver/ascend_hal.h
+    PATH_SUFFIXES pkg_inc
     NO_CMAKE_SYSTEM_PATH
-    NO_CMAKE_FIND_ROOT_PATH)
+    NO_CMAKE_FIND_ROOT_PATH
+)
 
-find_library(_CANN_ascend_hal_SHARED_LIBRARY
-    NAMES libascend_hal.so
-    PATH_SUFFIXES lib64/stub runtime/lib64/stub devlib
-    NO_CMAKE_SYSTEM_PATH
-    NO_CMAKE_FIND_ROOT_PATH)
+if(PRODUCT_SIDE STREQUAL "device")
+    find_library(_CANN_ASCEND_HAL_SHARED_LIBRARY
+        NAMES libascend_hal.so
+        PATH_SUFFIXES lib64/device/lib64
+        NO_CMAKE_SYSTEM_PATH
+        NO_CMAKE_FIND_ROOT_PATH)
+else()
+    find_library(_CANN_ASCEND_HAL_SHARED_LIBRARY
+        NAMES libascend_hal.so
+        PATH_SUFFIXES devlib lib64/stub runtime/lib64/stub
+        NO_CMAKE_SYSTEM_PATH
+        NO_CMAKE_FIND_ROOT_PATH)
+endif()
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(ascend_hal
@@ -61,22 +71,17 @@ find_package_handle_standard_args(ascend_hal
         ascend_hal_FOUND
     REQUIRED_VARS
         _CANN_HAL_INCLUDE_DIR
-        _CANN_ascend_hal_SHARED_LIBRARY
+        _CANN_ASCEND_HAL_SHARED_LIBRARY
 )
 
 if(ascend_hal_FOUND)
     add_library(ascend_hal_headers INTERFACE IMPORTED)
     set_target_properties(ascend_hal_headers PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${_CANN_HAL_INCLUDE_DIR};${_CANN_HAL_INCLUDE_DIR}/driver"
+        INTERFACE_INCLUDE_DIRECTORIES "${_CANN_HAL_INCLUDE_DIR}/driver"
     )
 
     add_library(ascend_hal SHARED IMPORTED)
     set_target_properties(ascend_hal PROPERTIES
         INTERFACE_LINK_LIBRARIES "ascend_hal_headers"
-        IMPORTED_LOCATION "${_CANN_ascend_hal_SHARED_LIBRARY}")
-
-    include(CMakePrintHelpers)
-    cmake_print_properties(TARGETS ascend_hal_headers
-        PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-    )
+        IMPORTED_LOCATION "${_CANN_ASCEND_HAL_SHARED_LIBRARY}")
 endif()
