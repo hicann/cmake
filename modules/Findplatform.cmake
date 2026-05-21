@@ -9,7 +9,6 @@
 # -----------------------------------------------------------------------------------------------------------
 
 if (platform_FOUND)
-    message(STATUS "Package platform has been found.")
     return()
 endif()
 
@@ -44,12 +43,12 @@ unset(_cmake_targets_defined)
 unset(_cmake_targets_not_defined)
 unset(_cmake_expected_targets)
 
-find_path(_INCLUDE_DIR
-    NAMES include/platform/platform_info.h
+find_path(_CANN_PLATFORM_INCLUDE_DIR
+    NAMES platform/platform_info.h
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH)
 
-find_library(platform_SHARED_LIBRARY
+find_library(_CANN_PLATFORM_SHARED_LIBRARY
     NAMES libplatform.so
     PATH_SUFFIXES lib64
     NO_CMAKE_SYSTEM_PATH
@@ -60,36 +59,19 @@ find_package_handle_standard_args(platform
     FOUND_VAR
         platform_FOUND
     REQUIRED_VARS
-        _INCLUDE_DIR
-        platform_SHARED_LIBRARY
+        _CANN_PLATFORM_INCLUDE_DIR
+        _CANN_PLATFORM_SHARED_LIBRARY
 )
 
 if(platform_FOUND)
-    set(platform_INCLUDE_DIR "${_INCLUDE_DIR}")
-    include(CMakePrintHelpers)
-    message(STATUS "Variables in platform module:")
-    cmake_print_variables(platform_INCLUDE_DIR)
-    cmake_print_variables(platform_SHARED_LIBRARY)
-
     add_library(platform SHARED IMPORTED)
     set_target_properties(platform PROPERTIES
         INTERFACE_LINK_LIBRARIES "platform_headers"
-        IMPORTED_LOCATION "${platform_SHARED_LIBRARY}"
+        IMPORTED_LOCATION "${_CANN_PLATFORM_SHARED_LIBRARY}"
     )
 
     add_library(platform_headers INTERFACE IMPORTED)
     set_target_properties(platform_headers PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${platform_INCLUDE_DIR};${platform_INCLUDE_DIR}/include;${platform_INCLUDE_DIR}/include/platform"
-    )
-
-    include(CMakePrintHelpers)
-    cmake_print_properties(TARGETS platform
-        PROPERTIES INTERFACE_LINK_LIBRARIES IMPORTED_LOCATION
-    )
-    cmake_print_properties(TARGETS platform_headers
-        PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+        INTERFACE_INCLUDE_DIRECTORIES "${_CANN_PLATFORM_INCLUDE_DIR}/platform"
     )
 endif()
-
-# Cleanup temporary variables.
-set(_INCLUDE_DIR)

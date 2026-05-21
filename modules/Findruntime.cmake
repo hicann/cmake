@@ -87,7 +87,7 @@ if(runtime_FOUND)
 
     add_library(runtime_headers INTERFACE IMPORTED)
     set_target_properties(runtime_headers PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${runtime_INCLUDE_DIR};${runtime_INCLUDE_DIR}/pkg_inc;${runtime_INCLUDE_DIR}/pkg_inc/runtime;${runtime_INCLUDE_DIR}/pkg_inc/runtime/runtime;${runtime_INCLUDE_DIR}/pkg_inc/profiling;${_CANN_AICPU_INCLUDE_DIR};${_CANN_AICPU_INCLUDE_DIR}/aicpu_schedule"
+        INTERFACE_INCLUDE_DIRECTORIES "${runtime_INCLUDE_DIR};${runtime_INCLUDE_DIR}/pkg_inc;${runtime_INCLUDE_DIR}/pkg_inc/aicpu/common;${runtime_INCLUDE_DIR}/pkg_inc/runtime;${runtime_INCLUDE_DIR}/pkg_inc/runtime/runtime;${runtime_INCLUDE_DIR}/pkg_inc/profiling;${_CANN_AICPU_INCLUDE_DIR};${_CANN_AICPU_INCLUDE_DIR}/aicpu_schedule"
     )
 
     include(CMakePrintHelpers)
