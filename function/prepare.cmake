@@ -68,12 +68,14 @@ macro(init_cann_project)
         set(CMAKE_CXX_STANDARD_REQUIRED ON)
         set(CMAKE_CXX_EXTENSIONS OFF)
 
-        set(CMAKE_CXX_COMPILE_OBJECT
-            "<CMAKE_CXX_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
-        )
-        set(CMAKE_C_COMPILE_OBJECT
-            "<CMAKE_C_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
-        )
+        if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
+                set(CMAKE_CXX_COMPILE_OBJECT
+                    "<CMAKE_CXX_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
+                )
+                set(CMAKE_C_COMPILE_OBJECT
+                    "<CMAKE_C_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
+                )
+        endif()
 
         option(ENABLE_CCACHE "Enable ccache" TRUE)
         if(ENABLE_CCACHE)
