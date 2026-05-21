@@ -261,7 +261,7 @@ else()
     set_target_properties(host_protoc PROPERTIES IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/bin/protoc)
     add_dependencies(host_protoc protobuf_host_build)
     # use for math
-    set(HOST_PROTOC_SRC PROTOBUF_SRC_DIR/src)
+    set(HOST_PROTOC_SRC ${PROTOBUF_SRC_DIR}/src)
     set(HOST_PROTOC_PATH ${CMAKE_BINARY_DIR}/bin)
 endif()
 

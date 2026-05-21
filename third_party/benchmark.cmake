@@ -35,7 +35,7 @@ if(EXISTS ${REQ_URL})
     message(STATUS "[ThirdPartyLib][benchmark] ${REQ_URL} found.")
 else()
     message(STATUS "[ThirdPartyLib][benchmark] ${REQ_URL} not found, need download.")
-    set(REQ_URL "https://gitcode.com/cann-src-third-party/benchmark/releases/download/v1.8.3/benchmark-1.8.3.tar.gz")
+    set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/benchmark/benchmark-1.8.3.tar.gz")
     list(APPEND BENCHMARK_EXTRA_ARGS
         DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/pkg
     )
@@ -45,7 +45,7 @@ include(ExternalProject)
 set(benchmark_CXXFLAGS "-D_GLIBCXX_USE_CXX11_ABI=${USE_CXX11_ABI} -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
 ExternalProject_Add(benchmark_build
     URL ${REQ_URL}
-    TLS_VERIFY OFF
+    URL_HASH SHA256=6bc180a57d23d4d9515519f92b0c83d61b05b5bab188961f36ac7b06b0d9e9ce
     ${BENCHMARK_EXTRA_ARGS}
     CONFIGURE_COMMAND ${CMAKE_COMMAND}
         -DBENCHMARK_ENABLE_GTEST_TESTS=OFF
