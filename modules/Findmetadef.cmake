@@ -16,7 +16,7 @@ endif()
 set(_cmake_targets_defined "")
 set(_cmake_targets_not_defined "")
 set(_cmake_expected_targets "")
-foreach(_cmake_expected_target IN ITEMS exe_graph register metadef opp_registry metadef_headers exe_graph_headers)
+foreach(_cmake_expected_target IN ITEMS exe_graph metadef opp_registry metadef_headers exe_graph_headers)
     list(APPEND _cmake_expected_targets "${_cmake_expected_target}")
     if(TARGET "${_cmake_expected_target}")
         list(APPEND _cmake_targets_defined "${_cmake_expected_target}")
@@ -90,7 +90,7 @@ if(metadef_FOUND)
     add_library(metadef_headers INTERFACE IMPORTED)
     set_target_properties(metadef_headers PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES
-            "${_CANN_METADEF_PKG_INC_DIR};${_CANN_METADEF_PKG_INC_DIR}/base"
+            "${_CANN_METADEF_INCLUDE_DIR};${_CANN_METADEF_PKG_INC_DIR};${_CANN_METADEF_PKG_INC_DIR}/base"
     )
 
     add_library(exe_graph_headers INTERFACE IMPORTED)
