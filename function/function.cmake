@@ -27,13 +27,13 @@ macro(init_cann_superbuild_project)
 endmacro()
 
 # 加载配置
-function(load_superbuild_config)
+macro(load_superbuild_config)
     if(CANN_SUPERBUILD_CONFIG AND EXISTS ${CANN_SUPERBUILD_CONFIG})
         include(${CANN_SUPERBUILD_CONFIG})
     else()
         include(${CANN_CMAKE_DIR}/superbuild/config.cmake)
     endif()
-endfunction()
+endmacro()
 
 # 获取包对应源码目录
 function(get_package_dir_by_package outvar package)
