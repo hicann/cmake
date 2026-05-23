@@ -62,6 +62,8 @@ else()
                         ${GRPC_EXTRA_ARGS}
                         PATCH_COMMAND ${CMAKE_COMMAND} -E make_directory <SOURCE_DIR>/third_party/opencensus-proto/src
                             COMMAND ${CMAKE_COMMAND} -E copy_directory ${CANN_3RD_LIB_PATH}/lib_cache/zlib <SOURCE_DIR>/third_party/zlib
+                            # 低版本cmake无法通过DRE2_ROOT_DIR找到re2路径，拷贝一份到build路径下
+                            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CANN_3RD_LIB_PATH}/lib_cache/re2/re2 <SOURCE_DIR>/re2
                             COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/grpc-fix-compile-bug-in-device.patch
                         CONFIGURE_COMMAND ${CMAKE_COMMAND}
                             # zlib

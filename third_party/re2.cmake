@@ -34,7 +34,6 @@ else()
 
     ExternalProject_Add(re2_build
                         URL ${REQ_URL}
-                        TLS_VERIFY OFF
                         DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/pkg
                         SOURCE_DIR ${RE2_INTALL_PATH}
                         PATCH_COMMAND patch -N --batch --quiet -r - -p1 < ${CMAKE_CURRENT_LIST_DIR}/re2-add_compatible_functions.patch

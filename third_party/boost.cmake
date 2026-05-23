@@ -55,8 +55,6 @@ else()
     ExternalProject_Add(third_party_boost
         URL ${REQ_URL}
         URL_HASH SHA256=f55c340aa49763b1925ccf02b2e83f35fdcf634c9d5164a2acb87540173c741d
-        DOWNLOAD_NO_EXTRACT FALSE
-        DOWNLOAD_NO_PROGRESS TRUE
         DOWNLOAD_DIR ${BOOST_DOWNLOAD_PATH}
         SOURCE_DIR ${BOOST_SRC_PATH}
         CONFIGURE_COMMAND ""    # 无需编译，只需解压
