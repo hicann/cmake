@@ -40,7 +40,7 @@ if(boost_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     add_custom_target(third_party_boost)
 else()
     if(EXISTS ${CANN_3RD_LIB_PATH}/boost/${BOOST_FILE})
-        set(REQ_URL CANN_3RD_LIB_PATH/boost/${BOOST_FILE})
+        set(REQ_URL ${CANN_3RD_LIB_PATH}/boost/${BOOST_FILE})
         message(STATUS "[ThirdParty][boost] Found local boost package: ${REQ_URL}")
     elseif(EXISTS ${CANN_3RD_LIB_PATH}/${BOOST_FILE})
         # 离线编译场景，优先使用已下载的包
