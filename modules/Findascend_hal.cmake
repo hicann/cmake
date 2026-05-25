@@ -51,19 +51,17 @@ find_path(_CANN_HAL_INCLUDE_DIR
     NO_CMAKE_FIND_ROOT_PATH
 )
 
+set(HAL_STUB_PATH_SUFFIX "devlib")
+
 if(PRODUCT_SIDE STREQUAL "device")
-    find_library(_CANN_ASCEND_HAL_SHARED_LIBRARY
-        NAMES libascend_hal.so
-        PATH_SUFFIXES lib64/device/lib64
-        NO_CMAKE_SYSTEM_PATH
-        NO_CMAKE_FIND_ROOT_PATH)
-else()
-    find_library(_CANN_ASCEND_HAL_SHARED_LIBRARY
-        NAMES libascend_hal.so
-        PATH_SUFFIXES devlib lib64/stub runtime/lib64/stub
-        NO_CMAKE_SYSTEM_PATH
-        NO_CMAKE_FIND_ROOT_PATH)
+    set(HAL_STUB_PATH_SUFFIX "devlib/device")
 endif()
+
+find_library(_CANN_ascend_hal_SHARED_LIBRARY
+    NAMES libascend_hal.so
+    PATH_SUFFIXES ${HAL_STUB_PATH_SUFFIX}
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(ascend_hal
@@ -71,7 +69,7 @@ find_package_handle_standard_args(ascend_hal
         ascend_hal_FOUND
     REQUIRED_VARS
         _CANN_HAL_INCLUDE_DIR
-        _CANN_ASCEND_HAL_SHARED_LIBRARY
+        _CANN_ascend_hal_SHARED_LIBRARY
 )
 
 if(ascend_hal_FOUND)
@@ -83,5 +81,16 @@ if(ascend_hal_FOUND)
     add_library(ascend_hal SHARED IMPORTED)
     set_target_properties(ascend_hal PROPERTIES
         INTERFACE_LINK_LIBRARIES "ascend_hal_headers"
-        IMPORTED_LOCATION "${_CANN_ASCEND_HAL_SHARED_LIBRARY}")
+        IMPORTED_LOCATION "${_CANN_ascend_hal_SHARED_LIBRARY}")
+
+    add_library(ascend_hal_stub SHARED IMPORTED)
+    set_target_properties(ascend_hal_stub PROPERTIES
+        INTERFACE_LINK_LIBRARIES "ascend_hal_headers"
+        IMPORTED_LOCATION "${_CANN_ascend_hal_SHARED_LIBRARY}"
+    )
+
+    include(CMakePrintHelpers)
+    cmake_print_properties(TARGETS ascend_hal_headers
+        PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+    )
 endif()

@@ -12,6 +12,12 @@ if(ascendcl_FOUND)
     return()
 endif()
 
+find_path(_CANN_ASCENDCL_INCLUDE_DIR
+    NAMES acl/acl.h
+    PATH_SUFFIXES include
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH)
+
 find_library(_CANN_ASCENDCL_SHARED_LIBRARY
     NAMES libascendcl.so
     PATH_SUFFIXES lib64
@@ -24,12 +30,19 @@ find_package_handle_standard_args(ascendcl
     FOUND_VAR
         ascendcl_FOUND
     REQUIRED_VARS
+        _CANN_ASCENDCL_INCLUDE_DIR
         _CANN_ASCENDCL_SHARED_LIBRARY
 )
 
 if(ascendcl_FOUND)
     add_library(ascendcl SHARED IMPORTED)
     set_target_properties(ascendcl PROPERTIES
+        INTERFACE_LINK_LIBRARIES "ascendcl_headers"
         IMPORTED_LOCATION "${_CANN_ASCENDCL_SHARED_LIBRARY}"
+    )
+
+    add_library(ascendcl_headers INTERFACE IMPORTED)
+    set_target_properties(ascendcl_headers PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${_CANN_ASCENDCL_INCLUDE_DIR}/acl"
     )
 endif()

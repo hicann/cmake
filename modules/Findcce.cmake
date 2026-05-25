@@ -13,8 +13,9 @@ if (cce_FOUND)
     return()
 endif()
 
-find_path(_INCLUDE_DIR
-    NAMES experiment/cce/cce_def.hpp
+find_path(cce_INCLUDE_DIR
+    NAMES aicpu_engine_struct.h
+    PATH_SUFFIXES pkg_inc/aicpu
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH)
 
@@ -23,18 +24,17 @@ find_package_handle_standard_args(cce
     FOUND_VAR
         cce_FOUND
     REQUIRED_VARS
-        _INCLUDE_DIR
+        cce_INCLUDE_DIR
 )
 
 if(cce_FOUND)
-    set(cce_INCLUDE_DIR "${_INCLUDE_DIR}/experiment")
     include(CMakePrintHelpers)
     message(STATUS "Variables in cce module:")
     cmake_print_variables(cce_INCLUDE_DIR)
 
     add_library(cce_headers INTERFACE IMPORTED)
     set_target_properties(cce_headers PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${cce_INCLUDE_DIR};${cce_INCLUDE_DIR}/cce"
+        INTERFACE_INCLUDE_DIRECTORIES "${cce_INCLUDE_DIR}"
     )
 
     include(CMakePrintHelpers)
@@ -43,5 +43,3 @@ if(cce_FOUND)
     )
 endif()
 
-# Cleanup temporary variables.
-set(_INCLUDE_DIR)
