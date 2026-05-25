@@ -16,7 +16,7 @@ endif()
 set(_cmake_targets_defined "")
 set(_cmake_targets_not_defined "")
 set(_cmake_expected_targets "")
-foreach(_cmake_expected_target IN ITEMS unified_dlog slog_headers)
+foreach(_cmake_expected_target IN ITEMS unified_dlog slog_headers unified_dlog_headers)
     list(APPEND _cmake_expected_targets "${_cmake_expected_target}")
     if(TARGET "${_cmake_expected_target}")
         list(APPEND _cmake_targets_defined "${_cmake_expected_target}")
@@ -92,11 +92,19 @@ if(unified_dlog_FOUND)
         INTERFACE_INCLUDE_DIRECTORIES "${unified_dlog_INCLUDE_DIR}"
     )
 
+    add_library(unified_dlog_headers INTERFACE IMPORTED)
+    set_target_properties(unified_dlog_headers PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${unified_dlog_INCLUDE_DIR}"
+    )
+
     include(CMakePrintHelpers)
     cmake_print_properties(TARGETS unified_dlog
         PROPERTIES INTERFACE_LINK_LIBRARIES IMPORTED_LOCATION
     )
     cmake_print_properties(TARGETS slog_headers
+        PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+    )
+    cmake_print_properties(TARGETS unified_dlog_headers
         PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
     )
 endif()

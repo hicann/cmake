@@ -40,3 +40,49 @@ else()
 endif()
 
 message(STATUS "Using AICPU include dirs: ${AICPU_INC_DIRS}")
+
+if(TARGET aicpu_headers)
+  return()
+endif()
+
+find_path(aicpu_INCLUDE_DIR
+    NAMES aicpu_engine_struct.h
+    PATH_SUFFIXES pkg_inc/aicpu
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH
+)
+
+find_package_handle_standard_args(aicpu
+    FOUND_VAR
+        aicpu_FOUND
+    REQUIRED_VARS
+        aicpu_INCLUDE_DIR
+)
+
+if(aicpu_FOUND)
+    if(NOT BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
+      set(AICPU_IMPORTED_INC_DIRS
+        ${aicpu_INCLUDE_DIR}/..
+        ${aicpu_INCLUDE_DIR}
+        ${aicpu_INCLUDE_DIR}/aicpu_schedule
+        ${aicpu_INCLUDE_DIR}/common
+        ${aicpu_INCLUDE_DIR}/cpu_kernels
+        ${aicpu_INCLUDE_DIR}/queue_schedule
+        ${aicpu_INCLUDE_DIR}/tsd
+      )
+      list(APPEND AICPU_INC_DIRS ${AICPU_IMPORTED_INC_DIRS})
+    endif()
+
+    if(NOT TARGET aicpu_headers)
+      add_library(aicpu_headers INTERFACE IMPORTED)
+      if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
+        set_target_properties(aicpu_headers PROPERTIES
+            INTERFACE_INCLUDE_DIRECTORIES "${AICPU_INC_DIRS}"
+        )
+      else()
+        set_target_properties(aicpu_headers PROPERTIES
+            INTERFACE_INCLUDE_DIRECTORIES "${AICPU_IMPORTED_INC_DIRS}"
+        )
+      endif()
+    endif()
+endif()

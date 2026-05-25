@@ -16,7 +16,7 @@ endif()
 set(_cmake_targets_defined "")
 set(_cmake_targets_not_defined "")
 set(_cmake_expected_targets "")
-foreach(_cmake_expected_target IN ITEMS exe_graph metadef opp_registry metadef_headers exe_graph_headers)
+foreach(_cmake_expected_target IN ITEMS exe_graph metadef opp_registry rt2_registry_static metadef_headers exe_graph_headers)
     list(APPEND _cmake_expected_targets "${_cmake_expected_target}")
     if(TARGET "${_cmake_expected_target}")
         list(APPEND _cmake_targets_defined "${_cmake_expected_target}")
@@ -74,6 +74,12 @@ find_library(_CANN_opp_registry_SHARED_LIBRARY
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH)
 
+find_library(_CANN_rt2_registry_STATIC_LIBRARY
+    NAMES librt2_registry.a
+    PATH_SUFFIXES lib64
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH)
+
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(metadef
     FOUND_VAR
@@ -84,6 +90,7 @@ find_package_handle_standard_args(metadef
         _CANN_exe_graph_SHARED_LIBRARY
         _CANN_metadef_SHARED_LIBRARY
         _CANN_opp_registry_SHARED_LIBRARY
+        _CANN_rt2_registry_STATIC_LIBRARY
 )
 
 if(metadef_FOUND)
@@ -114,5 +121,10 @@ if(metadef_FOUND)
     add_library(opp_registry SHARED IMPORTED)
     set_target_properties(opp_registry PROPERTIES
         IMPORTED_LOCATION "${_CANN_opp_registry_SHARED_LIBRARY}"
+    )
+
+    add_library(rt2_registry_static STATIC IMPORTED)
+    set_target_properties(rt2_registry_static PROPERTIES
+        IMPORTED_LOCATION "${_CANN_rt2_registry_STATIC_LIBRARY}"
     )
 endif()

@@ -48,7 +48,8 @@ find_path(_CANN_HCCL_INCLUDE_DIR "hccl/hccl_types.h"
            NO_CMAKE_SYSTEM_PATH
            NO_CMAKE_FIND_ROOT_PATH)
 
-find_path(_CANN_HCCL_PKG_INCLUDE_DIR "hccl/hccl_diag.h"
+find_path(_CANN_HCCL_PKG_INCLUDE_DIR "hccl/base.h"
+           PATH_SUFFIXES pkg_inc
            NO_CMAKE_SYSTEM_PATH
            NO_CMAKE_FIND_ROOT_PATH)
 
@@ -76,9 +77,16 @@ if(hccl_FOUND)
         IMPORTED_LOCATION "${_CANN_hccl_SHARED_LIBRARY}"
     )
 
+    add_library(hcomm SHARED IMPORTED)
+    set_target_properties(hcomm PROPERTIES
+        INTERFACE_LINK_LIBRARIES "hccl_headers"
+        IMPORTED_LINK_DEPENDENT_LIBRARIES "c_sec;slog;mmpa;runtime;qos_manager;tsdclient;error_manager;exe_graph;lowering;hccl_alg;hccl_plf"
+        IMPORTED_LOCATION "${_CANN_hccl_SHARED_LIBRARY}"
+    )
+
     add_library(hccl_headers INTERFACE IMPORTED)
     set_target_properties(hccl_headers PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${HIXL_CODE_DIR}/src/hixl/proxy;${_CANN_HCCL_INCLUDE_DIR};${_CANN_HCCL_INCLUDE_DIR}/hccl;${_CANN_HCCL_PKG_INCLUDE_DIR};${_CANN_HCCL_PKG_INCLUDE_DIR}/hccl"
+        INTERFACE_INCLUDE_DIRECTORIES "${_CANN_HCCL_INCLUDE_DIR};${_CANN_HCCL_INCLUDE_DIR}/hccl;${_CANN_HCCL_PKG_INCLUDE_DIR};${_CANN_HCCL_PKG_INCLUDE_DIR}/hccl"
     )
 
     include(CMakePrintHelpers)

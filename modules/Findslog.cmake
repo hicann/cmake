@@ -44,8 +44,9 @@ unset(_cmake_targets_defined)
 unset(_cmake_targets_not_defined)
 unset(_cmake_expected_targets)
 
-find_path(_INCLUDE_DIR
-    NAMES experiment/slog/toolchain/slog.h
+find_path(slog_INCLUDE_DIR
+    NAMES base/dlog_pub.h
+    PATH_SUFFIXES pkg_inc
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH)
 
@@ -66,13 +67,12 @@ find_package_handle_standard_args(slog
     FOUND_VAR
         slog_FOUND
     REQUIRED_VARS
-        _INCLUDE_DIR
+        slog_INCLUDE_DIR
         slog_SHARED_LIBRARY
         alog_SHARED_LIBRARY
 )
 
 if(slog_FOUND)
-    set(slog_INCLUDE_DIR "${_INCLUDE_DIR}/experiment")
     include(CMakePrintHelpers)
     message(STATUS "Variables in slog module:")
     cmake_print_variables(slog_INCLUDE_DIR)
@@ -95,7 +95,7 @@ if(slog_FOUND)
 
     add_library(old_slog_headers INTERFACE IMPORTED)
     set_target_properties(old_slog_headers PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${slog_INCLUDE_DIR};${slog_INCLUDE_DIR}/slog;${slog_INCLUDE_DIR}/slog/toolchain"
+        INTERFACE_INCLUDE_DIRECTORIES "${slog_INCLUDE_DIR};${slog_INCLUDE_DIR}/base"
     )
 
     include(CMakePrintHelpers)

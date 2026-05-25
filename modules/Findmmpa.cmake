@@ -101,7 +101,7 @@ if(mmpa_FOUND)
 
     add_library(mmpa_headers INTERFACE IMPORTED)
     set_target_properties(mmpa_headers PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${mmpa_INCLUDE_DIR};${mmpa_INCLUDE_DIR}/mmpa"
+        INTERFACE_INCLUDE_DIRECTORIES "${mmpa_INCLUDE_DIR};${mmpa_INCLUDE_DIR}/mmpa;${mmpa_INCLUDE_DIR}/mmpa/sub_inc"
     )
 
     include(CMakePrintHelpers)
