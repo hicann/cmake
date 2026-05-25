@@ -61,6 +61,7 @@ checkopts() {
   ENABLE_BUILD_DEVICE="ON"
   CANN_PACKAGES=""
   CANN_SUPERBUILD_CONFIG=""
+  CHECK_CANN_PATH="0"
 
   # Process the options
   parsed_args=$(getopt -a -o j:hp:v -l help,pkgs:,superbuild-config:,verbose,cov,build_host_only,cann_path:,build-type:,cann_3rd_lib_path:,asan,sign-script:,enable-sign -- "$@") || {
@@ -139,6 +140,8 @@ checkopts() {
     echo "error: --pkgs option is required."
     exit 1
   fi
+
+  set_env
 }
 
 set_env() {
@@ -150,6 +153,7 @@ set_env() {
     DEFAULT_INSTALL_DIR="/usr/local/Ascend/cann"
   fi
 
+  ASCEND_CANN_PACKAGE_PATH=""
   if [ -n "${CANN_PATH}" ];then
     ASCEND_CANN_PACKAGE_PATH=${CANN_PATH}
   elif [ -n "${ASCEND_HOME_PATH}" ];then
@@ -160,7 +164,7 @@ set_env() {
     ASCEND_CANN_PACKAGE_PATH=${DEFAULT_TOOLKIT_INSTALL_DIR}
   elif [ -d "${DEFAULT_INSTALL_DIR}" ];then
     ASCEND_CANN_PACKAGE_PATH=${DEFAULT_INSTALL_DIR}
-  else
+  elif [ "$CHECK_CANN_PATH" = "1" ]; then
     log "Error: Please set the cann package installation directory through parameter -p|--cann_path."
     exit 1
   fi
@@ -218,7 +222,6 @@ build_project() {
 
 main() {
   checkopts "$@"
-  set_env
 
   # build start
   echo "---------------- build start ----------------"
