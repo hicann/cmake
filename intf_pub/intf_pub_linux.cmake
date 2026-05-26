@@ -12,10 +12,9 @@ if(TARGET intf_pub)
     return()
 endif()
 
-add_library(intf_pub INTERFACE)
+add_library(intf_pub_base INTERFACE)
 
-target_compile_options(intf_pub INTERFACE
-    $<$<COMPILE_LANGUAGE:CXX>:-std=c++17>
+target_compile_options(intf_pub_base INTERFACE
     -fPIC
     -pipe
     -Wall
@@ -41,18 +40,18 @@ elseif(NOT PRODUCT_SIDE STREQUAL "device")
 endif()
 
 if(DEFINED CXX11_ABI_VALUE)
-    target_compile_definitions(intf_pub INTERFACE
+    target_compile_definitions(intf_pub_base INTERFACE
         $<$<COMPILE_LANGUAGE:CXX>:_GLIBCXX_USE_CXX11_ABI=${CXX11_ABI_VALUE}>
     )
 endif()
 
-target_compile_definitions(intf_pub INTERFACE
+target_compile_definitions(intf_pub_base INTERFACE
     $<$<CONFIG:Release>:CFG_BUILD_NDEBUG>
     $<$<CONFIG:Debug>:CFG_BUILD_DEBUG>
     LINUX=0
 )
 
-target_link_options(intf_pub INTERFACE
+target_link_options(intf_pub_base INTERFACE
     -Wl,-z,relro
     -Wl,-z,now
     -Wl,-z,noexecstack
@@ -65,7 +64,25 @@ target_link_options(intf_pub INTERFACE
     $<$<BOOL:${ENABLE_GCOV}>:-fprofile-arcs -ftest-coverage>
 )
 
-target_link_libraries(intf_pub INTERFACE
+target_link_libraries(intf_pub_base INTERFACE
     -pthread
     $<$<BOOL:${ENABLE_GCOV}>:-lgcov>
+)
+
+add_library(intf_pub INTERFACE)
+target_link_libraries(intf_pub INTERFACE 
+    intf_pub_base
+)
+
+target_compile_options(intf_pub INTERFACE
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++17>
+)
+
+add_library(intf_pub_cxx14 INTERFACE)
+target_link_libraries(intf_pub_cxx14 INTERFACE 
+    intf_pub_base
+)
+
+target_compile_options(intf_pub_cxx14 INTERFACE
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
 )
