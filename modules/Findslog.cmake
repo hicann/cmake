@@ -16,7 +16,7 @@ endif()
 set(_cmake_targets_defined "")
 set(_cmake_targets_not_defined "")
 set(_cmake_expected_targets "")
-foreach(_cmake_expected_target IN ITEMS slog alog old_slog_headers)
+foreach(_cmake_expected_target IN ITEMS slog alog)
     list(APPEND _cmake_expected_targets "${_cmake_expected_target}")
     if(TARGET "${_cmake_expected_target}")
         list(APPEND _cmake_targets_defined "${_cmake_expected_target}")
@@ -44,71 +44,49 @@ unset(_cmake_targets_defined)
 unset(_cmake_targets_not_defined)
 unset(_cmake_expected_targets)
 
-find_path(slog_INCLUDE_DIR
-    NAMES base/dlog_pub.h
-    PATH_SUFFIXES pkg_inc
-    NO_CMAKE_SYSTEM_PATH
-    NO_CMAKE_FIND_ROOT_PATH)
+if(PRODUCT_SIDE STREQUAL "device")
+    set(_CANN_FIND_PATHS "${ASCEND_INSTALL_PATH}/lib64/device/lib64")
+else()
+    set(_CANN_FIND_PATHS "${ASCEND_INSTALL_PATH}/lib64")
+endif()
 
-find_library(slog_SHARED_LIBRARY
+find_library(_CANN_SLOG_SHARED_LIBRARY
     NAMES libascendalog.so
-    PATH_SUFFIXES lib64
+    PATHS ${_CANN_FIND_PATHS}
     NO_CMAKE_SYSTEM_PATH
-    NO_CMAKE_FIND_ROOT_PATH)
+    NO_CMAKE_FIND_ROOT_PATH
+    NO_CMAKE_PATH)
 
-find_library(alog_SHARED_LIBRARY
+find_library(_CANN_ALOG_SHARED_LIBRARY
     NAMES libascendalog.so
-    PATH_SUFFIXES lib64
+    PATHS ${_CANN_FIND_PATHS}
     NO_CMAKE_SYSTEM_PATH
-    NO_CMAKE_FIND_ROOT_PATH)
+    NO_CMAKE_FIND_ROOT_PATH
+    NO_CMAKE_PATH)
+
+unset(_CANN_FIND_PATHS)
+
+find_package(unified_dlog REQUIRED)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(slog
-    FOUND_VAR
-        slog_FOUND
     REQUIRED_VARS
-        slog_INCLUDE_DIR
-        slog_SHARED_LIBRARY
-        alog_SHARED_LIBRARY
+        _CANN_SLOG_SHARED_LIBRARY
+        _CANN_ALOG_SHARED_LIBRARY
 )
 
 if(slog_FOUND)
-    include(CMakePrintHelpers)
-    message(STATUS "Variables in slog module:")
-    cmake_print_variables(slog_INCLUDE_DIR)
-    cmake_print_variables(slog_SHARED_LIBRARY)
-    cmake_print_variables(alog_SHARED_LIBRARY)
-
     add_library(slog SHARED IMPORTED)
     set_target_properties(slog PROPERTIES
         INTERFACE_COMPILE_DEFINITIONS "LOG_CPP;PROCESS_LOG"
-        INTERFACE_LINK_LIBRARIES "old_slog_headers"
-        IMPORTED_LOCATION "${slog_SHARED_LIBRARY}"
+        INTERFACE_LINK_LIBRARIES "slog_headers"
+        IMPORTED_LOCATION "${_CANN_SLOG_SHARED_LIBRARY}"
     )
 
     add_library(alog SHARED IMPORTED)
     set_target_properties(alog PROPERTIES
         INTERFACE_COMPILE_DEFINITIONS "LOG_CPP;PROCESS_LOG"
-        INTERFACE_LINK_LIBRARIES "old_slog_headers"
-        IMPORTED_LOCATION "${alog_SHARED_LIBRARY}"
-    )
-
-    add_library(old_slog_headers INTERFACE IMPORTED)
-    set_target_properties(old_slog_headers PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${slog_INCLUDE_DIR};${slog_INCLUDE_DIR}/base"
-    )
-
-    include(CMakePrintHelpers)
-    cmake_print_properties(TARGETS slog
-        PROPERTIES INTERFACE_COMPILE_DEFINITIONS INTERFACE_LINK_LIBRARIES IMPORTED_LOCATION
-    )
-    cmake_print_properties(TARGETS alog
-        PROPERTIES INTERFACE_COMPILE_DEFINITIONS INTERFACE_LINK_LIBRARIES IMPORTED_LOCATION
-    )
-    cmake_print_properties(TARGETS old_slog_headers
-        PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+        INTERFACE_LINK_LIBRARIES "slog_headers"
+        IMPORTED_LOCATION "${_CANN_ALOG_SHARED_LIBRARY}"
     )
 endif()
-
-# Cleanup temporary variables.
-set(_INCLUDE_DIR)
