@@ -19,6 +19,7 @@ BUILD_PATH="${BASEPATH}/build"
 usage() {
   echo "Usage:"
   echo "  sh build.sh --pkgs=<PACKAGES> [-h | --help] [-v | --verbose] [-j<N>]"
+  echo "              [--binary-pkgs=<PACKAGES>]"
   echo "              [--superbuild-config=<PATH>] [--p=<PATH> | --cann_path=<PATH>]"
   echo "              [--cann_3rd_lib_path=<PATH>]"
   echo "              [--asan] [--build_host_only] [--cov]"
@@ -28,6 +29,8 @@ usage() {
   echo "    -h, --help     Print usage"
   echo "    --pkgs=<PACKAGES>"
   echo "                   Packages to be built, separate the package names with commas"
+  echo "    --binary-pkgs=<PACKAGES>"
+  echo "                   Use the binary in the package"
   echo "    --superbuild-config=<PATH>"
   echo "                   Config path for superbuild"
   echo "    --asan         Enable AddressSanitizer"
@@ -49,6 +52,13 @@ usage() {
   echo ""
 }
 
+trans_commas() {
+  local _outvar="$1"
+  read -r "$_outvar" <<EOF
+$(echo "$2" | tr "," ";")
+EOF
+}
+
 # parse and set options
 checkopts() {
   VERBOSE=""
@@ -60,11 +70,12 @@ checkopts() {
   ENABLE_SIGN="OFF"
   ENABLE_BUILD_DEVICE="ON"
   CANN_PACKAGES=""
+  CANN_BINARY_PACKAGES=""
   CANN_SUPERBUILD_CONFIG=""
   CHECK_CANN_PATH="0"
 
   # Process the options
-  parsed_args=$(getopt -a -o j:hp:v -l help,pkgs:,superbuild-config:,verbose,cov,build_host_only,cann_path:,build-type:,cann_3rd_lib_path:,asan,sign-script:,enable-sign -- "$@") || {
+  parsed_args=$(getopt -a -o j:hp:v -l help,pkgs:,superbuild-config:,binary-pkgs:,verbose,cov,build_host_only,cann_path:,build-type:,cann_3rd_lib_path:,asan,sign-script:,enable-sign -- "$@") || {
     usage
     exit 1
   }
@@ -85,11 +96,15 @@ checkopts() {
         shift
         ;;
       --pkgs)
-        CANN_PACKAGES="$2"
+        trans_commas "CANN_PACKAGES" "$2"
         shift 2
         ;;
       --superbuild-config)
         CANN_SUPERBUILD_CONFIG="$2"
+        shift 2
+        ;;
+      --binary-pkgs)
+        trans_commas "CANN_BINARY_PACKAGES" "$2"
         shift 2
         ;;
       --asan)
@@ -165,7 +180,7 @@ set_env() {
   elif [ -d "${DEFAULT_INSTALL_DIR}" ];then
     ASCEND_CANN_PACKAGE_PATH=${DEFAULT_INSTALL_DIR}
   elif [ "$CHECK_CANN_PATH" = "1" ]; then
-    log "Error: Please set the cann package installation directory through parameter -p|--cann_path."
+    echo "Error: Please set the cann package installation directory through parameter -p|--cann_path."
     exit 1
   fi
 }
@@ -185,24 +200,27 @@ build_project() {
   touch "$BUILD_PATH/.cmake/api/v1/query/codemodel-v2"
 
   cd "${BUILD_PATH}"
-  CMAKE_ARGS="-DENABLE_OPEN_SRC=TRUE \
-              -DENABLE_UNIFIED_BUILD=TRUE \
-              -DCANN_PACKAGES=${CANN_PACKAGES} \
-              -DCANN_SUPERBUILD_CONFIG=${CANN_SUPERBUILD_CONFIG} \
-              -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-              -DCMAKE_INSTALL_PREFIX=${OUTPUT_PATH} \
-              -DASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH} \
-              -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH} \
-              -DENABLE_GCOV=${ENABLE_GCOV} \
-              -DENABLE_ASAN=${ENABLE_ASAN} \
-              -DENABLE_SIGN=${ENABLE_SIGN} \
-              -DENABLE_BUILD_DEVICE=${ENABLE_BUILD_DEVICE} \
-              -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT}"
+  CMAKE_ARGS=(
+    "-DBUILD_OPEN_PROJECT=TRUE"
+    "-DENABLE_OPEN_SRC=TRUE"
+    "-DENABLE_UNIFIED_BUILD=TRUE"
+    "-DCANN_PACKAGES=${CANN_PACKAGES}"
+    "-DCANN_BINARY_PACKAGES=${CANN_BINARY_PACKAGES}"
+    "-DCANN_SUPERBUILD_CONFIG=${CANN_SUPERBUILD_CONFIG}"
+    "-DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
+    "-DCMAKE_INSTALL_PREFIX=${OUTPUT_PATH}"
+    "-DASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}"
+    "-DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}"
+    "-DENABLE_GCOV=${ENABLE_GCOV}"
+    "-DENABLE_ASAN=${ENABLE_ASAN}"
+    "-DENABLE_SIGN=${ENABLE_SIGN}"
+    "-DENABLE_BUILD_DEVICE=${ENABLE_BUILD_DEVICE}"
+    "-DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT}"
+  )
 
-  echo "CMAKE_ARGS=${CMAKE_ARGS}"
-  cmake -S ../superbuild -B . ${CMAKE_ARGS}
+  cmake -S ../superbuild -B . "${CMAKE_ARGS[@]}"
   if [ $? -ne 0 ]; then
-    echo "execute command: cmake ${CMAKE_ARGS} .. failed."
+    echo "execute command: cmake ${CMAKE_ARGS[@]} .. failed."
     return 1
   fi
 

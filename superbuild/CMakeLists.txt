@@ -31,6 +31,7 @@ set_cann_all_targets("${CANN_PACKAGE_DIRS}")
 
 set(TOOLCHAIN_DIR ${ASCEND_INSTALL_PATH}/toolkit/toolchain/hcc)
 string(REPLACE ";" "::" EP_DEVICE_CANN_PACKAGES "${DEVICE_CANN_PACKAGES}")
+string(REPLACE ";" "::" EP_CANN_BINARY_PACKAGES "${CANN_BINARY_PACKAGES}")
 string(REPLACE ";" "::" EP_DEVICE_CANN_DEPEND_PACKAGES "${DEVICE_CANN_DEPEND_PACKAGES}")
 
 if(DEVICE_CANN_PACKAGES)
@@ -49,6 +50,7 @@ if(DEVICE_CANN_PACKAGES)
             -DASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}
             -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}
             -DCANN_PACKAGES=${EP_DEVICE_CANN_PACKAGES}
+            -DCANN_BINARY_PACKAGES=${EP_CANN_BINARY_PACKAGES}
             -DCANN_DEPEND_PACKAGES=${EP_DEVICE_CANN_DEPEND_PACKAGES}
             -DENABLE_SIGN=${ENABLE_SIGN}
             -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT}
@@ -56,6 +58,12 @@ if(DEVICE_CANN_PACKAGES)
         LIST_SEPARATOR ::
         BUILD_ALWAYS TRUE
     )
+    ExternalProject_Add_Step(cann_device query_codemodel
+ 	    COMMAND ${CMAKE_COMMAND} -E make_directory <BINARY_DIR>/.cmake/api/v1/query
+ 	    COMMAND ${CMAKE_COMMAND} -E touch <BINARY_DIR>/.cmake/api/v1/query/codemodel-v2
+ 	    DEPENDEES patch
+ 	    DEPENDERS configure
+ 	)
     foreach(CANN_PACKAGE IN LISTS DEVICE_CANN_PACKAGES)
         install(FILES
             ${CMAKE_BINARY_DIR}/device_build/device-${CANN_PACKAGE}.tar.gz

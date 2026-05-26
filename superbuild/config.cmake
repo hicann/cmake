@@ -13,3 +13,5 @@ set(CANN_PACKAGE_DIR_asc-tools "asc/asc-tools")
 set(CANN_PACKAGE_DIR_ge-executor "ge")
 set(CANN_PACKAGE_DIR_ge-compiler "ge")
 set(CANN_PACKAGE_DIR_dflow-executor "ge")
+
+set(CANN_PACKAGE_COMPONENTS_asc-devkit "acl_rtc" "ascendc_runtime" "ASC")

@@ -24,7 +24,17 @@ macro(init_cann_superbuild_project)
 
     get_filename_component(CANN_TOP_DIR "${CANN_CMAKE_DIR}/.." REALPATH)
     load_superbuild_config()
+    calc_cann_binary_components()
 endmacro()
+
+# 计算二进制组件
+function(calc_cann_binary_components)
+    set(CANN_BINARY_COMPONENTS)
+    foreach(PKG IN LISTS CANN_BINARY_PACKAGES)
+        list(APPEND CANN_BINARY_COMPONENTS ${CANN_PACKAGE_COMPONENTS_${PKG}})
+    endforeach()
+    set(CANN_BINARY_COMPONENTS "${CANN_BINARY_COMPONENTS}" PARENT_SCOPE)
+endfunction()
 
 # 加载配置
 macro(load_superbuild_config)
@@ -183,7 +193,7 @@ function(do_get_pkg_dependencies pkgs all_pkgs)
 
         get_build_pkg_deps(build_pkg_deps ${CANN_VERSION_${pkg}_BUILD_DEPS})
         foreach(dep_pkg IN LISTS build_pkg_deps)
-            if(dep_pkg IN_LIST all_pkgs OR dep_pkg IN_LIST pkgs_next)
+            if(dep_pkg IN_LIST all_pkgs OR dep_pkg IN_LIST pkgs_next OR dep_pkg IN_LIST CANN_BINARY_PACKAGES)
                 continue()
             endif()
             if(dep_pkg STREQUAL "bisheng-compiler")
