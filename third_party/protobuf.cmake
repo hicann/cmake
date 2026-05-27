@@ -102,8 +102,14 @@ if(NOT PRODUCT_SIDE STREQUAL "device")
     )
 endif()
 
+if(EXISTS "${PROTOBUF_INCLUDE_DIRS}/google/protobuf/port_def.inc")
+    set(EXIST_PROTOBUF_HEADER_FILES TRUE)
+else()
+    set(EXIST_PROTOBUF_HEADER_FILES FALSE)
+endif()
+
 # 判断是否需要构建
-if(NOT PROTOC_PATH OR NOT ASCEND_PROTOBUF_STATIC_LIB OR NOT ASCEND_PROTOBUF_SHARED_LIB OR NOT HOST_PROTOBUF_STATIC_LIB OR NOT EXISTS "${PROTOBUF_INCLUDE_DIRS}")
+if(NOT PROTOC_PATH OR NOT ASCEND_PROTOBUF_STATIC_LIB OR NOT ASCEND_PROTOBUF_SHARED_LIB OR NOT HOST_PROTOBUF_STATIC_LIB OR NOT EXIST_PROTOBUF_HEADER_FILES)
     set(NEED_BUILD_PROTOBUF ON)
 else()
     set(NEED_BUILD_PROTOBUF OFF)
@@ -150,7 +156,7 @@ if(NEED_BUILD_PROTOBUF)
     add_dependencies(protobuf_src abseil_build)
 
     # 如果只要头文件而无需全部编译，单独提取包含头文件的安装
-    if(ASCEND_PROTOBUF_STATIC_LIB AND NOT EXISTS "${PROTOBUF_INCLUDE_DIRS}")
+    if(ASCEND_PROTOBUF_STATIC_LIB AND NOT EXIST_PROTOBUF_HEADER_FILES)
         ExternalProject_Add(protobuf_headers_only_build
             DEPENDS protobuf_src
             SOURCE_DIR ${PROTOBUF_SRC_DIR}
@@ -176,23 +182,24 @@ endif()
 # ---------------------------------------------------------
 # Target: ascend_protobuf (Shared)
 # ---------------------------------------------------------
-add_library(ascend_protobuf_shared_lib UNKNOWN IMPORTED)
-add_library(ascend_protobuf INTERFACE)
+add_library(ascend_protobuf SHARED IMPORTED GLOBAL)
 
-if(NOT PRODUCT_SIDE STREQUAL "device" AND ASCEND_PROTOBUF_SHARED_LIB AND EXISTS "${PROTOBUF_INCLUDE_DIRS}")
+if(NOT PRODUCT_SIDE STREQUAL "device" AND ASCEND_PROTOBUF_SHARED_LIB AND EXIST_PROTOBUF_HEADER_FILES)
     message("[ThirdParty][protobuf] shared use cache.")
-    set_target_properties(ascend_protobuf_shared_lib PROPERTIES IMPORTED_LOCATION ${ASCEND_PROTOBUF_SHARED_LIB})
-    set_target_properties(ascend_protobuf_shared_lib PROPERTIES IMPORTED_NO_SONAME TRUE)
-    target_include_directories(ascend_protobuf INTERFACE ${PROTOBUF_INCLUDE_DIRS})
-    target_link_libraries(ascend_protobuf INTERFACE ascend_protobuf_shared_lib)
+    set_target_properties(ascend_protobuf PROPERTIES
+        IMPORTED_NO_SONAME TRUE
+        IMPORTED_LOCATION ${ASCEND_PROTOBUF_SHARED_LIB}
+        INTERFACE_INCLUDE_DIRECTORIES "${PROTOBUF_INCLUDE_DIRS}"
+    )
     get_filename_component(PROTOBUF_SHARED_LIB_DIR "${ASCEND_PROTOBUF_SHARED_LIB}" DIRECTORY)
     get_filename_component(PROTOBUF_SHARED_PKG_DIR "${PROTOBUF_SHARED_LIB_DIR}" DIRECTORY)
 elseif(NOT PRODUCT_SIDE STREQUAL "device" AND TARGET protobuf_headers_target AND ASCEND_PROTOBUF_SHARED_LIB)
     message("[ThirdParty][protobuf] shared depend protobuf_headers_target.")
-    set_target_properties(ascend_protobuf_shared_lib PROPERTIES IMPORTED_LOCATION ${ASCEND_PROTOBUF_SHARED_LIB})
-    set_target_properties(ascend_protobuf_shared_lib PROPERTIES IMPORTED_NO_SONAME TRUE)
-    target_include_directories(ascend_protobuf INTERFACE ${PROTOBUF_INCLUDE_DIRS})
-    target_link_libraries(ascend_protobuf INTERFACE ascend_protobuf_shared_lib)
+    set_target_properties(ascend_protobuf PROPERTIES
+        IMPORTED_NO_SONAME TRUE
+        IMPORTED_LOCATION ${ASCEND_PROTOBUF_SHARED_LIB}
+        INTERFACE_INCLUDE_DIRECTORIES "${PROTOBUF_INCLUDE_DIRS}"
+    )
     get_filename_component(PROTOBUF_SHARED_LIB_DIR "${ASCEND_PROTOBUF_SHARED_LIB}" DIRECTORY)
     get_filename_component(PROTOBUF_SHARED_PKG_DIR "${PROTOBUF_SHARED_LIB_DIR}" DIRECTORY)
     add_dependencies(ascend_protobuf protobuf_headers_target)
@@ -224,12 +231,15 @@ else()
         INSTALL_COMMAND $(MAKE) install
         EXCLUDE_FROM_ALL TRUE
     )
-    set_target_properties(ascend_protobuf_shared_lib PROPERTIES IMPORTED_LOCATION ${PROTOBUF_SHARED_PKG_DIR}/lib/libascend_protobuf.so)
-    target_include_directories(ascend_protobuf INTERFACE ${PROTOBUF_SHARED_PKG_DIR}/include)
-    target_link_libraries(ascend_protobuf INTERFACE ascend_protobuf_shared_lib)
+    set_target_properties(ascend_protobuf PROPERTIES
+        IMPORTED_LOCATION ${PROTOBUF_SHARED_PKG_DIR}/lib/libascend_protobuf.so
+        INTERFACE_INCLUDE_DIRECTORIES "${PROTOBUF_SHARED_PKG_DIR}/include"
+    )
     add_dependencies(ascend_protobuf protobuf_shared_build)
     set(PROTOBUF_SHARED_LIB_DIR "${PROTOBUF_SHARED_PKG_DIR}/lib")
 endif()
+
+create_imported_interface_include_directories(ascend_protobuf)
 
 # ---------------------------------------------------------
 # Target: host_protoc
@@ -268,20 +278,21 @@ endif()
 # ---------------------------------------------------------
 # Target: ascend_protobuf_static
 # ---------------------------------------------------------
-add_library(ascend_protobuf_static_lib STATIC IMPORTED)
-add_library(ascend_protobuf_static INTERFACE)
+add_library(ascend_protobuf_static STATIC IMPORTED GLOBAL)
 
-if(ASCEND_PROTOBUF_STATIC_LIB AND EXISTS "${PROTOBUF_INCLUDE_DIRS}")
+if(ASCEND_PROTOBUF_STATIC_LIB AND EXIST_PROTOBUF_HEADER_FILES)
     message("[ThirdParty][protobuf] static use cache.")
-    set_target_properties(ascend_protobuf_static_lib PROPERTIES IMPORTED_LOCATION ${ASCEND_PROTOBUF_STATIC_LIB})
-    target_include_directories(ascend_protobuf_static INTERFACE ${PROTOBUF_INCLUDE_DIRS})
-    target_link_libraries(ascend_protobuf_static INTERFACE ascend_protobuf_static_lib)
+    set_target_properties(ascend_protobuf_static PROPERTIES
+        IMPORTED_LOCATION ${ASCEND_PROTOBUF_STATIC_LIB}
+        INTERFACE_INCLUDE_DIRECTORIES ${PROTOBUF_INCLUDE_DIRS}
+    )
     set(PROTOBUF_STATIC_FINAL_PATH ${ASCEND_PROTOBUF_STATIC_LIB})
 elseif(TARGET protobuf_headers_target AND ASCEND_PROTOBUF_STATIC_LIB)
     message("[ThirdParty][protobuf] static depend protobuf_headers_target.")
-    set_target_properties(ascend_protobuf_static_lib PROPERTIES IMPORTED_LOCATION ${ASCEND_PROTOBUF_STATIC_LIB})
-    target_include_directories(ascend_protobuf_static INTERFACE ${PROTOBUF_INCLUDE_DIRS})
-    target_link_libraries(ascend_protobuf_static INTERFACE ascend_protobuf_static_lib)
+    set_target_properties(ascend_protobuf_static PROPERTIES
+        IMPORTED_LOCATION ${ASCEND_PROTOBUF_STATIC_LIB}
+        INTERFACE_INCLUDE_DIRECTORIES ${PROTOBUF_INCLUDE_DIRS}
+    )
     add_dependencies(ascend_protobuf_static protobuf_headers_target)
     set(PROTOBUF_STATIC_FINAL_PATH ${ASCEND_PROTOBUF_STATIC_LIB})
 else()
@@ -313,12 +324,15 @@ else()
         INSTALL_COMMAND $(MAKE) install
         EXCLUDE_FROM_ALL TRUE
     )
-    set_target_properties(ascend_protobuf_static_lib PROPERTIES IMPORTED_LOCATION ${PROTOBUF_STATIC_PKG_DIR}/lib/libascend_protobuf.a)
-    target_include_directories(ascend_protobuf_static INTERFACE ${PROTOBUF_STATIC_PKG_DIR}/include)
-    target_link_libraries(ascend_protobuf_static INTERFACE ascend_protobuf_static_lib)
+    set_target_properties(ascend_protobuf_static PROPERTIES
+        IMPORTED_LOCATION ${PROTOBUF_STATIC_PKG_DIR}/lib/libascend_protobuf.a
+        INTERFACE_INCLUDE_DIRECTORIES ${PROTOBUF_STATIC_PKG_DIR}/include
+    )
     add_dependencies(ascend_protobuf_static protobuf_static_build)
     set(PROTOBUF_STATIC_FINAL_PATH ${PROTOBUF_STATIC_PKG_DIR}/lib/libascend_protobuf.a)
 endif()
+
+create_imported_interface_include_directories(ascend_protobuf_static)
 
 # ---------------------------------------------------------
 # Target: protobuf_static (Host Static)
@@ -326,7 +340,7 @@ endif()
 add_library(host_protobuf_static_lib STATIC IMPORTED)
 add_library(protobuf_static INTERFACE)
 
-if(HOST_PROTOBUF_STATIC_LIB AND EXISTS "${PROTOBUF_INCLUDE_DIRS}")
+if(HOST_PROTOBUF_STATIC_LIB AND EXIST_PROTOBUF_HEADER_FILES)
     message("[ThirdParty][protobuf] host static use cache.")
     set_target_properties(host_protobuf_static_lib PROPERTIES IMPORTED_LOCATION ${HOST_PROTOBUF_STATIC_LIB})
     target_include_directories(protobuf_static INTERFACE ${PROTOBUF_INCLUDE_DIRS})

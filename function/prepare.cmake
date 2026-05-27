@@ -674,3 +674,15 @@ function(generate_cann_stub_library name)
 
     __cann_generate_stub_with_output_name(${name} ${CANN_OUTPUT_NAME})
 endfunction()
+
+# 创建导入库头文件搜索目录
+function(create_imported_interface_include_directories)
+    foreach(target IN LISTS ARGN)
+        get_property(DIRS TARGET ${target} PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+        foreach(DIR IN LISTS DIRS)
+            if(NOT EXISTS "${DIR}")
+                file(MAKE_DIRECTORY "${DIR}")
+            endif()
+        endforeach()
+    endforeach()
+endfunction()
