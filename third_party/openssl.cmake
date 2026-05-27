@@ -13,7 +13,7 @@ unset(openssl_FOUND CACHE)
 unset(SSL_FILE CACHE)
 unset(CRYPTO_LIB_PATH CACHE)
 set(OPENSSL_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/openssl${PRODUCT_SIDE})
-set(OPENSSL_SRC_PATH ${CANN_3RD_LIB_PATH}/openssl${PRODUCT_SIDE})
+set(OPENSSL_SRC_PATH ${CANN_3RD_LIB_PATH}/openssl)
 
 find_path(OPENSSL_INCLUDE
     NAMES openssl/ssl.h
@@ -143,7 +143,6 @@ else()
                 CXX=${OPENSSL_CXX}
             BUILD_COMMAND ${OPENSSL_MAKE_CMD}
             INSTALL_COMMAND ${OPENSSL_INSTALL_CMD}
-            BUILD_IN_SOURCE TRUE                          # OpenSSL 不支持分离构建目录
     )
     ExternalProject_Add_Step(openssl_project extra_install
         COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/include/crypto ${OPENSSL_INSTALL_PATH}/include/crypto
