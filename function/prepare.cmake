@@ -421,13 +421,14 @@ endfunction()
 # OUTPUT - 输出文件路径
 # MANIFEST - 可选，manifest文件名
 # OUTPUT_TARGET - 输出目标名
+# SIZE_LIMIT - 可选，大小限制（单位KB），超出则报错
 # TARGETS - 目标列表
 # FILES - 文件列表
 # 说明：如果设置了 CANN_VERSION_CURRENT_PACKAGE，会自动生成 .ini 文件并打包
 function(cann_pack_targets_and_files)
     cmake_parse_arguments(ARG
         ""
-        "OUTPUT;MANIFEST;OUTPUT_TARGET"
+        "OUTPUT;MANIFEST;OUTPUT_TARGET;SIZE_LIMIT"
         "TARGETS;FILES"
         ${ARGN}
     )
@@ -519,6 +520,11 @@ function(cann_pack_targets_and_files)
         set(ini_depends ${CANN_CMAKE_DIR}/scripts/version/generate_package_ini.py)
     endif()
 
+    set(size_check_command "")
+    if(ARG_SIZE_LIMIT)
+        set(size_check_command COMMAND ${CMAKE_COMMAND} -D_OUTPUT_FILE=${ARG_OUTPUT} -D_SIZE_LIMIT_KB=${ARG_SIZE_LIMIT} -P ${CANN_CMAKE_DIR}/function/_check_size_limit.cmake)
+    endif()
+
     add_custom_command(
         OUTPUT "${ARG_OUTPUT}" ${ini_output}
         COMMAND ${CMAKE_COMMAND} -E make_directory "${staging_dir}"
@@ -531,6 +537,7 @@ function(cann_pack_targets_and_files)
             -P "${CANN_CMAKE_DIR}/function/_pack_stage.cmake"
         COMMAND tar "czf" "${ARG_OUTPUT}" .
                 "--mode=750"
+        ${size_check_command}
         WORKING_DIRECTORY ${staging_dir}
         DEPENDS ${ARG_TARGETS} ${staging_dir} ${ini_depends}
         COMMENT "Packing with ${ARG_OUTPUT}"
