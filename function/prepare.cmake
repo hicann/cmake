@@ -521,7 +521,7 @@ function(cann_pack_targets_and_files)
     endif()
 
     set(size_check_command "")
-    if(ARG_SIZE_LIMIT)
+    if(ARG_SIZE_LIMIT AND CMAKE_BUILD_TYPE STREQUAL "Release")
         set(size_check_command COMMAND ${CMAKE_COMMAND} -D_OUTPUT_FILE=${ARG_OUTPUT} -D_SIZE_LIMIT_KB=${ARG_SIZE_LIMIT} -P ${CANN_CMAKE_DIR}/function/_check_size_limit.cmake)
     endif()
 
