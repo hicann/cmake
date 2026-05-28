@@ -49,6 +49,8 @@ usage() {
   echo "                   Set sign-script's path to <PATH>"
   echo "    --enable-sign"
   echo "                   Enable to sign"
+  echo "    --launch-rule"
+  echo "                   Set compiler launcher rule"
   echo ""
 }
 
@@ -73,9 +75,10 @@ checkopts() {
   CANN_BINARY_PACKAGES=""
   CANN_SUPERBUILD_CONFIG=""
   CHECK_CANN_PATH="0"
+  LAUNCH_RULE=""
 
   # Process the options
-  parsed_args=$(getopt -a -o j:hp:v -l help,pkgs:,superbuild-config:,binary-pkgs:,verbose,cov,build_host_only,cann_path:,build-type:,cann_3rd_lib_path:,asan,sign-script:,enable-sign -- "$@") || {
+  parsed_args=$(getopt -a -o j:hp:v -l help,pkgs:,superbuild-config:,binary-pkgs:,verbose,cov,build_host_only,cann_path:,build-type:,cann_3rd_lib_path:,asan,sign-script:,enable-sign,launch-rule: -- "$@") || {
     usage
     exit 1
   }
@@ -138,6 +141,10 @@ checkopts() {
       --enable-sign)
         ENABLE_SIGN="ON"
         shift
+        ;;
+      --launch-rule)
+        LAUNCH_RULE="$2"
+        shift 2
         ;;
       --)
         shift
@@ -217,6 +224,11 @@ build_project() {
     "-DENABLE_BUILD_DEVICE=${ENABLE_BUILD_DEVICE}"
     "-DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT}"
   )
+
+  if [ -n "${LAUNCH_RULE}" ]; then
+    CMAKE_ARGS+=("-DLAUNCH_COMPILE_TOOL=${LAUNCH_RULE}")
+    CMAKE_ARGS+=("-DLAUNCH_LINK_TOOL=${LAUNCH_RULE}")
+  fi
 
   cmake -S ../superbuild -B . "${CMAKE_ARGS[@]}"
   if [ $? -ne 0 ]; then

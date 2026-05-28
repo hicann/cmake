@@ -11,6 +11,12 @@
 # 初始化superbuild工程
 macro(init_cann_superbuild_project)
     cmake_parse_arguments(CANN "" "PRODUCT_SIDE" "" ${ARGN})
+    if(LAUNCH_COMPILE_TOOL)
+        set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${LAUNCH_COMPILE_TOOL}")
+    endif()
+    if(LAUNCH_LINK_TOOL)
+        set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK "${LAUNCH_LINK_TOOL}")
+    endif()  
     if(CANN_PRODUCT_SIDE)
         set(PRODUCT_SIDE "${CANN_PRODUCT_SIDE}")
     endif()
