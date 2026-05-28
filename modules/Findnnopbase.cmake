@@ -64,7 +64,7 @@ if(NNOPBASE_LIB_DIR)
   get_filename_component(NNOPBASE_LIB_DIR ${NNOPBASE_LIB_DIR} REALPATH)
   add_library(nnopbase SHARED IMPORTED)
   set_target_properties(nnopbase PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES ${NNOPBASE_OPDEV_INC_DIR}
+    INTERFACE_INCLUDE_DIRECTORIES "${NNOPBASE_OPDEV_INC_DIR};${NNOPBASE_OPDEV_INC_DIR}/opdev"
     IMPORTED_LOCATION ${NNOPBASE_LIB_DIR}
   )
 else()
@@ -77,6 +77,10 @@ if(nnopbase_FOUND)
   set(NNOPBASE_INCLUDE_DIRS
     ${NNOPBASE_ACLNN_INC_DIR}
     ${NNOPBASE_OPDEV_INC_DIR}
+  )
+  add_library(nnopbase_headers INTERFACE IMPORTED)
+  set_target_properties(nnopbase_headers PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${NNOPBASE_INCLUDE_DIRS}"
   )
   message(STATUS "Found aclnn include dir:  ${NNOPBASE_ACLNN_INC_DIR}")
   message(STATUS "Found opdev include dir:  ${NNOPBASE_OPDEV_INC_DIR}")

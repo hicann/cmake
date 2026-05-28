@@ -97,7 +97,7 @@ if(metadef_FOUND)
     add_library(metadef_headers INTERFACE IMPORTED)
     set_target_properties(metadef_headers PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES
-            "${_CANN_METADEF_INCLUDE_DIR};${_CANN_METADEF_INCLUDE_DIR}/external;${_CANN_METADEF_PKG_INC_DIR};${_CANN_METADEF_PKG_INC_DIR}/base"
+            "${_CANN_METADEF_INCLUDE_DIR};${_CANN_METADEF_INCLUDE_DIR}/exe_graph/runtime;${_CANN_METADEF_INCLUDE_DIR}/external;${_CANN_METADEF_PKG_INC_DIR};${_CANN_METADEF_PKG_INC_DIR}/base"
     )
 
     add_library(exe_graph_headers INTERFACE IMPORTED)
