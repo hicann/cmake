@@ -80,7 +80,7 @@ else()
                             -DABSL_ROOT_DIR=${CANN_3RD_LIB_PATH}/lib_cache/abseil-cpp
                             # protobuf
                             -DgRPC_PROTOBUF_PROVIDER=module
-                            -DPROTOBUF_ROOT_DIR=${CANN_3RD_LIB_PATH}/protobuf_static/build
+                            -DPROTOBUF_ROOT_DIR=${PROTOBUF_HOST_STATIC_PKG_DIR}/build
                             -Dprotobuf_BUILD_PROTOC_BINARIES=OFF
                             # ssl
                             -DgRPC_SSL_PROVIDER=package
@@ -108,7 +108,7 @@ else()
     )
     set(PROTOBUF_GRPC_INCLUDE "${GRPC_INSTALL_PATH}/include")
     set(PROTOBUF_GRPC_LIBRARY "${GRPC_INSTALL_PATH}/lib")
-    add_dependencies(grpc_build openssl_project re2_build zlib_bin_build cares_build abseil_build protobuf_static_build)
+    add_dependencies(grpc_build openssl_project re2_build zlib_bin_build cares_build abseil_build protobuf_host_static_build)
 endif()
 
 set(PROTOBUF_GRPC_INCLUDE_DIR ${PROTOBUF_GRPC_INCLUDE})
@@ -176,7 +176,7 @@ else()
                             -DABSL_ROOT_DIR=${CANN_3RD_LIB_PATH}/lib_cache/abseil-cpp
                             # protobuf
                             -DgRPC_PROTOBUF_PROVIDER=module
-                            -DPROTOBUF_ROOT_DIR=${CANN_3RD_LIB_PATH}/protobuf_static/build
+                            -DPROTOBUF_ROOT_DIR=${PROTOBUF_HOST_STATIC_PKG_DIR}/build
                             # ssl
                             -DgRPC_SSL_PROVIDER=none
                             # grpc option
@@ -196,7 +196,7 @@ else()
                         EXCLUDE_FROM_ALL TRUE
     )
 
-    add_dependencies(protoc_grpc_build re2_build cares_build abseil_build protobuf_static_build)
+    add_dependencies(protoc_grpc_build re2_build cares_build abseil_build protobuf_host_static_build)
 endif()
 
 message(STATUS "[ThirdPartyLib][protoc grpc] grpc_cpp_plugin:${PROTOC_GRPC_INSTALL_PATH}.")
