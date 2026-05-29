@@ -66,6 +66,7 @@ macro(init_cann_project)
         include(CMakePrintHelpers)
 
         set(CANN_BINARY_COMPONENTS)
+        set(CANN_BINARY_COMPONENTS_ALL FALSE)
 
         set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
         set(CMAKE_CXX_STANDARD 17)
@@ -124,7 +125,7 @@ endmacro()
 
 # 包装 find_package，在联编/统一构建模式下跳过
 macro(find_cann_package)
-    if(TOPLEVEL_PROJECT OR "${ARGV0}" IN_LIST CANN_BINARY_COMPONENTS)
+    if(TOPLEVEL_PROJECT OR "${ARGV0}" IN_LIST CANN_BINARY_COMPONENTS OR CANN_BINARY_COMPONENTS_ALL)
         find_package(${ARGN})
     endif()
 endmacro()
