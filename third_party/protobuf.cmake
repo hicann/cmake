@@ -285,6 +285,8 @@ if(ASCEND_PROTOBUF_STATIC_LIB AND EXIST_PROTOBUF_HEADER_FILES)
     set_target_properties(ascend_protobuf_static PROPERTIES
         IMPORTED_LOCATION ${ASCEND_PROTOBUF_STATIC_LIB}
         INTERFACE_INCLUDE_DIRECTORIES ${PROTOBUF_INCLUDE_DIRS}
+        # 静态库支持链接动态库
+        POSITION_INDEPENDENT_CODE ON
     )
     set(PROTOBUF_STATIC_FINAL_PATH ${ASCEND_PROTOBUF_STATIC_LIB})
 elseif(TARGET protobuf_headers_target AND ASCEND_PROTOBUF_STATIC_LIB)
@@ -292,6 +294,8 @@ elseif(TARGET protobuf_headers_target AND ASCEND_PROTOBUF_STATIC_LIB)
     set_target_properties(ascend_protobuf_static PROPERTIES
         IMPORTED_LOCATION ${ASCEND_PROTOBUF_STATIC_LIB}
         INTERFACE_INCLUDE_DIRECTORIES ${PROTOBUF_INCLUDE_DIRS}
+        # 静态库支持链接动态库
+        POSITION_INDEPENDENT_CODE ON
     )
     add_dependencies(ascend_protobuf_static protobuf_headers_target)
     set(PROTOBUF_STATIC_FINAL_PATH ${ASCEND_PROTOBUF_STATIC_LIB})
@@ -327,6 +331,8 @@ else()
     set_target_properties(ascend_protobuf_static PROPERTIES
         IMPORTED_LOCATION ${PROTOBUF_STATIC_PKG_DIR}/lib/libascend_protobuf.a
         INTERFACE_INCLUDE_DIRECTORIES ${PROTOBUF_STATIC_PKG_DIR}/include
+        # 静态库支持链接动态库
+        POSITION_INDEPENDENT_CODE ON
     )
     add_dependencies(ascend_protobuf_static protobuf_static_build)
     set(PROTOBUF_STATIC_FINAL_PATH ${PROTOBUF_STATIC_PKG_DIR}/lib/libascend_protobuf.a)
