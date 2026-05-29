@@ -387,11 +387,3 @@ else()
     add_dependencies(protobuf_static protobuf_host_static_build)
     set(PROTOBUF_HOST_STATIC_FINAL_PATH ${PROTOBUF_HOST_STATIC_PKG_DIR}/lib/libhost_ascend_protobuf.a)
 endif()
-
-if(PRODUCT_SIDE STREQUAL "device")
-get_filename_component(PROTOBUF_ABS_PATH "${PROTOBUF_STATIC_FINAL_PATH}" REALPATH)
-install(FILES
-    ${PROTOBUF_ABS_PATH}
-    DESTINATION ${DEVICE_LIBRARY_PATH} COMPONENT npu-runtime
-)
-endif()
