@@ -24,6 +24,7 @@ usage() {
   echo "              [--cann_3rd_lib_path=<PATH>]"
   echo "              [--asan] [--build_host_only] [--cov]"
   echo "              [--sign-script <PATH>] [--enable-sign]"
+  echo "              [--rule-launch | --rule_launch]"
   echo ""
   echo "Options:"
   echo "    -h, --help     Print usage"
@@ -49,7 +50,7 @@ usage() {
   echo "                   Set sign-script's path to <PATH>"
   echo "    --enable-sign"
   echo "                   Enable to sign"
-  echo "    --launch-rule"
+  echo "    --rule-launch/--rule_launch"
   echo "                   Set compiler launcher rule"
   echo ""
 }
@@ -78,7 +79,7 @@ checkopts() {
   LAUNCH_RULE=""
 
   # Process the options
-  parsed_args=$(getopt -a -o j:hp:v -l help,pkgs:,superbuild-config:,binary-pkgs:,verbose,cov,build_host_only,cann_path:,build-type:,cann_3rd_lib_path:,asan,sign-script:,enable-sign,launch-rule: -- "$@") || {
+  parsed_args=$(getopt -a -o j:hp:v -l help,pkgs:,superbuild-config:,binary-pkgs:,verbose,cov,build_host_only,cann_path:,build-type:,cann_3rd_lib_path:,asan,sign-script:,enable-sign,rule-launch:,rule_launch: -- "$@") || {
     usage
     exit 1
   }
@@ -142,10 +143,10 @@ checkopts() {
         ENABLE_SIGN="ON"
         shift
         ;;
-      --launch-rule)
+      --rule-launch | --rule_launch)
         LAUNCH_RULE="$2"
         shift 2
-        ;;
+        ;;  
       --)
         shift
         break
