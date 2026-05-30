@@ -108,36 +108,25 @@ else()
     )
     set(PROTOBUF_GRPC_INCLUDE "${GRPC_INSTALL_PATH}/include")
     set(PROTOBUF_GRPC_LIBRARY "${GRPC_INSTALL_PATH}/lib")
-    add_dependencies(grpc_build openssl_project re2_build zlib_bin_build cares_build abseil_build protobuf_host_static_build)
-endif()
-
-set(PROTOBUF_GRPC_INCLUDE_DIR ${PROTOBUF_GRPC_INCLUDE})
-message(STATUS "[ThirdPartyLib][grpc] PROTOBUF_GRPC_INCLUDE:${PROTOBUF_GRPC_INCLUDE}, PROTOBUF_GRPC_LIBRARY:${PROTOBUF_GRPC_LIBRARY}.")
-if(NOT TARGET protobuf::libprotobuf)
-    add_library(protobuf::libprotobuf STATIC IMPORTED)
-    set_target_properties(protobuf::libprotobuf PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${PROTOBUF_GRPC_INCLUDE}"
-        IMPORTED_LOCATION             "${PROTOBUF_GRPC_LIBRARY}"
-    )
-else()
-    message(STATUS "[ThirdPartyLib][grpc] protobuf::libprotobuf already exist.")
+    include(${CMAKE_CURRENT_LIST_DIR}/openssl.cmake)
+    include(${CMAKE_CURRENT_LIST_DIR}/re2.cmake)
+    include(${CMAKE_CURRENT_LIST_DIR}/zlib.cmake)
+    include(${CMAKE_CURRENT_LIST_DIR}/cares.cmake)
+    include(${CMAKE_CURRENT_LIST_DIR}/abseil-cpp.cmake)
+    include(${CMAKE_CURRENT_LIST_DIR}/protobuf.cmake)
+    add_dependencies(grpc_build openssl_project re2_build zlib_static cares_build abseil_build protobuf_host_static_build)
 endif()
 
 # protoc_grpc config
 set(PROTOC_GRPC_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/protoc_grpc)
+set(GRPC_CPP_PLUGIN_PROGRAM ${PROTOC_GRPC_INSTALL_PATH}/grpc_cpp_plugin)
 
-find_program(GRPC_CPP_PLUGIN_PROGRAM
-    NAMES grpc_cpp_plugin
-    PATHS ${PROTOC_GRPC_INSTALL_PATH}
-    NO_DEFAULT_PATH)
+add_executable(grpc_cpp_plugin IMPORTED)
+set_target_properties(grpc_cpp_plugin PROPERTIES
+    IMPORTED_LOCATION "${GRPC_CPP_PLUGIN_PROGRAM}"
+)
 
-if(GRPC_CPP_PLUGIN_PROGRAM)
-    set(protoc_grpc_FOUND TRUE)
-else()
-    set(protoc_grpc_FOUND FALSE)
-endif()
-
-if(protoc_grpc_FOUND)
+if(EXISTS ${GRPC_CPP_PLUGIN_PROGRAM})
     message(STATUS "[ThirdPartyLib][protoc grpc] protoc_grpc found, skip compiling.")
 else()
     message(STATUS "[ThirdPartyLib][protoc grpc] protoc_grpc not found, finding binary file.")
@@ -195,16 +184,10 @@ else()
                         INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${PROTOC_GRPC_INSTALL_PATH} && ${CMAKE_COMMAND} -E copy <BINARY_DIR>/grpc_cpp_plugin ${PROTOC_GRPC_INSTALL_PATH}
                         EXCLUDE_FROM_ALL TRUE
     )
-
+    include(${CMAKE_CURRENT_LIST_DIR}/re2.cmake)
+    include(${CMAKE_CURRENT_LIST_DIR}/cares.cmake)
+    include(${CMAKE_CURRENT_LIST_DIR}/abseil-cpp.cmake)
+    include(${CMAKE_CURRENT_LIST_DIR}/protobuf.cmake)
     add_dependencies(protoc_grpc_build re2_build cares_build abseil_build protobuf_host_static_build)
-endif()
-
-message(STATUS "[ThirdPartyLib][protoc grpc] grpc_cpp_plugin:${PROTOC_GRPC_INSTALL_PATH}.")
-if(NOT TARGET grpc_cpp_plugin)
-    add_executable(grpc_cpp_plugin IMPORTED)
-    set_target_properties(grpc_cpp_plugin PROPERTIES
-        IMPORTED_LOCATION "${PROTOC_GRPC_INSTALL_PATH}"
-    )
-else()
-    message(STATUS "[ThirdPartyLib][protoc grpc] grpc_cpp_plugin already exist.")
+    add_dependencies(grpc_cpp_plugin protoc_grpc_build)
 endif()

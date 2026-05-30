@@ -9,38 +9,35 @@
 # -----------------------------------------------------------------------------------------------------------
 include_guard(GLOBAL)
 include(ExternalProject)
-include(FindPackageHandleStandardArgs)
 
 set(ZLIB_INSTALL_DIR ${CANN_3RD_LIB_PATH}/lib_cache/zlib)
-find_path(ZLIB_INCLUDE
-    NAMES zlib.h
-    PATHS ${ZLIB_INSTALL_DIR}
-    NO_DEFAULT_PATH)
-find_library(ZLIB_LIBRARY
-    NAMES libz.a
-    PATH_SUFFIXES lib lib64
-    PATHS ${ZLIB_INSTALL_DIR}
-    NO_DEFAULT_PATH)
-find_path(MINIZIP_INCLUDE
-    NAMES minizip/zip.h minizip/unzip.h minizip/ioapi.h
-    PATH_SUFFIXES include
-    PATHS ${ZLIB_INSTALL_DIR}
-    NO_DEFAULT_PATH)
-find_library(MINIZIP_LIBRARY
-    NAMES libminizip.a
-    PATH_SUFFIXES lib lib64
-    PATHS ${ZLIB_INSTALL_DIR}
-    NO_DEFAULT_PATH)
 
-if(ZLIB_INCLUDE AND ZLIB_LIBRARY AND MINIZIP_INCLUDE AND MINIZIP_LIBRARY)
-    set(zlib_FOUND TRUE)
-else()
-    set(zlib_FOUND FALSE)
+set(ZLIB_LIBRARY ${ZLIB_INSTALL_DIR}/lib/libz.a)
+set(ZLIB_INCLUDE_DIR ${ZLIB_INSTALL_DIR}/include)
+if(NOT EXISTS ${ZLIB_INCLUDE_DIR})
+    file(MAKE_DIRECTORY "${ZLIB_INCLUDE_DIR}")
 endif()
+add_library(zlib_static STATIC IMPORTED)
+set_target_properties(zlib_static PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${ZLIB_INCLUDE_DIR}"
+    IMPORTED_LOCATION             "${ZLIB_LIBRARY}"
+)
 
-if(zlib_FOUND)
-    message(STATUS "[ThirdParty][zlib] zlib inc found in ${ZLIB_INCLUDE}, zlib lib found in ${ZLIB_LIBRARY}.")
-    add_custom_target(zlib_bin_build)
+set(MINIZIP_LIBRARY ${ZLIB_INSTALL_DIR}/lib/libminizip.a)
+set(MINIZIP_INCLUDE_DIR ${ZLIB_INSTALL_DIR}/include)
+if(NOT EXISTS ${ZLIB_INCLUDE_DIR})
+    file(MAKE_DIRECTORY "${ZLIB_INCLUDE_DIR}")
+endif()
+add_library(minizip_static STATIC IMPORTED)
+set_target_properties(minizip_static PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${MINIZIP_INCLUDE_DIR}"
+    IMPORTED_LOCATION             "${MINIZIP_LIBRARY}"
+    # 自动添加libminizip.a对libz.a的依赖
+    INTERFACE_LINK_LIBRARIES ${ZLIB_LIBRARY}
+)
+
+if(EXISTS ${ZLIB_LIBRARY} AND EXISTS ${MINIZIP_LIBRARY})
+    message(STATUS "zlib lib found in ${ZLIB_LIBRARY}.")
 else()
     set(REQ_URL "${CANN_3RD_LIB_PATH}/zlib/zlib-1.2.13.tar.xz")
     set(REQ_URL_BACK "${CANN_3RD_LIB_PATH}/zlib/zlib-1.2.13.tar.gz")
@@ -73,32 +70,6 @@ else()
                         COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/zlib_bin_build-prefix/src/zlib_bin_build ${ZLIB_INSTALL_DIR}
                         EXCLUDE_FROM_ALL TRUE
     )
-    message(STATUS "[ThirdParty][zlib] zlib and minizip will be installed to: ${ZLIB_INSTALL_DIR}")
-    set(ZLIB_INCLUDE ${ZLIB_INSTALL_DIR}/include)
-    set(MINIZIP_INCLUDE ${ZLIB_INSTALL_DIR}/include)
-    set(ZLIB_LIBRARY ${ZLIB_INSTALL_DIR}/lib/libz.a)
-    set(MINIZIP_LIBRARY ${ZLIB_INSTALL_DIR}/lib/libminizip.a)
-endif()
-
-set(ZLIB_INCLUDE_DIR ${ZLIB_INCLUDE})
-if(NOT TARGET zlib_static)
-    add_library(zlib_static STATIC IMPORTED)
-    set_target_properties(zlib_static PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${ZLIB_INCLUDE}"
-        IMPORTED_LOCATION             "${ZLIB_LIBRARY}"
-    )
-else()
-    message(STATUS "[ThirdParty][zlib] zlib_static already exist.")
-endif()
-
-if(NOT TARGET minizip_static)
-    add_library(minizip_static STATIC IMPORTED)
-    set_target_properties(minizip_static PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${MINIZIP_INCLUDE}"
-        IMPORTED_LOCATION             "${MINIZIP_LIBRARY}"
-        # 自动添加libminizip.a对libz.a的依赖
-        INTERFACE_LINK_LIBRARIES ${ZLIB_LIBRARY}
-    )
-else()
-    message(STATUS "[ThirdParty][zlib] minizip_static already exist.")
+    add_dependencies(zlib_static zlib_bin_build)
+    add_dependencies(minizip_static zlib_bin_build)
 endif()

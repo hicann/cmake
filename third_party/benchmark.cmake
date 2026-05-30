@@ -11,19 +11,20 @@ include_guard(GLOBAL)
 
 set(BENCHMARK_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/benchmark)
 set(BENCHMARK_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/benchmark)
-if (TARGET benchmark_build)
-    return()
+set(BENCHMARK_SHARED_LLIBRARY_DIR ${BENCHMARK_INSTALL_PATH}/lib/libbenchmark.so)
+set(BENCHMARK_INCLUDE_DIR ${BENCHMARK_INSTALL_PATH}/incldue)
+if(NOT EXISTS ${BENCHMARK_INCLUDE_DIR})
+    file(MAKE_DIRECTORY "${BENCHMARK_INCLUDE_DIR}")
 endif()
 
-find_package(benchmark CONFIG
-    PATHS ${BENCHMARK_INSTALL_PATH}
-    NO_DEFAULT_PATH
-    NO_CMAKE_SYSTEM_PATH
-    NO_CMAKE_FIND_ROOT_PATH
+add_library(benchmark::benchmark SHARED IMPORTED)
+set_target_properties(benchmark::benchmark PROPERTIES
+    IMPORTED_LOCATION "${BENCHMARK_SHARED_LLIBRARY_DIR}"
+    INTERFACE_INCLUDE_DIRECTORIES "${BENCHMARK_INCLUDE_DIR}"
 )
 
-if(benchmark_FOUND)
-    message(STATUS "[ThirdPartyLib][benchmark] benchmark found in: ${BENCHMARK_INSTALL_PATH}")
+if(EXISTS ${BENCHMARK_SHARED_LLIBRARY_DIR})
+    message(STATUS "[ThirdPartyLib][benchmark] benchmark found in: ${BENCHMARK_SHARED_LLIBRARY_DIR}")
     return()
 endif()
 
@@ -63,3 +64,4 @@ ExternalProject_Add(benchmark_build
     INSTALL_COMMAND $(MAKE) install
     EXCLUDE_FROM_ALL TRUE
 )
+add_dependencies(benchmark::benchmark benchmark_build)
