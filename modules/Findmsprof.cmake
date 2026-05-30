@@ -110,8 +110,15 @@ if(msprof_FOUND)
         IMPORTED_LOCATION "${_CANN_PROFIMPL_SHARED_LIBRARY}"
     )
 
+    set(_CANN_INCLUDE_DIRECTORIES
+        ${_CANN_MSPROF_INCLUDE_DIR}
+        ${_CANN_MSPROF_INCLUDE_DIR}/profiling
+        ${_CANN_MSPROF_INCLUDE_DIR}/toolchain
+    )
+
     add_library(msprof_headers INTERFACE IMPORTED)
     set_target_properties(msprof_headers PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${_CANN_MSPROF_INCLUDE_DIR};${_CANN_MSPROF_INCLUDE_DIR}/profiling;${_CANN_MSPROF_INCLUDE_DIR}/toolchain"
+        INTERFACE_INCLUDE_DIRECTORIES "${_CANN_INCLUDE_DIRECTORIES}"
     )
+    unset(_CANN_INCLUDE_DIRECTORIES)
 endif()

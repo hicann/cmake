@@ -73,7 +73,7 @@ if(hccl_FOUND)
     add_library(hccl SHARED IMPORTED)
     set_target_properties(hccl PROPERTIES
         INTERFACE_LINK_LIBRARIES "hccl_headers"
-        IMPORTED_LINK_DEPENDENT_LIBRARIES "c_sec;slog;mmpa;runtime;qos_manager;tsdclient;error_manager;exe_graph;lowering;hccl_alg;hccl_plf"
+        IMPORTED_LINK_DEPENDENT_LIBRARIES "c_sec;slog;mmpa;runtime;error_manager"
         IMPORTED_LOCATION "${_CANN_hccl_SHARED_LIBRARY}"
     )
 

@@ -90,9 +90,24 @@ if(runtime_FOUND)
         IMPORTED_LOCATION "${runtime_SHARED_LIBRARY}"
     )
 
+    set(_CANN_INCLUDE_DIRECTORIES
+        ${runtime_INCLUDE_DIR}
+        ${runtime_INCLUDE_DIR}/pkg_inc
+        ${runtime_INCLUDE_DIR}/pkg_inc/aicpu/common
+        ${runtime_INCLUDE_DIR}/pkg_inc/runtime
+        ${runtime_INCLUDE_DIR}/pkg_inc/runtime/runtime
+        ${runtime_INCLUDE_DIR}/pkg_inc/runtime/runtime/rts
+        ${runtime_INCLUDE_DIR}/pkg_inc/profiling
+        ${_CANN_AICPU_INCLUDE_DIR}
+        ${_CANN_AICPU_INCLUDE_DIR}/aicpu_schedule
+        ${runtime_acl_INCLUDE_DIR}
+        ${runtime_acl_INCLUDE_DIR}/acl
+        ${runtime_acl_INCLUDE_DIR}/acl/error_codes
+    )
+
     add_library(runtime_headers INTERFACE IMPORTED)
     set_target_properties(runtime_headers PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${runtime_INCLUDE_DIR};${runtime_INCLUDE_DIR}/pkg_inc;${runtime_INCLUDE_DIR}/pkg_inc/aicpu/common;${runtime_INCLUDE_DIR}/pkg_inc/runtime;${runtime_INCLUDE_DIR}/pkg_inc/runtime/runtime;${runtime_INCLUDE_DIR}/pkg_inc/profiling;${_CANN_AICPU_INCLUDE_DIR};${_CANN_AICPU_INCLUDE_DIR}/aicpu_schedule;${runtime_acl_INCLUDE_DIR};${runtime_acl_INCLUDE_DIR}/acl;${runtime_acl_INCLUDE_DIR}/acl/error_codes"
+        INTERFACE_INCLUDE_DIRECTORIES "${_CANN_INCLUDE_DIRECTORIES}"
     )
 
     include(CMakePrintHelpers)
@@ -102,4 +117,7 @@ if(runtime_FOUND)
     cmake_print_properties(TARGETS runtime_headers
         PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
     )
+
+    # Cleanup temporary variables.
+    set(_CANN_INCLUDE_DIRECTORIES)
 endif()
