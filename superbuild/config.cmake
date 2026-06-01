@@ -8,6 +8,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
+set(CANN_PACKAGE_DIR_npu-runtime "runtime")
 set(CANN_PACKAGE_DIR_asc-devkit "asc/asc-devkit")
 set(CANN_PACKAGE_DIR_asc-tools "asc/asc-tools")
 set(CANN_PACKAGE_DIR_ge-executor "ge")

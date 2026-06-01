@@ -15,6 +15,8 @@ include(../function/function.cmake)
 init_cann_superbuild_project(PRODUCT_SIDE "host")
 set(BUILD_OPEN_PROJECT TRUE)
 set(PACKAGE_OPEN_PROJECT TRUE)
+# opbase编译依赖BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG设置为TRUE
+set(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG TRUE)
 
 get_pkg_dependencies("${CANN_PACKAGES}")
 calc_device_packages()

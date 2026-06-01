@@ -125,6 +125,11 @@ endmacro()
 
 # 添加device侧工程
 function(add_cann_device_project component)
+    # 多仓联编时跳过device工程
+    if(ENABLE_UNIFIED_BUILD)
+        return()
+    endif()
+
     set(EP_CMAKE_ARGS)
     if(ASCEND_CANN_PACKAGE_PATH)
         list(APPEND EP_CMAKE_ARGS "-D" "ASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}")
