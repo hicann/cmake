@@ -94,6 +94,7 @@ if(runtime_FOUND)
         ${runtime_INCLUDE_DIR}
         ${runtime_INCLUDE_DIR}/pkg_inc
         ${runtime_INCLUDE_DIR}/pkg_inc/aicpu/common
+        ${runtime_INCLUDE_DIR}/pkg_inc/dump
         ${runtime_INCLUDE_DIR}/pkg_inc/runtime
         ${runtime_INCLUDE_DIR}/pkg_inc/runtime/runtime
         ${runtime_INCLUDE_DIR}/pkg_inc/runtime/runtime/rts

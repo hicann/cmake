@@ -94,10 +94,22 @@ find_package_handle_standard_args(metadef
 )
 
 if(metadef_FOUND)
+    set(_metadef_headers_include_dirs
+        ${_CANN_METADEF_INCLUDE_DIR}
+        ${_CANN_METADEF_INCLUDE_DIR}/exe_graph/runtime
+        ${_CANN_METADEF_INCLUDE_DIR}/external
+        ${_CANN_METADEF_INCLUDE_DIR}/external/ge_common
+        ${_CANN_METADEF_INCLUDE_DIR}/register
+        ${_CANN_METADEF_PKG_INC_DIR}
+        ${_CANN_METADEF_PKG_INC_DIR}/base
+        ${_CANN_METADEF_PKG_INC_DIR}/common
+        ${_CANN_METADEF_PKG_INC_DIR}/common/ge_common
+        ${_CANN_METADEF_PKG_INC_DIR}/common/ge_common/debug
+    )
+
     add_library(metadef_headers INTERFACE IMPORTED)
     set_target_properties(metadef_headers PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES
-            "${_CANN_METADEF_INCLUDE_DIR};${_CANN_METADEF_INCLUDE_DIR}/exe_graph/runtime;${_CANN_METADEF_INCLUDE_DIR}/external;${_CANN_METADEF_PKG_INC_DIR};${_CANN_METADEF_PKG_INC_DIR}/base"
+        INTERFACE_INCLUDE_DIRECTORIES "${_metadef_headers_include_dirs}"
     )
 
     add_library(exe_graph_headers INTERFACE IMPORTED)

@@ -33,10 +33,13 @@ if(aihac_codegen_FOUND)
         ${_CANN_AIHAC_CODEGEN_AUTOFUSE_INCLUDE_DIR}/ascir
         ${_CANN_AIHAC_CODEGEN_AUTOFUSE_INCLUDE_DIR}/ascir/ascendc_ir/ascendc_ir_core
         ${_CANN_AIHAC_CODEGEN_AUTOFUSE_INCLUDE_DIR}/ascir/meta
+        ${_CANN_AIHAC_CODEGEN_AUTOFUSE_INCLUDE_DIR}/ascir/utils
         ${_CANN_AIHAC_CODEGEN_AUTOFUSE_INCLUDE_DIR}/common
         ${_CANN_AIHAC_CODEGEN_AUTOFUSE_INCLUDE_DIR}/graph_metadef
         ${_CANN_AIHAC_CODEGEN_AUTOFUSE_INCLUDE_DIR}/graph_metadef/graph
+        ${_CANN_AIHAC_CODEGEN_AUTOFUSE_INCLUDE_DIR}/graph_metadef/graph/ascendc_ir
         ${_CANN_AIHAC_CODEGEN_AUTOFUSE_INCLUDE_DIR}/graph_metadef/graph/ascendc_ir/ascendc_ir_core
+        ${_CANN_AIHAC_CODEGEN_AUTOFUSE_INCLUDE_DIR}/utils
     )
 
     add_library(aihac_codegen_headers INTERFACE IMPORTED)
