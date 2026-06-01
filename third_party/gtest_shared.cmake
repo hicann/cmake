@@ -104,16 +104,16 @@ else()
         )
 endif()
 
-add_library(GTestShared::gtest SHARED IMPORTED GLOBAL)
+add_library(GTestShared::gtest SHARED IMPORTED)
 add_dependencies(GTestShared::gtest gtest_shared_build)
 
-add_library(GTestShared::gmock SHARED IMPORTED GLOBAL)
+add_library(GTestShared::gmock SHARED IMPORTED)
 add_dependencies(GTestShared::gmock gtest_shared_build)
 
-add_library(GTestShared::gtest_main SHARED IMPORTED GLOBAL)
+add_library(GTestShared::gtest_main SHARED IMPORTED)
 add_dependencies(GTestShared::gtest_main gtest_shared_build)
 
-add_library(GTestShared::gmock_main SHARED IMPORTED GLOBAL)
+add_library(GTestShared::gmock_main SHARED IMPORTED)
 add_dependencies(GTestShared::gmock_main gtest_shared_build)
 
 message(STATUS "[ThirdParty][gtest_shared] GTEST_INSTALL_PATH = ${GTEST_INSTALL_PATH}")

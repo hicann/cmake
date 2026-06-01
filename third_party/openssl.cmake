@@ -147,7 +147,7 @@ else()
     ExternalProject_Add_Step(openssl_project extra_install
         COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/include/crypto ${OPENSSL_INSTALL_PATH}/include/crypto
         COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/include/internal ${OPENSSL_INSTALL_PATH}/include/internal
-        COMMAND ${CMAKE_COMMAND} -E create_symlink lib64 ${OPENSSL_INSTALL_PATH}/lib
+        COMMAND ${CMAKE_COMMAND} -E chdir ${OPENSSL_INSTALL_PATH} ${CMAKE_COMMAND} -E create_symlink lib64 ${CMAKE_INSTALL_LIBDIR}
         DEPENDEES install
     )
 
@@ -167,9 +167,6 @@ message(STATUS "[ThirdPartyLib][openssl] libcrypto: ${CRYPTO_LIB_PATH} libssl: $
 if(NOT TARGET crypto_static)
     add_library(crypto_static STATIC IMPORTED GLOBAL)
     add_dependencies(crypto_static openssl_project)
-    if(NOT EXISTS ${OPENSSL_INCLUDE})
-        file(MAKE_DIRECTORY "${OPENSSL_INCLUDE}")
-    endif()
     set_target_properties(crypto_static PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INCLUDE}"
         IMPORTED_LOCATION             "${CRYPTO_LIB_PATH}"
@@ -182,9 +179,6 @@ endif()
 if(NOT TARGET ssl_static)
     add_library(ssl_static STATIC IMPORTED GLOBAL)
     add_dependencies(ssl_static openssl_project)
-    if(NOT EXISTS ${OPENSSL_INCLUDE})
-        file(MAKE_DIRECTORY "${OPENSSL_INCLUDE}")
-    endif()
     set_target_properties(ssl_static PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INCLUDE}"
         IMPORTED_LOCATION             "${SSL_LIB_PATH}"
