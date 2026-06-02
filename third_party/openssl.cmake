@@ -10,10 +10,14 @@
 include_guard(GLOBAL)
 
 unset(openssl_FOUND CACHE)
-unset(SSL_FILE CACHE)
-unset(CRYPTO_LIB_PATH CACHE)
-set(OPENSSL_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/openssl${PRODUCT_SIDE})
-set(OPENSSL_SRC_PATH ${CANN_3RD_LIB_PATH}/openssl)
+
+if(PRODUCT_SIDE STREQUAL "device")
+    set(OPENSSL_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/device/openssl)
+    set(OPENSSL_PKG_PATH ${CANN_3RD_LIB_PATH}/device/pkg)
+else()
+    set(OPENSSL_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/openssl)
+    set(OPENSSL_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg)
+endif()
 
 find_path(OPENSSL_INCLUDE
     NAMES openssl/ssl.h
@@ -49,16 +53,9 @@ find_package_handle_standard_args(openssl
 
 if (openssl_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     message(STATUS "[ThirdPartyLib][openssl] use local libcrypto: ${CRYPTO_LIB_PATH}")
-    # use for runtime
-    if (EXISTS "${OPENSSL_INSTALL_PATH}/include/openssl/sha.h")
-        message(STATUS "[ThirdPartyLib][openssl] local sha.h: ${OPENSSL_INSTALL_PATH}/include/openssl/sha.h")
-        set(CRYPTO_INCLUDE_DIR "${OPENSSL_INSTALL_PATH}/include")
-    else()
-        set(CRYPTO_INCLUDE_DIR)
-    endif()
-    add_custom_target(openssl_project)
     # the key use for hcomm services online
     set(OPENSSL_INCLUDE_DIR ${OPENSSL_INSTALL_PATH}/include)
+    add_custom_target(openssl_project)
 else()
     # ========== 基本路径配置 ==========
     if (EXISTS ${CANN_3RD_LIB_PATH}/openssl-openssl-3.0.9.tar.gz)
@@ -67,7 +64,7 @@ else()
         set(REQ_URL ${CANN_3RD_LIB_PATH}/openssl-openssl-3.0.9.tar.gz)
     elseif(EXISTS ${CANN_3RD_LIB_PATH}/openssl/Configure)
         message(STATUS "[ThirdParty][openssl] Found local source code in ${CANN_3RD_LIB_PATH}/openssl")
-        set(REQ_URL "")
+        set(REQ_URL "${CANN_3RD_LIB_PATH}/openssl")
     else()
         message(STATUS "[ThirdParty][openssl] Downloading openssl.")
         set(REQ_URL https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/openssl/openssl-openssl-3.0.9.tar.gz)
@@ -87,12 +84,6 @@ else()
     # ========== 编译选项 ==========
     set(OPENSSL_OPTION "-fstack-protector-all -D_FORTIFY_SOURCE=2 -fvisibility=hidden -O2 -Wl,-z,relro,-z,now,-z,noexecstack -Wl,--build-id=none -s")
 
-    if("${DEVICE_TOOLCHAIN}" STREQUAL "arm-tiny-hcc-toolchain.cmake")
-        set(OPENSSL_OPTION "-mcpu=cortex-a55 -mfloat-abi=hard ${OPENSSL_OPTION}")
-    elseif("${DEVICE_TOOLCHAIN}" STREQUAL "arm-nano-hcc-toolchain.cmake")
-        set(OPENSSL_OPTION "-mcpu=cortex-a9 -mfloat-abi=soft ${OPENSSL_OPTION}")
-    endif()
-
     find_program(CCACHE_PROGRAM ccache)
     if(CCACHE_PROGRAM)
         set(OPENSSL_CC "${CCACHE_PROGRAM} ${CMAKE_C_COMPILER}")
@@ -110,22 +101,13 @@ else()
         no-afalgeng no-asm no-shared threads enable-ssl3-method no-tests
         ${OPENSSL_OPTION}
         --prefix=${OPENSSL_INSTALL_PATH}
-        --libdir=lib64
+        --libdir=lib
     )
-    if(DEVICE_MODE)
-        message(STATUS "[ThirdParty][openssl] set configure command in mode: ${DEVICE_MODE}.")
-        set(OPENSSL_CONFIGURE_COMMAND
-            unset CROSS_COMPILE &&
-            ${OPENSSL_CONFIGURE_PUB_COMMAND}
-        )
-    else()
-        message(STATUS "[ThirdParty][openssl] set configure command in default.")
-        set(OPENSSL_CONFIGURE_COMMAND
-            unset CROSS_COMPILE &&
-            export NO_OSSL_RENAME_VERSION=1 &&
-            ${OPENSSL_CONFIGURE_PUB_COMMAND}
-        )
-    endif()
+
+    set(OPENSSL_CONFIGURE_COMMAND
+        unset CROSS_COMPILE && export NO_OSSL_RENAME_VERSION=1 &&
+        ${OPENSSL_CONFIGURE_PUB_COMMAND}
+    )
 
     # ========== 构建命令 ==========
     set(OPENSSL_MAKE_CMD $(MAKE))
@@ -135,8 +117,7 @@ else()
     ExternalProject_Add(openssl_project
             URL ${REQ_URL}                        # 从本地 tar.gz 获取源
             URL_HASH SHA256=2eec31f2ac0e126ff68d8107891ef534159c4fcfb095365d4cd4dc57d82616ee  # 校验哈希压缩包正确性
-            DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/pkg
-            SOURCE_DIR ${OPENSSL_SRC_PATH}                 # 解压后的源码目录
+            DOWNLOAD_DIR ${OPENSSL_PKG_PATH}
             CONFIGURE_COMMAND
                 ${OPENSSL_CONFIGURE_COMMAND}
                 CC=${OPENSSL_CC}
@@ -147,29 +128,25 @@ else()
     ExternalProject_Add_Step(openssl_project extra_install
         COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/include/crypto ${OPENSSL_INSTALL_PATH}/include/crypto
         COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/include/internal ${OPENSSL_INSTALL_PATH}/include/internal
-        COMMAND ${CMAKE_COMMAND} -E create_symlink lib64 ${OPENSSL_INSTALL_PATH}/lib
         DEPENDEES install
     )
 
+    set(OPENSSL_INCLUDE ${OPENSSL_INSTALL_PATH}/include)
     # the key use for hcomm services
-    set(OPENSSL_INCLUDE_DIR
-        ${OPENSSL_INSTALL_PATH}/include
-        ${OPENSSL_SRC_PATH}/include
-    )
+    set(OPENSSL_INCLUDE_DIR ${OPENSSL_INCLUDE})
 
     set(CRYPTO_LIB_PATH "${OPENSSL_INSTALL_PATH}/lib/libcrypto.a")
     set(SSL_LIB_PATH "${OPENSSL_INSTALL_PATH}/lib/libssl.a")
-    set(OPENSSL_INCLUDE "${OPENSSL_INSTALL_PATH}/include")
-    set(CRYPTO_INCLUDE_DIR "${OPENSSL_INSTALL_PATH}/include")
+
+    if(NOT EXISTS ${OPENSSL_INCLUDE})
+        file(MAKE_DIRECTORY "${OPENSSL_INCLUDE}")
+    endif()
 endif()
 
 message(STATUS "[ThirdPartyLib][openssl] libcrypto: ${CRYPTO_LIB_PATH} libssl: ${SSL_LIB_PATH} include: ${OPENSSL_INCLUDE}")
 if(NOT TARGET crypto_static)
     add_library(crypto_static STATIC IMPORTED GLOBAL)
     add_dependencies(crypto_static openssl_project)
-    if(NOT EXISTS ${OPENSSL_INCLUDE})
-        file(MAKE_DIRECTORY "${OPENSSL_INCLUDE}")
-    endif()
     set_target_properties(crypto_static PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INCLUDE}"
         IMPORTED_LOCATION             "${CRYPTO_LIB_PATH}"
@@ -182,9 +159,6 @@ endif()
 if(NOT TARGET ssl_static)
     add_library(ssl_static STATIC IMPORTED GLOBAL)
     add_dependencies(ssl_static openssl_project)
-    if(NOT EXISTS ${OPENSSL_INCLUDE})
-        file(MAKE_DIRECTORY "${OPENSSL_INCLUDE}")
-    endif()
     set_target_properties(ssl_static PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INCLUDE}"
         IMPORTED_LOCATION             "${SSL_LIB_PATH}"

@@ -178,7 +178,7 @@ else()
                             -Dprotobuf_BUILD_PROTOC_BINARIES=OFF
                             # ssl
                             -DgRPC_SSL_PROVIDER=package
-                            -DOPENSSL_ROOT_DIR=${CANN_3RD_LIB_PATH}/lib_cache/openssl
+                            -DOPENSSL_ROOT_DIR=${OPENSSL_INSTALL_PATH}
                             -DOPENSSL_USE_STATIC_LIBS=TRUE
                             # grpc option
                             -DCMAKE_POLICY_VERSION_MINIMUM=3.5
