@@ -8,36 +8,130 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 include_guard(GLOBAL)
-
 include(ExternalProject)
+
+include(${CMAKE_CURRENT_LIST_DIR}/openssl.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/re2.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/zlib.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/cares.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/abseil-cpp.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/protobuf.cmake)
+find_package(Threads)
 
 # grpc config
 set(GRPC_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/grpc)
 
-find_path(PROTOBUF_GRPC_INCLUDE
-    NAMES google/protobuf/api.pb.h
-    PATH_SUFFIXES include
-    PATHS ${GRPC_INSTALL_PATH}
-    NO_DEFAULT_PATH
+set(GRPC_INCLUDE_DIR ${GRPC_INSTALL_PATH}/include)
+if(NOT EXISTS ${GRPC_INCLUDE_DIR})
+    file(MAKE_DIRECTORY "${GRPC_INCLUDE_DIR}")
+endif()
+set(GRPC_STATIC_LIB ${GRPC_INSTALL_PATH}/lib/libgrpc.a)
+set(GRPCXX_STATIC_LIB ${GRPC_INSTALL_PATH}/lib/libgrpc++.a)
+ 
+set(GRPC_INTERFACE_LINK_LIBRARIES
+    ${GRPC_INSTALL_PATH}/lib/libupb_collections_lib.a
+    ${GRPC_INSTALL_PATH}/lib/libupb_json_lib.a
+    ${GRPC_INSTALL_PATH}/lib/libupb_textformat_lib.a
+    ${GRPC_INSTALL_PATH}/lib/libutf8_range_lib.a
+    ${GRPC_INSTALL_PATH}/lib/libupb.a
+    ${GRPC_INSTALL_PATH}/lib/libre2.a
+    ${GRPC_INSTALL_PATH}/lib/libz.a
+    ${GRPC_INSTALL_PATH}/lib/libcares.a
+    ${GRPC_INSTALL_PATH}/lib/libgpr.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_random_distributions.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_random_seed_sequences.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_random_internal_pool_urbg.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_random_internal_randen.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_random_internal_randen_hwaes.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_random_internal_randen_hwaes_impl.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_random_internal_randen_slow.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_random_internal_platform.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_random_internal_seed_material.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_random_seed_gen_exception.a
+    ${GRPC_INSTALL_PATH}/lib/libaddress_sorting.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_statusor.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_log_internal_check_op.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_leak_check.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_die_if_null.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_log_internal_conditions.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_log_internal_message.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_log_internal_nullguard.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_examine_stack.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_log_internal_format.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_log_internal_proto.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_log_internal_log_sink_set.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_log_sink.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_log_entry.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_flags.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_flags_internal.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_flags_marshalling.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_flags_reflection.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_flags_config.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_flags_program_name.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_flags_private_handle_accessor.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_flags_commandlineflag.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_flags_commandlineflag_internal.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_log_initialize.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_log_globals.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_log_internal_globals.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_raw_hash_set.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_hash.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_city.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_low_level_hash.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_hashtablez_sampler.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_status.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_cord.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_cordz_info.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_cord_internal.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_cordz_functions.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_exponential_biased.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_cordz_handle.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_crc_cord_state.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_crc32c.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_crc_internal.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_crc_cpu_detect.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_bad_optional_access.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_str_format_internal.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_strerror.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_synchronization.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_stacktrace.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_symbolize.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_debugging_internal.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_demangle_internal.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_graphcycles_internal.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_kernel_timeout_internal.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_malloc_internal.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_time.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_civil_time.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_time_zone.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_bad_variant_access.a
+    ${GRPC_INSTALL_PATH}/lib/libutf8_validity.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_strings.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_int128.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_string_view.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_throw_delegate.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_strings_internal.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_base.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_spinlock_wait.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_raw_logging_internal.a
+    ${GRPC_INSTALL_PATH}/lib/libabsl_log_severity.a
 )
-
-find_library(PROTOBUF_GRPC_LIBRARY
-    NAMES libprotobuf.a
-    PATH_SUFFIXES lib lib64
-    PATHS ${GRPC_INSTALL_PATH}
-    NO_DEFAULT_PATH
+ 	 
+add_library(gRPC::grpc STATIC IMPORTED)
+set_target_properties(gRPC::grpc PROPERTIES
+    IMPORTED_LOCATION "${GRPC_STATIC_LIB}"
+    INTERFACE_INCLUDE_DIRECTORIES "${GRPC_INCLUDE_DIR}"
+    INTERFACE_LINK_LIBRARIES "dl;m;Threads::Threads;rt;${GRPC_INTERFACE_LINK_LIBRARIES};OpenSSL::SSL;OpenSSL::Crypto"
 )
-
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(grpc
-    FOUND_VAR
-        grpc_FOUND
-    REQUIRED_VARS
-        PROTOBUF_GRPC_INCLUDE
-        PROTOBUF_GRPC_LIBRARY
+ 	 
+add_library(gRPC::grpc++ STATIC IMPORTED)
+set_target_properties(gRPC::grpc++ PROPERTIES
+    IMPORTED_LOCATION "${GRPCXX_STATIC_LIB}"
+    INTERFACE_INCLUDE_DIRECTORIES "${GRPC_INCLUDE_DIR}"
+    INTERFACE_LINK_LIBRARIES "dl;m;Threads::Threads;rt;gRPC::grpc;${GRPC_INSTALL_PATH}/lib/libprotobuf.a"
 )
-
-if(grpc_FOUND)
+ 	 
+if(EXISTS ${GRPC_STATIC_LIB} AND EXISTS ${GRPCXX_STATIC_LIB})
     message(STATUS "[ThirdPartyLib][grpc] grpc found, skip compiling.")
 else()
     message(STATUS "[ThirdPartyLib][grpc] grpc not found, finding binary file.")
@@ -61,13 +155,13 @@ else()
                         TLS_VERIFY OFF
                         ${GRPC_EXTRA_ARGS}
                         PATCH_COMMAND ${CMAKE_COMMAND} -E make_directory <SOURCE_DIR>/third_party/opencensus-proto/src
-                            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CANN_3RD_LIB_PATH}/lib_cache/zlib <SOURCE_DIR>/third_party/zlib
                             # 低版本cmake无法通过DRE2_ROOT_DIR找到re2路径，拷贝一份到build路径下
                             COMMAND ${CMAKE_COMMAND} -E copy_directory ${CANN_3RD_LIB_PATH}/lib_cache/re2/re2 <SOURCE_DIR>/re2
                             COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/grpc-fix-compile-bug-in-device.patch
                         CONFIGURE_COMMAND ${CMAKE_COMMAND}
                             # zlib
                             -DgRPC_ZLIB_PROVIDER=module
+                            -DZLIB_ROOT_DIR=${ZLIB_SRC_DIR}
                             # cares
                             -DgRPC_CARES_PROVIDER=module
                             -DCARES_ROOT_DIR=${CANN_3RD_LIB_PATH}/lib_cache/c-ares
@@ -80,7 +174,7 @@ else()
                             -DABSL_ROOT_DIR=${CANN_3RD_LIB_PATH}/lib_cache/abseil-cpp
                             # protobuf
                             -DgRPC_PROTOBUF_PROVIDER=module
-                            -DPROTOBUF_ROOT_DIR=${PROTOBUF_HOST_STATIC_PKG_DIR}/build
+                            -DPROTOBUF_ROOT_DIR=${PROTOBUF_SRC_DIR}
                             -Dprotobuf_BUILD_PROTOC_BINARIES=OFF
                             # ssl
                             -DgRPC_SSL_PROVIDER=package
@@ -106,38 +200,21 @@ else()
                         INSTALL_COMMAND $(MAKE) install && ${CMAKE_COMMAND} -E touch ${GRPC_INSTALL_PATH}/lib/cmake/grpc/gRPCPluginTargets.cmake
                         EXCLUDE_FROM_ALL TRUE
     )
-    set(PROTOBUF_GRPC_INCLUDE "${GRPC_INSTALL_PATH}/include")
-    set(PROTOBUF_GRPC_LIBRARY "${GRPC_INSTALL_PATH}/lib")
-    add_dependencies(grpc_build openssl_project re2_build zlib_bin_build cares_build abseil_build protobuf_host_static_build)
-endif()
-
-set(PROTOBUF_GRPC_INCLUDE_DIR ${PROTOBUF_GRPC_INCLUDE})
-message(STATUS "[ThirdPartyLib][grpc] PROTOBUF_GRPC_INCLUDE:${PROTOBUF_GRPC_INCLUDE}, PROTOBUF_GRPC_LIBRARY:${PROTOBUF_GRPC_LIBRARY}.")
-if(NOT TARGET protobuf::libprotobuf)
-    add_library(protobuf::libprotobuf STATIC IMPORTED)
-    set_target_properties(protobuf::libprotobuf PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${PROTOBUF_GRPC_INCLUDE}"
-        IMPORTED_LOCATION             "${PROTOBUF_GRPC_LIBRARY}"
-    )
-else()
-    message(STATUS "[ThirdPartyLib][grpc] protobuf::libprotobuf already exist.")
+    add_dependencies(grpc_build openssl_project re2_build zlib_src cares_build abseil_build protobuf_src)
+    add_dependencies(gRPC::grpc grpc_build)
+    add_dependencies(gRPC::grpc++ grpc_build)
 endif()
 
 # protoc_grpc config
 set(PROTOC_GRPC_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/protoc_grpc)
+set(GRPC_CPP_PLUGIN_PROGRAM ${PROTOC_GRPC_INSTALL_PATH}/grpc_cpp_plugin)
 
-find_program(GRPC_CPP_PLUGIN_PROGRAM
-    NAMES grpc_cpp_plugin
-    PATHS ${PROTOC_GRPC_INSTALL_PATH}
-    NO_DEFAULT_PATH)
+add_executable(grpc_cpp_plugin IMPORTED)
+set_target_properties(grpc_cpp_plugin PROPERTIES
+    IMPORTED_LOCATION "${GRPC_CPP_PLUGIN_PROGRAM}"
+)
 
-if(GRPC_CPP_PLUGIN_PROGRAM)
-    set(protoc_grpc_FOUND TRUE)
-else()
-    set(protoc_grpc_FOUND FALSE)
-endif()
-
-if(protoc_grpc_FOUND)
+if(EXISTS ${GRPC_CPP_PLUGIN_PROGRAM})
     message(STATUS "[ThirdPartyLib][protoc grpc] protoc_grpc found, skip compiling.")
 else()
     message(STATUS "[ThirdPartyLib][protoc grpc] protoc_grpc not found, finding binary file.")
@@ -176,7 +253,7 @@ else()
                             -DABSL_ROOT_DIR=${CANN_3RD_LIB_PATH}/lib_cache/abseil-cpp
                             # protobuf
                             -DgRPC_PROTOBUF_PROVIDER=module
-                            -DPROTOBUF_ROOT_DIR=${PROTOBUF_HOST_STATIC_PKG_DIR}/build
+                            -DPROTOBUF_ROOT_DIR=${PROTOBUF_SRC_DIR}
                             # ssl
                             -DgRPC_SSL_PROVIDER=none
                             # grpc option
@@ -195,16 +272,6 @@ else()
                         INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${PROTOC_GRPC_INSTALL_PATH} && ${CMAKE_COMMAND} -E copy <BINARY_DIR>/grpc_cpp_plugin ${PROTOC_GRPC_INSTALL_PATH}
                         EXCLUDE_FROM_ALL TRUE
     )
-
-    add_dependencies(protoc_grpc_build re2_build cares_build abseil_build protobuf_host_static_build)
-endif()
-
-message(STATUS "[ThirdPartyLib][protoc grpc] grpc_cpp_plugin:${PROTOC_GRPC_INSTALL_PATH}.")
-if(NOT TARGET grpc_cpp_plugin)
-    add_executable(grpc_cpp_plugin IMPORTED)
-    set_target_properties(grpc_cpp_plugin PROPERTIES
-        IMPORTED_LOCATION "${PROTOC_GRPC_INSTALL_PATH}"
-    )
-else()
-    message(STATUS "[ThirdPartyLib][protoc grpc] grpc_cpp_plugin already exist.")
+    add_dependencies(protoc_grpc_build re2_build cares_build abseil_build protobuf_src)
+    add_dependencies(grpc_cpp_plugin protoc_grpc_build)
 endif()

@@ -15,20 +15,15 @@ endif()
 
 include(ExternalProject)
 include(GNUInstallDirs)
+include(${CMAKE_CURRENT_LIST_DIR}/abseil-cpp.cmake)
 
 # ==========================================================================================================
 # 1. Paths & Directories Setup
 # ==========================================================================================================
-set(PROTOBUF_LIB_CACHE_DIR ${CANN_3RD_LIB_PATH}/lib_cache/protobuf-25.1)
-set(PROTOBUF_SRC_DIR ${CANN_3RD_LIB_PATH}/protobuf-src)
-set(PROTOBUF_DL_DIR ${CANN_3RD_LIB_PATH}/pkg)
 set(PROTOBUF_STATIC_PKG_DIR ${CANN_3RD_LIB_PATH}/lib_cache/protobuf_static)
 set(PROTOBUF_SHARED_PKG_DIR ${CANN_3RD_LIB_PATH}/lib_cache/protobuf_shared)
 set(PROTOBUF_HOST_STATIC_PKG_DIR ${CANN_3RD_LIB_PATH}/lib_cache/protobuf_host_static)
 set(PROTOBUF_HOST_PROTOC_DIR ${CANN_3RD_LIB_PATH}/lib_cache/protoc)
-
-set(PROTOBUF_INCLUDE_DIRS ${PROTOBUF_LIB_CACHE_DIR}/include)
-set(PROTOBUF_HOST_DIR ${PROTOBUF_LIB_CACHE_DIR})
 
 set(LIB_SUB_DIR "lib64")
 set(PROTOBUF_STATIC_FILE_NAME "libhost_ascend_protobuf.a")
@@ -38,7 +33,6 @@ if(PRODUCT_SIDE STREQUAL "device")
 
     # in device mode, need another path to save lib.
     message("[ThirdParty][protobuf] device mode set protobuf lib path")
-    set(PROTOBUF_SRC_DIR ${CANN_3RD_LIB_PATH}/device/protobuf-src)
     set(PROTOBUF_STATIC_PKG_DIR ${CANN_3RD_LIB_PATH}/lib_cache/device/protobuf_static)
     set(PROTOBUF_SHARED_PKG_DIR ${CANN_3RD_LIB_PATH}/lib_cache/device/protobuf_shared)
     set(PROTOBUF_HOST_STATIC_PKG_DIR ${CANN_3RD_LIB_PATH}/lib_cache/device/protobuf_host_static)
@@ -49,10 +43,6 @@ if(DEFINED ENV{ASCEND_HOME_PATH})
     set(LD_LIB_PATHS "$ENV{ASCEND_HOME_PATH}/${LIB_SUB_DIR}")
     set(LD_BIN_PATHS "$ENV{ASCEND_HOME_PATH}/bin")
 endif()
-
-# 使用设备端工具链生成 ascend_protobuf_static
-set(CMAKE_CXX_COMPILER_ ${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-g++)
-set(CMAKE_C_COMPILER_ ${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-gcc)
 
 # ==========================================================================================================
 # 2. Compile Flags & Optimization
@@ -89,16 +79,26 @@ set(HOST_PROTOBUF_STATIC_CXXFLAGS "${HOST_PROTOBUF_STATIC_CXXFLAGS} ${PROTOBUF_S
 # ==========================================================================================================
 # 3. Find Existing Libraries & Protoc
 # ==========================================================================================================
-# 优先搜索 LD_LIBRARY_PATH 里的 bin,然后搜索 PROTOBUF_LIB_CACHE_DIR 的 bin
-find_program(PROTOC_PATH protoc PATHS ${PROTOBUF_HOST_PROTOC_DIR} ${LD_BIN_PATHS} NO_DEFAULT_PATH)
+find_program(PROTOC_PROGRAM 
+    NAMES protoc 
+    PATHS ${PROTOBUF_HOST_PROTOC_DIR} ${LD_BIN_PATHS} 
+    NO_DEFAULT_PATH
+)
 
-# 优先搜索 LD_LIBRARY_PATH 里的 lib,然后搜索 PROTOBUF_LIB_CACHE_DIR
 find_library(ASCEND_PROTOBUF_STATIC_LIB
-    NAMES ${PROTOBUF_STATIC_FILE_NAME}
+    NAMES libascend_protobuf.a
     PATH_SUFFIXES lib lib64
     PATHS ${PROTOBUF_STATIC_PKG_DIR} ${LD_LIB_PATHS}
     NO_DEFAULT_PATH
 )
+
+find_path(ASCEND_PROTOBUF_STATIC_INCLUDE
+    NAMES google/protobuf/any.h
+    PATH_SUFFIXES include
+    PATHS ${PROTOBUF_STATIC_PKG_DIR} ${LD_LIB_PATHS}
+    NO_DEFAULT_PATH
+)
+
 find_library(HOST_PROTOBUF_STATIC_LIB
     NAMES ${PROTOBUF_STATIC_FILE_NAME}
     PATH_SUFFIXES lib lib64
@@ -106,145 +106,81 @@ find_library(HOST_PROTOBUF_STATIC_LIB
     NO_DEFAULT_PATH
 )
 
-if(NOT PRODUCT_SIDE STREQUAL "device") 
-    find_library(ASCEND_PROTOBUF_SHARED_LIB
-        NAMES libascend_protobuf.so.3.13.0.0
-        PATH_SUFFIXES lib lib64
-        PATHS ${PROTOBUF_SHARED_PKG_DIR} ${LD_LIB_PATHS}
-        NO_DEFAULT_PATH
-    )
-endif()
-message("[ThirdParty][protobuf] Runtime protobuf lib:")
-message("[ThirdParty][protobuf] PROTOC_PATH : ${PROTOC_PATH}.")
+find_path(HOST_PROTOBUF_STATIC_INCLUDE
+    NAMES google/protobuf/any.h
+    PATH_SUFFIXES include
+    PATHS ${PROTOBUF_HOST_STATIC_PKG_DIR} ${LD_LIB_PATHS}
+    NO_DEFAULT_PATH
+)
+
+find_library(ASCEND_PROTOBUF_SHARED_LIB
+    NAMES libascend_protobuf.so
+    PATH_SUFFIXES lib lib64
+    PATHS ${PROTOBUF_SHARED_PKG_DIR} ${LD_LIB_PATHS}
+    NO_DEFAULT_PATH
+)
+
+find_path(ASCEND_PROTOBUF_SHARED_INCLUDE
+    NAMES google/protobuf/any.h
+    PATH_SUFFIXES include
+    PATHS ${PROTOBUF_SHARED_PKG_DIR} ${LD_LIB_PATHS}
+    NO_DEFAULT_PATH
+)
+
+message("[ThirdParty][protobuf] PROTOC_PROGRAM : ${PROTOC_PROGRAM}.")
 message("[ThirdParty][protobuf] ASCEND_PROTOBUF_STATIC_LIB : ${ASCEND_PROTOBUF_STATIC_LIB}.")
 message("[ThirdParty][protobuf] HOST_PROTOBUF_STATIC_LIB : ${HOST_PROTOBUF_STATIC_LIB}.")
 message("[ThirdParty][protobuf] ASCEND_PROTOBUF_SHARED_LIB : ${ASCEND_PROTOBUF_SHARED_LIB}.")
-# Used for ge
-# protobuf shared
-find_library(ASCEND_PROTOBUF_SHARED_LIBRARY
-    NAMES libascend_protobuf.so
-    PATH_SUFFIXES lib lib64
-    PATHS ${PROTOBUF_SHARED_PKG_DIR}
-    NO_DEFAULT_PATH
-)
-# protobuf static
-find_library(ASCEND_PROTOBUF_STATIC_LIBRARY
-    NAMES libascend_protobuf.a
-    PATH_SUFFIXES lib lib64
-    PATHS ${PROTOBUF_STATIC_PKG_DIR}
-    NO_DEFAULT_PATH
-)
-# host protobuf static
-find_library(PROTOBUF_STATIC_LIBRARY
-    NAMES libhost_ascend_protobuf.a
-    PATH_SUFFIXES lib lib64
-    PATHS ${PROTOBUF_HOST_STATIC_PKG_DIR}
-    NO_DEFAULT_PATH
-)
-# protoc
-find_program(PROTOC_PROGRAM
-    NAMES protoc
-    PATHS ${PROTOBUF_HOST_PROTOC_DIR}
-    NO_DEFAULT_PATH
-)
-message("[ThirdParty][protobuf] GE protobuf lib:")
-message("[ThirdParty][protobuf] ASCEND_PROTOBUF_SHARED_LIBRARY : ${ASCEND_PROTOBUF_SHARED_LIBRARY}.")
-message("[ThirdParty][protobuf] ASCEND_PROTOBUF_STATIC_LIBRARY : ${ASCEND_PROTOBUF_STATIC_LIBRARY}.")
-message("[ThirdParty][protobuf] PROTOBUF_STATIC_LIBRARY : ${PROTOBUF_STATIC_LIBRARY}.")
-message("[ThirdParty][protobuf] PROTOC_PROGRAM : ${PROTOC_PROGRAM}.")
 
-# 判断是否需要构建
-if(NOT PROTOC_PATH OR NOT ASCEND_PROTOBUF_STATIC_LIB OR NOT ASCEND_PROTOBUF_SHARED_LIB OR NOT HOST_PROTOBUF_STATIC_LIB
-    OR NOT ASCEND_PROTOBUF_SHARED_LIBRARY OR NOT ASCEND_PROTOBUF_STATIC_LIBRARY OR NOT PROTOBUF_STATIC_LIBRARY OR NOT PROTOC_PROGRAM)
-    message("[ThirdParty][protobuf] need build protobuf")
-    set(NEED_BUILD_PROTOBUF ON)
+# 解析 protobuf 源码包路径
+if (EXISTS ${CANN_3RD_LIB_PATH}/protobuf-all-25.1.tar.gz)
+    set(PROTOBUF_PATH ${CANN_3RD_LIB_PATH}/protobuf-all-25.1.tar.gz)
+elseif (EXISTS ${CANN_3RD_LIB_PATH}/protobuf-25.1.tar.gz)
+    set(PROTOBUF_PATH ${CANN_3RD_LIB_PATH}/protobuf-25.1.tar.gz)
+elseif (EXISTS ${CANN_3RD_LIB_PATH}/protobuf/protobuf-all-25.1.tar.gz)
+    set(PROTOBUF_PATH ${CANN_3RD_LIB_PATH}/protobuf/protobuf-all-25.1.tar.gz)
 else()
-    message("[ThirdParty][protobuf] no need build protobuf")
-    set(NEED_BUILD_PROTOBUF OFF)
+    set(PROTOBUF_PATH ${CANN_3RD_LIB_PATH}/protobuf/protobuf-25.1.tar.gz)
 endif()
 
-
-# ==========================================================================================================
-# 4. Source Preparation (Download & Extract)
-# ==========================================================================================================
-if(NEED_BUILD_PROTOBUF)
-    # 解析 protobuf 源码包路径
-    if (EXISTS ${CANN_3RD_LIB_PATH}/protobuf-all-25.1.tar.gz)
-        set(PROTOBUF_PATH ${CANN_3RD_LIB_PATH}/protobuf-all-25.1.tar.gz)
-    elseif (EXISTS ${CANN_3RD_LIB_PATH}/protobuf-25.1.tar.gz)
-        set(PROTOBUF_PATH ${CANN_3RD_LIB_PATH}/protobuf-25.1.tar.gz)
-    elseif (EXISTS ${CANN_3RD_LIB_PATH}/protobuf/protobuf-all-25.1.tar.gz)
-        set(PROTOBUF_PATH ${CANN_3RD_LIB_PATH}/protobuf/protobuf-all-25.1.tar.gz)
-    else()
-        set(PROTOBUF_PATH ${CANN_3RD_LIB_PATH}/protobuf/protobuf-25.1.tar.gz)
-    endif()
-
-    # 解析 abseil 源码包路径
-    if(EXISTS ${CANN_3RD_LIB_PATH}/abseil-cpp-20230802.1.tar.gz)
-        set(ABSEIL_PATH ${CANN_3RD_LIB_PATH}/abseil-cpp-20230802.1.tar.gz)
-    else()
-        set(ABSEIL_PATH ${CANN_3RD_LIB_PATH}/abseil-cpp/abseil-cpp-20230802.1.tar.gz)
-    endif()
-
-    if(NOT EXISTS ${ABSEIL_PATH} OR NOT EXISTS ${PROTOBUF_PATH})
-        message("[ThirdParty][protobuf] ${PROTOBUF_PATH} not found, need download.")
-        set(PROTOBUF_PATH "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/protobuf/protobuf-25.1.tar.gz")
-    endif()
-    ExternalProject_Add(protobuf_src
-        URL ${PROTOBUF_PATH}
-        DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/protobuf
-        TLS_VERIFY OFF
-        SOURCE_DIR ${PROTOBUF_SRC_DIR}
-        PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/protobuf_25.1_change_version.patch
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ""
-    )
-    include(${CMAKE_CURRENT_LIST_DIR}/abseil-cpp.cmake)
-    add_dependencies(protobuf_src abseil_build)
-
-    # 如果只要头文件而无需全部编译，单独提取包含头文件的安装
-    if(ASCEND_PROTOBUF_STATIC_LIB)
-        message("[ThirdParty][protobuf] protobuf headers only build.")
-        ExternalProject_Add(protobuf_headers_only_build
-            DEPENDS protobuf_src
-            SOURCE_DIR ${PROTOBUF_SRC_DIR}
-            DOWNLOAD_COMMAND ""
-            UPDATE_COMMAND ""
-            CONFIGURE_COMMAND ""
-            BUILD_COMMAND ""
-            INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${PROTOBUF_HOST_DIR}/include
-                    COMMAND bash -c "cd ${PROTOBUF_SRC_DIR}/src && find google -name '*.h' -o -name '*.inc' | xargs -i cp --parents {} ${PROTOBUF_HOST_DIR}/include/"
-                    COMMAND bash -c "cd ${ABS_INSTALL_DIR} && find absl -name '*.h' -o -name '*.inc' | xargs -i cp --parents {} ${PROTOBUF_HOST_DIR}/include/"
-                    COMMAND bash -c "sed -i 's/#define ABSL_OPTION_USE_STD_STRING_VIEW 2/#define ABSL_OPTION_USE_STD_STRING_VIEW 0/g' ${PROTOBUF_HOST_DIR}/include/absl/base/options.h"
-            EXCLUDE_FROM_ALL TRUE
-        )
-        add_custom_target(protobuf_headers_target DEPENDS protobuf_headers_only_build)
-    endif()
-else()
-    add_custom_target(protobuf_headers_target)
+if(NOT EXISTS ${PROTOBUF_PATH})
+    message("[ThirdParty][protobuf] ${PROTOBUF_PATH} not found, need download.")
+    set(PROTOBUF_PATH "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/protobuf/protobuf-25.1.tar.gz")
 endif()
 
+# 避免host和device同时编译时下载路径冲突
+if(PRODUCT_SIDE STREQUAL "device")
+    set(PROTOBUF_DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/pkg)
+else()
+    set(PROTOBUF_DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/protobuf)
+endif()
 
-# ==========================================================================================================
-# 5. Targets Definition & Linking
-# ==========================================================================================================
+ExternalProject_Add(protobuf_src
+                    URL ${PROTOBUF_PATH}
+                    DOWNLOAD_DIR ${PROTOBUF_DOWNLOAD_DIR}
+                    TLS_VERIFY OFF
+                    PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/protobuf_25.1_change_version.patch
+                    CONFIGURE_COMMAND ""
+                    BUILD_COMMAND ""
+                    INSTALL_COMMAND ""
+                    EXCLUDE_FROM_ALL TRUE
+                    DEPENDS abseil_build
+)
+
+ExternalProject_Get_Property(protobuf_src SOURCE_DIR)
+set(PROTOBUF_SRC_DIR ${SOURCE_DIR})
 
 # ---------------------------------------------------------
 # Target: ascend_protobuf (Shared)
 # ---------------------------------------------------------
 add_library(ascend_protobuf SHARED IMPORTED GLOBAL)
-
-if(NOT PRODUCT_SIDE STREQUAL "device" AND TARGET protobuf_headers_target AND ASCEND_PROTOBUF_SHARED_LIB AND ASCEND_PROTOBUF_SHARED_LIBRARY)
-    message("[ThirdParty][protobuf_shared] shared depend protobuf_headers_target.")
+add_library(ascend_protobuf_shared_headers INTERFACE IMPORTED)
+if(ASCEND_PROTOBUF_SHARED_INCLUDE AND ASCEND_PROTOBUF_SHARED_LIB)
     set_target_properties(ascend_protobuf PROPERTIES
-        IMPORTED_NO_SONAME TRUE
         IMPORTED_LOCATION ${ASCEND_PROTOBUF_SHARED_LIB}
-        INTERFACE_INCLUDE_DIRECTORIES ${PROTOBUF_SHARED_PKG_DIR}/include
+        INTERFACE_INCLUDE_DIRECTORIES ${ASCEND_PROTOBUF_SHARED_INCLUDE}
     )
-    get_filename_component(PROTOBUF_SHARED_LIB_DIR "${ASCEND_PROTOBUF_SHARED_LIB}" DIRECTORY)
-    get_filename_component(PROTOBUF_SHARED_PKG_DIR "${PROTOBUF_SHARED_LIB_DIR}" DIRECTORY)
-    add_dependencies(ascend_protobuf protobuf_headers_target)
+    set(_ASCEND_PROTOBUF_SHARED_INCLUDE ${ASCEND_PROTOBUF_SHARED_INCLUDE})
 else()
     message("[ThirdParty][protobuf_shared] shared build.")
     ExternalProject_Add(protobuf_shared_build
@@ -273,28 +209,27 @@ else()
         INSTALL_COMMAND $(MAKE) install
         EXCLUDE_FROM_ALL TRUE
     )
+    set(_ASCEND_PROTOBUF_SHARED_INCLUDE ${PROTOBUF_SHARED_PKG_DIR}/include)
     set_target_properties(ascend_protobuf PROPERTIES
         IMPORTED_LOCATION ${PROTOBUF_SHARED_PKG_DIR}/lib/libascend_protobuf.so
-        INTERFACE_INCLUDE_DIRECTORIES "${PROTOBUF_SHARED_PKG_DIR}/include"
+        INTERFACE_INCLUDE_DIRECTORIES "${_ASCEND_PROTOBUF_SHARED_INCLUDE}"
     )
     add_dependencies(ascend_protobuf protobuf_shared_build)
-    set(PROTOBUF_SHARED_LIB_DIR "${PROTOBUF_SHARED_PKG_DIR}/lib")
+    add_dependencies(ascend_protobuf_shared_headers protobuf_shared_build)
 endif()
-# used for ge
-set(ASCEND_PROTOBUF_SHARED_INCLUDE_DIR ${PROTOBUF_SHARED_PKG_DIR}/include)
-get_filename_component(ASCEND_PROTOBUF_SHARED_LIBRARY_DIR ${PROTOBUF_SHARED_PKG_DIR}/lib ABSOLUTE)
-add_library(ascend_protobuf_shared_headers INTERFACE IMPORTED)
 target_include_directories(ascend_protobuf_shared_headers INTERFACE ${PROTOBUF_SHARED_PKG_DIR}/include)
-
 create_imported_interface_include_directories(ascend_protobuf)
+
+# use for runtime: PROTOBUF_SHARED_LIB_DIR
+set(PROTOBUF_SHARED_LIB_DIR "${PROTOBUF_SHARED_PKG_DIR}/lib")
 
 # ---------------------------------------------------------
 # Target: host_protoc
 # ---------------------------------------------------------
 add_executable(host_protoc IMPORTED GLOBAL)
-if(PROTOC_PATH AND PROTOC_PROGRAM)
+if(PROTOC_PROGRAM)
     message("[ThirdParty][protoc] protoc use cache.")
-    set_target_properties(host_protoc PROPERTIES IMPORTED_LOCATION ${PROTOC_PATH})
+    set_target_properties(host_protoc PROPERTIES IMPORTED_LOCATION ${PROTOC_PROGRAM})
 else()
     message("[ThirdParty][protoc] protoc build.")
     ExternalProject_Add(protobuf_host_build
@@ -306,17 +241,14 @@ else()
             -DCMAKE_CXX_STANDARD=14
             -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
             -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
-            -DCMAKE_INSTALL_PREFIX=${PROTOBUF_HOST_DIR}
+            -DCMAKE_INSTALL_PREFIX=${PROTOBUF_HOST_PROTOC_DIR}
             -Dprotobuf_BUILD_TESTS=OFF
             -Dprotobuf_WITH_ZLIB=OFF
             -DABSL_ROOT_DIR=${ABS_INSTALL_DIR}
             <SOURCE_DIR>
         BUILD_COMMAND $(MAKE)
-        INSTALL_COMMAND ${CMAKE_COMMAND}
-            -E make_directory ${PROTOBUF_HOST_PROTOC_DIR}
-            COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/protobuf_host_build-prefix/src/protobuf_host_build-build/protoc ${PROTOBUF_HOST_PROTOC_DIR}/protoc
-            # use for ge
-            COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/protobuf_host_build-prefix/src/protobuf_host_build-build/libprotobuf.a ${PROTOBUF_HOST_PROTOC_DIR}/libprotobuf.a
+        INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${PROTOBUF_HOST_PROTOC_DIR}
+            COMMAND cp <BINARY_DIR>/protoc ${PROTOBUF_HOST_PROTOC_DIR}/protoc
         EXCLUDE_FROM_ALL TRUE
     )
     set_target_properties(host_protoc PROPERTIES IMPORTED_LOCATION ${PROTOBUF_HOST_PROTOC_DIR}/protoc)
@@ -332,16 +264,13 @@ add_custom_target(protoc DEPENDS host_protoc)
 # Target: ascend_protobuf_static
 # ---------------------------------------------------------
 add_library(ascend_protobuf_static STATIC IMPORTED GLOBAL)
-
-if(TARGET protobuf_headers_target AND ASCEND_PROTOBUF_STATIC_LIB AND ASCEND_PROTOBUF_STATIC_LIBRARY)
-    message("[ThirdParty][protobuf_static] static depend protobuf_headers_target.")
+add_library(ascend_protobuf_static_headers INTERFACE IMPORTED)
+if(ASCEND_PROTOBUF_STATIC_INCLUDE AND ASCEND_PROTOBUF_STATIC_LIB)
     set_target_properties(ascend_protobuf_static PROPERTIES
         IMPORTED_LOCATION ${ASCEND_PROTOBUF_STATIC_LIB}
-        INTERFACE_INCLUDE_DIRECTORIES ${PROTOBUF_STATIC_PKG_DIR}/include
-        # 静态库支持链接动态库
-        POSITION_INDEPENDENT_CODE ON
+        INTERFACE_INCLUDE_DIRECTORIES ${ASCEND_PROTOBUF_STATIC_INCLUDE}
     )
-    add_dependencies(ascend_protobuf_static protobuf_headers_target)
+    set(_ASCEND_PROTOBUF_STATIC_INCLUDE ${ASCEND_PROTOBUF_STATIC_INCLUDE})
     set(PROTOBUF_STATIC_FINAL_PATH ${ASCEND_PROTOBUF_STATIC_LIB})
 else()
     message("[ThirdParty][protobuf_static] static build.")
@@ -372,35 +301,28 @@ else()
         INSTALL_COMMAND $(MAKE) install
         EXCLUDE_FROM_ALL TRUE
     )
+    set(_ASCEND_PROTOBUF_STATIC_INCLUDE ${PROTOBUF_STATIC_PKG_DIR}/include)
     set_target_properties(ascend_protobuf_static PROPERTIES
         IMPORTED_LOCATION ${PROTOBUF_STATIC_PKG_DIR}/lib/libascend_protobuf.a
-        INTERFACE_INCLUDE_DIRECTORIES ${PROTOBUF_STATIC_PKG_DIR}/include
-        # 静态库支持链接动态库
-        POSITION_INDEPENDENT_CODE ON
+        INTERFACE_INCLUDE_DIRECTORIES "${_ASCEND_PROTOBUF_STATIC_INCLUDE}"
     )
     add_dependencies(ascend_protobuf_static protobuf_static_build)
+    add_dependencies(ascend_protobuf_static_headers protobuf_static_build)
     set(PROTOBUF_STATIC_FINAL_PATH ${PROTOBUF_STATIC_PKG_DIR}/lib/libascend_protobuf.a)
 endif()
-# used for ge
-add_library(ascend_protobuf_static_headers INTERFACE IMPORTED)
-target_include_directories(ascend_protobuf_static_headers INTERFACE ${PROTOBUF_STATIC_PKG_DIR}/include)
-
+target_include_directories(ascend_protobuf_static_headers INTERFACE ${_ASCEND_PROTOBUF_STATIC_INCLUDE})
 create_imported_interface_include_directories(ascend_protobuf_static)
 
 # ---------------------------------------------------------
 # Target: protobuf_static (Host Static)
 # ---------------------------------------------------------
-add_library(host_protobuf_static_lib STATIC IMPORTED)
-add_library(protobuf_static INTERFACE)
-
-if(TARGET protobuf_headers_target AND HOST_PROTOBUF_STATIC_LIB AND PROTOBUF_STATIC_LIBRARY)
-    message("[ThirdParty][protobuf_host_static] host static depend protobuf_headers_target.")
-    set_target_properties(host_protobuf_static_lib PROPERTIES IMPORTED_LOCATION ${HOST_PROTOBUF_STATIC_LIB})
-    target_include_directories(protobuf_static INTERFACE ${PROTOBUF_HOST_STATIC_PKG_DIR}/include)
-    target_link_libraries(protobuf_static INTERFACE host_protobuf_static_lib) 
-    add_dependencies(protobuf_static protobuf_headers_target)
+add_library(protobuf_static STATIC IMPORTED GLOBAL)
+if(HOST_PROTOBUF_STATIC_INCLUDE AND HOST_PROTOBUF_STATIC_LIB)
+    set_target_properties(protobuf_static PROPERTIES 
+        IMPORTED_LOCATION ${HOST_PROTOBUF_STATIC_LIB}
+        INTERFACE_INCLUDE_DIRECTORIES "${HOST_PROTOBUF_STATIC_INCLUDE}"
+    )
     set(PROTOBUF_HOST_STATIC_FINAL_PATH ${HOST_PROTOBUF_STATIC_LIB})
-    add_custom_target(protobuf_host_static_build)
 else()
     message("[ThirdParty][protobuf_host_static] host static build.")
     ExternalProject_Add(protobuf_host_static_build
@@ -424,18 +346,17 @@ else()
             -Dprotobuf_BUILD_PROTOC_BINARIES=OFF
             -DABSL_COMPILE_OBJ=TRUE
             -DABSL_ROOT_DIR=${ABS_INSTALL_DIR}
-
             <SOURCE_DIR>
         BUILD_COMMAND $(MAKE)
-
         INSTALL_COMMAND $(MAKE) install
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${PROTOBUF_HOST_STATIC_PKG_DIR}/build
-            COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROTOBUF_SRC_DIR}/ ${PROTOBUF_HOST_STATIC_PKG_DIR}/build
         EXCLUDE_FROM_ALL TRUE
     )
-    set_target_properties(host_protobuf_static_lib PROPERTIES IMPORTED_LOCATION ${PROTOBUF_HOST_STATIC_PKG_DIR}/lib/libhost_ascend_protobuf.a)
-    target_include_directories(protobuf_static INTERFACE ${PROTOBUF_HOST_STATIC_PKG_DIR}/include)
-    target_link_libraries(protobuf_static INTERFACE host_protobuf_static_lib)
+
+    set_target_properties(protobuf_static PROPERTIES 
+        IMPORTED_LOCATION ${PROTOBUF_HOST_STATIC_PKG_DIR}/lib/libhost_ascend_protobuf.a
+        INTERFACE_INCLUDE_DIRECTORIES "${PROTOBUF_HOST_STATIC_PKG_DIR}/include"
+    )
     add_dependencies(protobuf_static protobuf_host_static_build)
     set(PROTOBUF_HOST_STATIC_FINAL_PATH ${PROTOBUF_HOST_STATIC_PKG_DIR}/lib/libhost_ascend_protobuf.a)
 endif()
+create_imported_interface_include_directories(protobuf_static)
