@@ -18,6 +18,10 @@ set(PACKAGE_OPEN_PROJECT TRUE)
 # opbase编译依赖BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG设置为TRUE
 set(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG TRUE)
 
+# GE编译依赖这个路径，路径区别于子包编译
+set(METADEF_GRPAH_INC_PATH "${CANN_TOP_DIR}/metadef/inc/external/graph")
+set(BUILD_METADEF TRUE)
+
 get_pkg_dependencies("${CANN_PACKAGES}")
 calc_device_packages()
 set(ENABLE_BUILD_DEVICE FALSE)
