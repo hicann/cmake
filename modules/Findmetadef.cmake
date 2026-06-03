@@ -94,8 +94,8 @@ find_package_handle_standard_args(metadef
 )
 
 if(metadef_FOUND)
-    set(METADEF_GRPAH_INC_PATH "${ASCEND_INSTALL_PATH}/include/graph")
-    cmake_print_variables(METADEF_GRPAH_INC_PATH)
+    set(METADEF_INC_PATH "${ASCEND_INSTALL_PATH}/include")
+    cmake_print_variables(METADEF_INC_PATH)
 
     set(_metadef_headers_include_dirs
         ${_CANN_METADEF_INCLUDE_DIR}
