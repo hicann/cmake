@@ -126,7 +126,12 @@ endmacro()
 # 添加device侧工程
 function(add_cann_device_project component)
     # 多仓联编时跳过device工程
-    if(ENABLE_UNIFIED_BUILD)
+    if(NOT TOPLEVEL_PROJECT)
+        return()
+    endif()
+
+    # ENABLE_BUILD_DEVICE为FALSE时跳过device工程
+    if(DEFINED ENABLE_BUILD_DEVICE AND NOT ENABLE_BUILD_DEVICE)
         return()
     endif()
 
