@@ -9,6 +9,9 @@
 # -----------------------------------------------------------------------------------------------------------
 include_guard(GLOBAL)
 include(ExternalProject)
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
 
 include(${CMAKE_CURRENT_LIST_DIR}/openssl.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/re2.cmake)

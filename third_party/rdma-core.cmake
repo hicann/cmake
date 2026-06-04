@@ -8,108 +8,136 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ------------------------------------------------------------------------------------------------------------
 include_guard(GLOBAL)
-
-function(download_file URL FILE_PATH EXPECTED_HASH)
-    if(NOT EXISTS "${FILE_PATH}")
-        get_filename_component(FILENAME "${FILE_PATH}" NAME)
-        message(STATUS "[ThirdParty][rdma-core] Downloading ${FILENAME}...")
-
-        file(DOWNLOAD
-            ${URL}
-            "${FILE_PATH}"
-            EXPECTED_HASH ${EXPECTED_HASH}
-            STATUS DOWNLOAD_STATUS
-            SHOW_PROGRESS
-        )
-
-        list(GET DOWNLOAD_STATUS 0 STATUS_CODE)
-        if(NOT STATUS_CODE EQUAL 0)
-            list(GET DOWNLOAD_STATUS 1 ERROR_MSG)
-            file(REMOVE "${FILE_PATH}")
-            message(FATAL_ERROR "[ThirdParty][rdma-core] failed to download ${FILENAME}: ${ERROR_MSG}")
-        endif()
-    else()
-        get_filename_component(FILENAME "${FILE_PATH}" NAME)
-        message(STATUS "[ThirdParty][rdma-core] ${FILENAME} already exists, skipping download")
-    endif()
-endfunction()
-
-set(RDMA_CORE_NAME "rdma-core")
-set(RDMA_CORE_VERSION "42.7")
-set(RDMA_CORE_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/rdma-core/rdma-core-42.7.tar.gz")
-set(RDMA_CORE_PATCH_URL "https://gitcode.com/cann-src-third-party/rdma-core/releases/download/v42.7-h2/rdma-core-42.7.patch")
-set(ROOT_BUILD_PATH "${CMAKE_SOURCE_DIR}/third_party")
-set(RDMA_CORE_SEARCH_PATHS "${CANN_3RD_LIB_PATH}/${RDMA_CORE_NAME}")
-set(RDMA_CORE_ROOT_DIR ${ROOT_BUILD_PATH}/rdma-core)
-set(RDMA_CORE_ARCHIVE rdma-core-${RDMA_CORE_VERSION}.tar.gz)
-set(RDMA_CORE_PATCH rdma-core-${RDMA_CORE_VERSION}.patch)
-set(RDMA_CORE_ARCHIVE_PATH "${ROOT_BUILD_PATH}/${RDMA_CORE_ARCHIVE}")
-set(RDMA_CORE_PATCH_PATH "${ROOT_BUILD_PATH}/${RDMA_CORE_PATCH}")
-set(RDMA_CORE_SRC_DIR "${ROOT_BUILD_PATH}/rdma-core-${RDMA_CORE_VERSION}")
-set(RDMA_CORE_BUILD_DIR "${ROOT_BUILD_PATH}/rdma-core-build")
-file(MAKE_DIRECTORY "${ROOT_BUILD_PATH}")
+include(ExternalProject)
+unset(rdma_core_FOUND CACHE)
+unset(RDMA_CORE_INCLUDE CACHE)
 
 if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
 endif()
 
-if(DEFINED CANN_3RD_LIB_PATH AND CANN_3RD_LIB_PATH)
-    set(RDMA_CORE_ARCHIVE_PATH "${CANN_3RD_LIB_PATH}/${RDMA_CORE_ARCHIVE}")
-    set(RDMA_CORE_PATCH_PATH "${CANN_3RD_LIB_PATH}/${RDMA_CORE_PATCH}")
+if(NOT CANN_3RD_LIB_PATH)
+    set(CANN_3RD_LIB_PATH ${CMAKE_SOURCE_DIR}/third_party)
 endif()
-if(EXISTS ${RDMA_CORE_SEARCH_PATHS})
-    set(RDMA_CORE_SRC_DIR ${RDMA_CORE_SEARCH_PATHS})
-    message(STATUS "[ThirdParty][rdma-core] successfully copied ${RDMA_CORE_SEARCH_PATHS} to ${ROOT_BUILD_PATH}.")
+
+if(PRODUCT_SIDE STREQUAL "device")
+    set(RDMA_CORE_SRC_DIR ${CANN_3RD_LIB_PATH}/lib_cache/device/rdma_core_src)
+    set(RDMA_CORE_BUILD_DIR ${CANN_3RD_LIB_PATH}/lib_cache/device/rdma_core_build)
+    set(RDMA_CORE_PKG_DIR ${CANN_3RD_LIB_PATH}/pkg/device)
 else()
-    if(NOT EXISTS "${RDMA_CORE_SRC_DIR}/CMakeLists.txt")
-        message(STATUS "[ThirdParty][rdma-core] source not found, starting download and setup...")
-
-        # -------------------------- downloading src --------------------------
-        download_file(${RDMA_CORE_URL} ${RDMA_CORE_ARCHIVE_PATH} SHA256=aa935de1fcd07c42f7237b0284b5697b1ace2a64f2bcfca3893185bc91b8c74d)
-
-        # -------------------------- dowloading patch --------------------------
-        download_file(${RDMA_CORE_PATCH_URL} ${RDMA_CORE_PATCH_PATH} SHA256=54ca56b3b68bc465a78dd5839cd7110610745c7152a1dc3a72b265deeebb905f)
-
-        # -------------------------- Extracting --------------------------
-        execute_process(
-            COMMAND tar -zxf "${RDMA_CORE_ARCHIVE_PATH}" -C "${ROOT_BUILD_PATH}"
-            WORKING_DIRECTORY "${ROOT_BUILD_PATH}"
-            RESULT_VARIABLE TAR_RESULT
-        )
-
-        if(NOT TAR_RESULT EQUAL 0)
-            message(FATAL_ERROR "[ThirdParty][rdma-core] failed to extract rdma-core archive")
-        endif()
-
-        # -------------------------- patching --------------------------
-        message(STATUS "[ThirdParty][rdma-core] applying rdma-core patch...")
-        execute_process(
-            COMMAND patch -p1 -i "${RDMA_CORE_PATCH_PATH}"
-            WORKING_DIRECTORY "${RDMA_CORE_SRC_DIR}"
-            RESULT_VARIABLE PATCH_RESULT
-        )
-        if(NOT PATCH_RESULT EQUAL 0)
-            message(FATAL_ERROR "[ThirdParty][rdma-core] failed to apply rdma-core patch")
-        endif()
-
-    else()
-        message(STATUS "[ThirdParty][rdma-core] source already prepared, skipping download/extract/patch")
-    endif()
+    set(RDMA_CORE_SRC_DIR ${CANN_3RD_LIB_PATH}/lib_cache/rdma_core_src)
+    set(RDMA_CORE_BUILD_DIR ${CANN_3RD_LIB_PATH}/lib_cache/rdma_core_build)
+    set(RDMA_CORE_PKG_DIR ${CANN_3RD_LIB_PATH}/pkg)
 endif()
-execute_process(
-    COMMAND ${CMAKE_COMMAND}
-        -S "${RDMA_CORE_SRC_DIR}"
-        -B "${RDMA_CORE_BUILD_DIR}"
-        -DNO_MAN_PAGES=1
-        -DENABLE_RESOLVE_NEIGH=0
-        -DCMAKE_SKIP_RPATH=True
-        -DNO_PYVERBS=1
+
+
+# 查找目录下是否已经安装，避免重复编译安装
+find_path(RDMA_CORE_INCLUDE
+    NAMES rdma/rdma_user_cm.h
+    PATH_SUFFIXES include
+    PATHS ${RDMA_CORE_BUILD_DIR}
+    NO_DEFAULT_PATH
 )
 
-execute_process(
-    COMMAND ${CMAKE_COMMAND}
-        --build "${RDMA_CORE_BUILD_DIR}"
-        --target kern-abi
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(rdma_core
+    FOUND_VAR
+        rdma_core_FOUND
+    REQUIRED_VARS
+        RDMA_CORE_INCLUDE
 )
 
-set(RDMA_CORE_INCLUDE_DIR ${RDMA_CORE_BUILD_DIR}/include)
+set(RDMA_CORE_FILE "rdma-core-42.7.tar.gz")
+set(RDMA_CORE_PATCH_FILE "rdma-core-42.7.patch")
+set(RDMA_CORE_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/rdma-core/${RDMA_CORE_FILE}")
+set(RDMA_CORE_PATCH_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/rdma-core/${RDMA_CORE_PATCH_FILE}")
+
+add_library(rdma_core_headers INTERFACE)
+
+if(rdma_core_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
+    set(RDMA_CORE_INCLUDE_DIR "${RDMA_CORE_INCLUDE}")
+    message(STATUS "[ThirdPartyLib][rdma-core] rdma-core found in ${RDMA_CORE_BUILD_PATH}, and not force rebuild cann third_party")
+else()
+    if(EXISTS "${RDMA_CORE_PKG_DIR}/${RDMA_CORE_PATCH_FILE}")
+        set(RDMA_CORE_PATCH "${RDMA_CORE_PKG_DIR}/${RDMA_CORE_PATCH_FILE}")
+    elseif(EXISTS "${CANN_3RD_LIB_PATH}/${RDMA_CORE_PATCH_FILE}")
+        set(RDMA_CORE_PATCH "${CANN_3RD_LIB_PATH}/${RDMA_CORE_PATCH_FILE}")
+    elseif(EXISTS "${CANN_3RD_LIB_PATH}/rdma-core/${RDMA_CORE_PATCH_FILE}")
+        set(RDMA_CORE_PATCH "${CANN_3RD_LIB_PATH}/rdma-core/${RDMA_CORE_PATCH_FILE}")
+    else()
+        set(RDMA_CORE_PATCH_PROJECT_URL "${RDMA_CORE_PATCH_URL}")
+    endif()
+
+    if(RDMA_CORE_PATCH_PROJECT_URL)
+ 	     ExternalProject_Add(rdma_core_patch
+            URL ${RDMA_CORE_PATCH_PROJECT_URL}
+ 	         URL_HASH SHA256=54ca56b3b68bc465a78dd5839cd7110610745c7152a1dc3a72b265deeebb905f
+ 	         DOWNLOAD_DIR ${RDMA_CORE_PKG_DIR}
+ 	         UPDATE_COMMAND ""
+ 	         CONFIGURE_COMMAND ""
+ 	         BUILD_COMMAND ""
+ 	         INSTALL_COMMAND ""
+ 	         DOWNLOAD_NO_EXTRACT TRUE
+ 	         DOWNLOAD_NO_PROGRESS TRUE
+ 	         EXCLUDE_FROM_ALL TRUE
+ 	     )
+        set(RDMA_CORE_PATCH "${RDMA_CORE_PKG_DIR}/${RDMA_CORE_PATCH_FILE}")
+    else()
+        add_custom_target(rdma_core_patch)
+    endif()
+
+    if(EXISTS "${CANN_3RD_LIB_PATH}/rdma-core/CMakeLists.txt")
+        set(RDMA_CORE_SRC_DIR ${CANN_3RD_LIB_PATH}/rdma-core)
+        message(STATUS "[ThirdPartyLib][rdma-core] use local rdma-core cache ${RDMA_CORE_SRC_DIR}.")
+    elseif(EXISTS "${CANN_3RD_LIB_PATH}/${RDMA_CORE_FILE}")
+        set(RDMA_CORE_PROJECT_URL "${CANN_3RD_LIB_PATH}/${RDMA_CORE_FILE}")
+        message(STATUS "[ThirdPartyLib][rdma-core] use local rdma-core cache ${RDMA_CORE_PROJECT_URL}.")
+    elseif(EXISTS "${CANN_3RD_LIB_PATH}/rdma-core/${RDMA_CORE_FILE}")
+        set(RDMA_CORE_PROJECT_URL "${CANN_3RD_LIB_PATH}/rdma-core/${RDMA_CORE_FILE}")
+        message(STATUS "[ThirdPartyLib][rdma-core] pipeline use rdma-core cache ${RDMA_CORE_PROJECT_URL}.")
+    else()
+        set(RDMA_CORE_PROJECT_URL "${RDMA_CORE_URL}")
+        message(STATUS "[ThirdPartyLib][rdma-core] not use cache, download rdma-core ${RDMA_CORE_URL}.")
+    endif()
+
+    if(RDMA_CORE_PROJECT_URL)
+        ExternalProject_Add(rdma_core_src
+            URL ${RDMA_CORE_PROJECT_URL}
+            URL_HASH SHA256=aa935de1fcd07c42f7237b0284b5697b1ace2a64f2bcfca3893185bc91b8c74d
+            SOURCE_DIR ${RDMA_CORE_SRC_DIR}
+            DOWNLOAD_DIR ${RDMA_CORE_PKG_DIR}
+            PATCH_COMMAND patch -p1 -i "${RDMA_CORE_PATCH}"
+            CONFIGURE_COMMAND ""
+            BUILD_COMMAND ""
+            INSTALL_COMMAND ""
+            DOWNLOAD_NO_PROGRESS TRUE
+            EXCLUDE_FROM_ALL TRUE
+            DEPENDS rdma_core_patch
+        )
+    else()
+        add_custom_target(rdma_core_src)
+    endif()
+
+    ExternalProject_Add(rdma_core_build
+        SOURCE_DIR ${RDMA_CORE_SRC_DIR}
+        BINARY_DIR ${RDMA_CORE_BUILD_DIR}
+        DOWNLOAD_COMMAND ""
+        CONFIGURE_COMMAND ${CMAKE_COMMAND}
+            -DNO_MAN_PAGES=1
+            -DENABLE_RESOLVE_NEIGH=0
+            -DCMAKE_SKIP_RPATH=True
+            -DNO_PYVERBS=1
+            <SOURCE_DIR>
+        BUILD_COMMAND $(MAKE) kern-abi
+        INSTALL_COMMAND ""
+        EXCLUDE_FROM_ALL TRUE
+        DEPENDS rdma_core_src
+    )
+
+    set(RDMA_CORE_INCLUDE_DIR "${RDMA_CORE_BUILD_DIR}/include")
+    add_dependencies(rdma_core_headers rdma_core_build)
+endif()
+
+target_include_directories(rdma_core_headers INTERFACE
+    ${RDMA_CORE_INCLUDE_DIR}
+)

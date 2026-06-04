@@ -13,7 +13,7 @@ unset(openssl_FOUND CACHE)
 
 if(PRODUCT_SIDE STREQUAL "device")
     set(OPENSSL_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/device/openssl)
-    set(OPENSSL_PKG_PATH ${CANN_3RD_LIB_PATH}/device/pkg)
+    set(OPENSSL_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg/device)
 else()
     set(OPENSSL_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/openssl)
     set(OPENSSL_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg)
