@@ -30,7 +30,6 @@ else()
 
     ExternalProject_Add(cares_build
                         URL ${REQ_URL}
-                        TLS_VERIFY OFF
                         DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/pkg
                         SOURCE_DIR ${CARES_INTALL_PATH}
                         CONFIGURE_COMMAND ""

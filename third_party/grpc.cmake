@@ -155,7 +155,6 @@ else()
     set(GRPC_CXX_FLAGS "-Wl,-z,relro,-z,now,-z,noexecstack -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-all -s -D_GLIBCXX_USE_CXX11_ABI=${USE_CXX11_ABI}")
     ExternalProject_Add(grpc_build
                         URL ${REQ_URL}
-                        TLS_VERIFY OFF
                         ${GRPC_EXTRA_ARGS}
                         PATCH_COMMAND ${CMAKE_COMMAND} -E make_directory <SOURCE_DIR>/third_party/opencensus-proto/src
                             # 低版本cmake无法通过DRE2_ROOT_DIR找到re2路径，拷贝一份到build路径下

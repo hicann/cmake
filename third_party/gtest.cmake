@@ -110,7 +110,6 @@ else()
     # adaptive the gtest upgrade scenario, reset the installation path.
     ExternalProject_Add(third_party_gtest
         URL ${GTEST_PROJECT_URL}
-        TLS_VERIFY OFF
         DOWNLOAD_DIR ${GTEST_DOWNLOAD_PATH}
         CONFIGURE_COMMAND ${CMAKE_COMMAND}
             -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
@@ -133,7 +132,7 @@ if(NOT EXISTS ${GTEST_INCLUDE})
     file(MAKE_DIRECTORY "${GTEST_INCLUDE}")
 endif()
 
-add_library(GTest::gtest STATIC IMPORTED)
+add_library(GTest::gtest STATIC IMPORTED GLOBAL)
 add_dependencies(GTest::gtest third_party_gtest)
 set_target_properties(GTest::gtest PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INCLUDE}

@@ -46,13 +46,13 @@ else()
     message(STATUS "[ThirdParty][zlib] ${REQ_URL} not found, need download.")
     set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/zlib/zlib-1.2.13.tar.gz")
 endif()
-ExternalProject_Add(zlib_src                        URL ${REQ_URL}
-                    TLS_VERIFY OFF
-                    PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/zlib_add_minizip_static_lib.patch
-                    CONFIGURE_COMMAND ""
-                    BUILD_COMMAND ""
-                    INSTALL_COMMAND ""
-                    EXCLUDE_FROM_ALL TRUE
+ExternalProject_Add(zlib_src                        
+    URL ${REQ_URL}
+    PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/zlib_add_minizip_static_lib.patch
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+    EXCLUDE_FROM_ALL TRUE
 )
 ExternalProject_Get_Property(zlib_src SOURCE_DIR)
 set(ZLIB_SRC_DIR ${SOURCE_DIR})

@@ -56,7 +56,6 @@ else()
     ExternalProject_Add(symengine_build
         SOURCE_DIR ${CANN_3RD_LIB_PATH}/symengine
         ${SYMENGINE_EXTRA_ARGS}
-        TLS_VERIFY OFF
         CONFIGURE_COMMAND ${CMAKE_COMMAND}
             -DCMAKE_VERBOSE_MAKEFILE=ON
             -DINTEGER_CLASS:STRING=boostmp

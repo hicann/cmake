@@ -24,7 +24,6 @@ set(JPEG_INSTALL_PATH ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo)
 include(ExternalProject)
 ExternalProject_Add(third_party_jpeg
     URL ${REQ_URL}
-    TLS_VERIFY OFF
     DOWNLOAD_EXTRACT_TIMESTAMP true
     CONFIGURE_COMMAND ${CMAKE_COMMAND}
         -DCMAKE_C_COMPILER_LAUNCHER=${CCACHE_PROGRAM}

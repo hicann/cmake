@@ -55,7 +55,6 @@ else()
             ${REQ_URL}
             ${PYBIND11_ARCHIVE}
             SHOW_PROGRESS
-            TLS_VERIFY OFF
         )
     endif()
     file(MAKE_DIRECTORY ${PYBIND11_INSTALL_PATH})

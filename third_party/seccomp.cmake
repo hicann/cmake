@@ -36,7 +36,6 @@ else()
         URL ${REQ_URL}
         DOWNLOAD_DIR download/seccomp
         PREFIX third_party
-        TLS_VERIFY OFF
         CONFIGURE_COMMAND cd <SOURCE_DIR> && ./autogen.sh && ./configure --prefix=<INSTALL_DIR>
         INSTALL_COMMAND   ""
         BUILD_COMMAND     ""

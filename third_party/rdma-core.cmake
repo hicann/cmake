@@ -69,18 +69,18 @@ else()
     endif()
 
     if(RDMA_CORE_PATCH_PROJECT_URL)
- 	     ExternalProject_Add(rdma_core_patch
+ 	    ExternalProject_Add(rdma_core_patch
             URL ${RDMA_CORE_PATCH_PROJECT_URL}
- 	         URL_HASH SHA256=54ca56b3b68bc465a78dd5839cd7110610745c7152a1dc3a72b265deeebb905f
- 	         DOWNLOAD_DIR ${RDMA_CORE_PKG_DIR}
- 	         UPDATE_COMMAND ""
- 	         CONFIGURE_COMMAND ""
- 	         BUILD_COMMAND ""
- 	         INSTALL_COMMAND ""
- 	         DOWNLOAD_NO_EXTRACT TRUE
- 	         DOWNLOAD_NO_PROGRESS TRUE
- 	         EXCLUDE_FROM_ALL TRUE
- 	     )
+ 	        URL_HASH SHA256=54ca56b3b68bc465a78dd5839cd7110610745c7152a1dc3a72b265deeebb905f
+ 	        DOWNLOAD_DIR ${RDMA_CORE_PKG_DIR}
+ 	        UPDATE_COMMAND ""
+ 	        CONFIGURE_COMMAND ""
+ 	        BUILD_COMMAND ""
+ 	        INSTALL_COMMAND ""
+ 	        DOWNLOAD_NO_EXTRACT TRUE
+ 	        DOWNLOAD_NO_PROGRESS TRUE
+ 	        EXCLUDE_FROM_ALL TRUE
+ 	    )
         set(RDMA_CORE_PATCH "${RDMA_CORE_PKG_DIR}/${RDMA_CORE_PATCH_FILE}")
     else()
         add_custom_target(rdma_core_patch)
