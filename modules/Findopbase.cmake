@@ -37,16 +37,9 @@ find_library(OPBASE_LIB_DIR
   NO_CMAKE_FIND_ROOT_PATH
 )
 
-find_library(_CANN_AICPU_CONTEXT_STATIC_LIBRARY
-    NAMES libaicpu_context.a
-    PATH_SUFFIXES lib64
-    NO_CMAKE_SYSTEM_PATH
-    NO_CMAKE_FIND_ROOT_PATH)
-
 find_package_handle_standard_args(opbase
     REQUIRED_VARS
       OPBASE_INC_DIR
-      _CANN_AICPU_CONTEXT_STATIC_LIBRARY
 )
 
 get_filename_component(OPBASE_INC_DIR ${OPBASE_INC_DIR} REALPATH)
@@ -64,10 +57,6 @@ else()
 endif()
 
 if(OPBASE_FOUND)
-  add_library(aicpu_context STATIC IMPORTED)
-  set_target_properties(aicpu_context PROPERTIES
-      IMPORTED_LOCATION "${_CANN_AICPU_CONTEXT_STATIC_LIBRARY}"
-  )
   if(NOT OPBASE_FIND_QUIETLY)
     message(STATUS "Found OPABSE include:${OPBASE_INC_DIR}")
     message(STATUS "Found OPABSE lib:${OPBASE_LIB_DIR}")
@@ -77,4 +66,8 @@ if(OPBASE_FOUND)
     ${OPBASE_INC_DIR}/op_common
     ${OPBASE_INC_DIR}/op_common/op_host
   )
+endif()
+
+if(PRODUCT_SIDE STREQUAL "device")
+  find_package(aicpu_context)
 endif()
