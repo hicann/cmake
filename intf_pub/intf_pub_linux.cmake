@@ -48,6 +48,7 @@ endif()
 target_compile_definitions(intf_pub_base INTERFACE
     $<$<CONFIG:Release>:CFG_BUILD_NDEBUG>
     $<$<CONFIG:Debug>:CFG_BUILD_DEBUG>
+    $<$<CONFIG:Release>:NDEBUG>
     LINUX=0
 )
 
