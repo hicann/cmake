@@ -31,9 +31,20 @@ def parse_version_line(line: str) -> str:
     return version.split('-')[0]
 
 
+def get_version_info_path(ascend_install_path: str, name: str) -> str:
+    """获取version.info文件路径。"""
+    return os.path.join(ascend_install_path, 'share', 'info', name, 'version.info')
+
+
 def read_pkg_version(recv: Receiver, ascend_install_path: str, name: str) -> Optional[str]:
     """读取包版本。"""
-    filepath = os.path.join(ascend_install_path, 'share', 'info', name, 'version.info')
+    if name == 'graph-autofusion':
+        filepath = get_version_info_path(ascend_install_path, name.replace('-', '_'))
+        if not os.path.isfile(filepath):
+            filepath = get_version_info_path(ascend_install_path, name)
+    else:
+        filepath = get_version_info_path(ascend_install_path, name)
+
     if not os.path.isfile(filepath):
         recv.err_msgs.append(f'{filepath} does not exist in read_pkg_version!')
         return None
@@ -189,6 +200,6 @@ def main():
     return True
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     if not main():
         sys.exit(1)

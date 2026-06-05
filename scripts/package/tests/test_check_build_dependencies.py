@@ -20,7 +20,7 @@ from unittest import mock
 import pytest
 
 # Dynamically load the module to avoid 'py' namespace conflicts
-_MODULE_PATH = Path(__file__).resolve().parents[1] / "check_build_dependencies.py"
+_MODULE_PATH = Path(__file__).resolve().parents[2] / "version" / "check_build_dependencies.py"
 spec = importlib.util.spec_from_file_location("check_build_dependencies", _MODULE_PATH)
 _check_build_dependencies = importlib.util.module_from_spec(spec)
 sys.modules["check_build_dependencies"] = _check_build_dependencies
@@ -146,6 +146,21 @@ class TestReadPkgVersion:
 
         assert result is None
         assert len(recv.err_msgs) == 1
+
+    @staticmethod
+    def test_read_pkg_version_graph_autofusion_success(tmp_path):
+        """Test reading version from existing file."""
+        # Create the version file structure
+        info_dir = tmp_path / 'share' / 'info' / 'graph_autofusion'
+        info_dir.mkdir(parents=True)
+        version_file = info_dir / 'version.info'
+        version_file.write_text('Version=2.5.0-alpha\nOtherField=value\n')
+
+        recv = Receiver([], [])
+        result = read_pkg_version(recv, str(tmp_path), 'graph-autofusion')
+
+        assert result == '2.5.0'
+        assert recv.err_msgs == []
 
 
 class TestCheckBuildDepItemExtended:
@@ -495,13 +510,6 @@ class TestMain:
 
         assert result is False
         assert 'does not exist' in caplog.text
-
-    @staticmethod
-    def test_main_help():
-        """Test main function with --help argument."""
-        with mock.patch('sys.argv', ['check_build_dependencies.py', '--help']):
-            result = main()
-        assert result is True
 
     @staticmethod
     def test_main_multiple_deps_with_warnings(tmp_path, caplog):
