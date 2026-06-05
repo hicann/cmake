@@ -9,7 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 include_guard(GLOBAL)
 
-add_library(symengine STATIC IMPORTED)
+add_library(symengine STATIC IMPORTED GLOBAL)
 set(SYMENGINE_INSTALL_DIR "${CANN_3RD_LIB_PATH}/lib_cache/symengine")
 set(SYMENGINE_LIB_FILE "${SYMENGINE_INSTALL_DIR}/lib/libsymengine.a")
 set(SYMENGINE_INCLUDE_DIR "${SYMENGINE_INSTALL_DIR}/include")

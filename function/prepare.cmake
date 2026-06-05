@@ -478,8 +478,8 @@ endfunction()
 # 说明：如果设置了 CANN_VERSION_CURRENT_PACKAGE，会自动生成 .ini 文件并打包
 function(cann_pack_targets_and_files)
     cmake_parse_arguments(ARG
-        ""
-        "OUTPUT;MANIFEST;OUTPUT_TARGET;SIZE_LIMIT"
+        "GEN_INI"
+        "OUTPUT;MANIFEST;OUTPUT_TARGET;TAR_ROOT_DIR;SIZE_LIMIT"
         "TARGETS;FILES"
         ${ARGN}
     )
@@ -500,7 +500,15 @@ function(cann_pack_targets_and_files)
     # Generate safe target name
     get_filename_component(tar_basename "${ARG_OUTPUT}" NAME_WE)
     string(MAKE_C_IDENTIFIER "pack_${tar_basename}" safe_name)
-    set(staging_dir "${CMAKE_CURRENT_BINARY_DIR}/_${safe_name}_stage")
+    set(staging_root_dir "${CMAKE_CURRENT_BINARY_DIR}/_${safe_name}_stage")
+
+    if(ARG_TAR_ROOT_DIR)
+        set(staging_dir "${staging_root_dir}/${ARG_TAR_ROOT_DIR}")
+        set(tar_src ${ARG_TAR_ROOT_DIR})
+    else()
+        set(staging_dir "${staging_root_dir}/${ARG_TAR_ROOT_DIR}")
+        set(tar_src ".")
+    endif()
     
     # Generate .ini file if CANN_VERSION_CURRENT_PACKAGE is set
     set(ini_file "")
@@ -536,7 +544,7 @@ function(cann_pack_targets_and_files)
     endforeach()
     list(APPEND src_items ${ARG_FILES})
 
-    if(NOT src_items AND NOT ini_file)
+    if(NOT src_items)
         message(FATAL_ERROR "[pack_targets_and_files] No targets or files specified to pack")
     endif()
 
@@ -578,7 +586,6 @@ function(cann_pack_targets_and_files)
 
     add_custom_command(
         OUTPUT "${ARG_OUTPUT}" ${ini_output}
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${staging_dir}"
         ${ini_command}
         ${ini_copy_command}
         COMMAND ${CMAKE_COMMAND}
@@ -586,16 +593,19 @@ function(cann_pack_targets_and_files)
             ${manifest_arg}
             -D "_ITEMS=$<JOIN:${src_items},;>"
             -P "${CANN_CMAKE_DIR}/function/_pack_stage.cmake"
-        COMMAND tar "czf" "${ARG_OUTPUT}" .
+        COMMAND tar "czf" "${ARG_OUTPUT}" ${tar_src}
                 "--mode=750"
         ${size_check_command}
-        WORKING_DIRECTORY ${staging_dir}
+        WORKING_DIRECTORY ${staging_root_dir}
         DEPENDS ${ARG_TARGETS} ${staging_dir} ${ini_depends}
         COMMENT "Packing with ${ARG_OUTPUT}"
         VERBATIM
     )
 
     add_custom_target(${ARG_OUTPUT_TARGET} ALL DEPENDS "${ARG_OUTPUT}")
+    set_target_properties(${ARG_OUTPUT_TARGET} PROPERTIES
+        TARGET_FILE "${ARG_OUTPUT}"
+    )
 endfunction()
 
 function(add_cann_sign_file)
