@@ -94,7 +94,7 @@ if(unified_dlog_FOUND)
 
     add_library(unified_dlog_headers INTERFACE IMPORTED)
     set_target_properties(unified_dlog_headers PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${unified_dlog_INCLUDE_DIR};${unified_dlog_INCLUDE_DIR}/pkg_inc/base"
+        INTERFACE_INCLUDE_DIRECTORIES "${unified_dlog_INCLUDE_DIR}"
     )
 
     include(CMakePrintHelpers)
