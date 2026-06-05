@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
-# -----------------------------------------------------------------------------------------------------------
+
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
 # This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
@@ -8,7 +8,6 @@
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
-# -----------------------------------------------------------------------------------------------------------
 
 #----------------------------------------------------------------------------
 # Purpose:
@@ -61,7 +60,12 @@ def gen_ini():
     if tree.getroot().tag != 'image_info':
         print("error in input xml file")
     if args.hash_list:
-        hash_list_path = os.path.join(args.hash_list_path, ('{}.img'.format('hash-list')))
+        # 防止路径遍历攻击：归一化路径并校验位于预期目录下
+        hash_dest = os.path.abspath(args.hash_list_path)
+        base_dir = os.path.dirname(os.path.realpath(args.inFilePath))
+        if not os.path.abspath(hash_dest).startswith(os.path.abspath(base_dir)):
+            raise ValueError(f"hash_dest must be within base directory: {base_dir}")
+        hash_list_path = os.path.join(hash_dest, ('{}.img'.format('hash-list')))
         if (os.path.exists(hash_list_path)) :
             os.remove(hash_list_path)
         for elem in tree.iter(tag='image'):
@@ -91,6 +95,7 @@ def gen_ini():
                 file_name = os.path.join(elem.attrib['out'], f'{elem.attrib["ini_name"]}.ini')
             else:
                 file_name = os.path.join(elem.attrib['out'], ('{}.ini'.format(elem.attrib['tag'])))
+            # print(file_name)
             with open(file_name, 'w+') as f:
                 line_elem = [elem.attrib['tag'], hashVal]
                 line = '{};\n'.format(',   '.join(line_elem))
@@ -127,6 +132,7 @@ def main():
         update_hash()
     else:
         gen_ini()
+
 
 if __name__ == '__main__':
     main()
