@@ -215,8 +215,10 @@ function(set_cann_cpack_config component)
     cmake_parse_arguments(CANN "NO_COMPONENT_INSTALL;NO_CLEAN" "ENABLE_DEVICE;COMPUTE_UNIT;SHARE_INFO_NAME;OUTPUT" "" ${ARGN})
 
     if(ENABLE_UNIFIED_BUILD)
-        if(component IN_LIST DEVICE_CANN_PACKAGES)
+        if(component IN_LIST DEVICE_CANN_PACKAGES AND SUPERBUILD_ENABLE_DEVICE)
             set(CANN_ENABLE_DEVICE TRUE)
+        else()
+            set(CANN_ENABLE_DEVICE FALSE)
         endif()
     endif()
 
