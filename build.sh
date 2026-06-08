@@ -201,13 +201,13 @@ mk_dir() {
 
 # create build path
 build_project() {
+  local -a cmake_cmd
   echo "create build directory and build";
   mk_dir "${BUILD_PATH}"
   mk_dir "${OUTPUT_PATH}"
   mkdir -p "$BUILD_PATH/.cmake/api/v1/query"
   touch "$BUILD_PATH/.cmake/api/v1/query/codemodel-v2"
 
-  cd "${BUILD_PATH}"
   CMAKE_ARGS=(
     "-DBUILD_OPEN_PROJECT=TRUE"
     "-DENABLE_OPEN_SRC=TRUE"
@@ -231,21 +231,17 @@ build_project() {
     CMAKE_ARGS+=("-DLAUNCH_LINK_TOOL=${LAUNCH_RULE}")
   fi
 
-  cmake -S ../superbuild -B . "${CMAKE_ARGS[@]}"
+  cmake_cmd=(cmake -S "$BASEPATH/superbuild" -B "$BUILD_PATH" "${CMAKE_ARGS[@]}")
+  "${cmake_cmd[@]}"
   if [ $? -ne 0 ]; then
-    echo "execute command: cmake ${CMAKE_ARGS[@]} .. failed."
+    echo "execute command: ${cmake_cmd[@]} failed."
     return 1
   fi
 
-  cmake --build . -j${THREAD_NUM}
+  cmake_cmd=(cmake --build "$BUILD_PATH" --target package "-j${THREAD_NUM}")
+  "${cmake_cmd[@]}"
   if [ $? -ne 0 ]; then
-    echo "execute command: cmake --build build -j${THREAD_NUM} failed."
-    return 1
-  fi
-
-  make package -j${THREAD_NUM}
-  if [ $? -ne 0 ]; then
-    echo "execute command: make package failed."
+    echo "execute command: ${cmake_cmd[@]} failed."
     return 1
   fi
   echo "build success!"
