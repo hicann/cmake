@@ -756,3 +756,37 @@ function(create_imported_interface_include_directories)
         endforeach()
     endforeach()
 endfunction()
+
+# 生成版本号头文件
+function(gen_cann_version_header pkg_name)
+    cmake_parse_arguments(CANN "" "VERSION" "" ${ARGN})
+    if(CANN_UNPARSED_ARGUMENTS)
+        # 如果有2个位置参数，将第2个位置参数作为component
+        list(GET CANN_UNPARSED_ARGUMENTS 0 component)
+    else()
+        set(component "${pkg_name}")
+    endif()
+    if(NOT CANN_VERSION)
+        set(CANN_VERSION "${CANN_VERSION_${component}_VERSION}")
+    endif()
+    set(OUTPUT_PATH "${CMAKE_BINARY_DIR}/include/version/${pkg_name}_version.h")
+    add_custom_command(OUTPUT ${OUTPUT_PATH}
+        COMMAND bash ${CANN_CMAKE_DIR}/scripts/package/generate_version_header.sh "${pkg_name}" "${CANN_VERSION}" --output ${OUTPUT_PATH}
+    )
+    add_custom_target(gen_${pkg_name}_version_header ALL DEPENDS ${OUTPUT_PATH})
+    if(NOT PRODUCT_SIDE STREQUAL "device")
+        install(FILES ${OUTPUT_PATH}
+            DESTINATION ${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/version
+            PERMISSIONS OWNER_READ GROUP_READ
+            COMPONENT ${component}
+            ${INSTALL_OPTIONAL}
+        )
+    endif()
+    if(NOT TARGET cann_version_headers)
+        add_library(cann_version_headers INTERFACE)
+        target_include_directories(cann_version_headers INTERFACE
+            $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
+        )
+    endif()
+    add_dependencies(cann_version_headers gen_${pkg_name}_version_header)
+endfunction()
