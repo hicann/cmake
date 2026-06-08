@@ -16,3 +16,4 @@ set(CANN_PACKAGE_DIR_ge-compiler "ge")
 set(CANN_PACKAGE_DIR_dflow-executor "ge")
 
 set(CANN_PACKAGE_COMPONENTS_asc-devkit "acl_rtc" "ascendc_runtime" "ASC")
+set(CANN_PACKAGE_COMPONENTS_ge-executor "graph")

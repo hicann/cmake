@@ -49,25 +49,25 @@ find_package_handle_standard_args(graph
 )
 
 if(graph_FOUND)
-    add_library(graph_headers INTERFACE IMPORTED)
+    add_library(graph_headers INTERFACE IMPORTED GLOBAL)
     set_target_properties(graph_headers PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES
             "${_CANN_GRAPH_INCLUDE_DIR};${_CANN_GRAPH_INCLUDE_DIR}/transformer/"
     )
 
-    add_library(graph SHARED IMPORTED)
+    add_library(graph SHARED IMPORTED GLOBAL)
     set_target_properties(graph PROPERTIES
         INTERFACE_LINK_LIBRARIES "graph_headers"
         IMPORTED_LOCATION "${_CANN_graph_SHARED_LIBRARY}"
     )
 
-    add_library(graph_base SHARED IMPORTED)
+    add_library(graph_base SHARED IMPORTED GLOBAL)
     set_target_properties(graph_base PROPERTIES
         INTERFACE_LINK_LIBRARIES "graph_headers"
         IMPORTED_LOCATION "${_CANN_graph_base_SHARED_LIBRARY}"
     )
 
-    add_library(register SHARED IMPORTED)
+    add_library(register SHARED IMPORTED GLOBAL)
     set_target_properties(register PROPERTIES
         IMPORTED_LOCATION "${_CANN_register_SHARED_LIBRARY}"
     )
