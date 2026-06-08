@@ -776,7 +776,7 @@ function(gen_cann_version_header pkg_name)
     add_custom_target(gen_${pkg_name}_version_header ALL DEPENDS ${OUTPUT_PATH})
     if(NOT PRODUCT_SIDE STREQUAL "device")
         install(FILES ${OUTPUT_PATH}
-            DESTINATION ${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/version
+            DESTINATION ${TARGET_ARCH}-linux/include/version
             PERMISSIONS OWNER_READ GROUP_READ
             COMPONENT ${component}
             ${INSTALL_OPTIONAL}
