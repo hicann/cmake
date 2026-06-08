@@ -190,7 +190,7 @@ else()
                             -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
                             -DCMAKE_BUILD_TYPE=Release
                             -DgRPC_BUILD_TESTS=OFF
-                            -DCMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR}
+                            -DCMAKE_INSTALL_LIBDIR=lib
                             -DLLVM_PATH=${LLVM_PATH}
                             -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
                             -DgRPC_BUILD_CSHARP_EXT=OFF
@@ -266,7 +266,7 @@ else()
                             -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
                             -DCMAKE_BUILD_TYPE=Release
                             -DgRPC_BUILD_TESTS=OFF
-                            -DCMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR}
+                            -DCMAKE_INSTALL_LIBDIR=lib
                             -DgRPC_BUILD_CSHARP_EXT=OFF
                             -DCMAKE_INSTALL_PREFIX=${PROTOC_GRPC_INSTALL_PATH}
                             <SOURCE_DIR>
