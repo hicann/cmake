@@ -8,34 +8,50 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-if (TARGET cares_build)
-    return()
+include_guard(GLOBAL)
+
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
 endif()
 
-include(ExternalProject)
+if(NOT CANN_3RD_LIB_PATH)
+    set(CANN_3RD_LIB_PATH ${CMAKE_SOURCE_DIR}/third_party)
+endif()
 
-set(CARES_INTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/c-ares)
+if(PRODUCT_SIDE STREQUAL "device")
+    set(CARES_INTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/device/c-ares)
+    set(CARES_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg/device)
+else()
+    set(CARES_INTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/c-ares)
+    set(CARES_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg)
+endif()
+
 set(CARES_FILE ${CARES_INTALL_PATH}/include/ares.h)
 if (EXISTS ${CARES_FILE})
     message(STATUS "[ThirdPartyLib][c-ares] ${CARES_FILE} found.")
     add_custom_target(cares_build)
 else()
-    set(REQ_URL "${CANN_3RD_LIB_PATH}/c-ares/c-ares-1.19.1.tar.gz")
-    if(EXISTS ${REQ_URL})
-      message(STATUS "[ThirdPartyLib][c-ares] ${REQ_URL} found.")
+
+    if(EXISTS ${CANN_3RD_LIB_PATH}/c-ares/c-ares-1.19.1.tar.gz)
+        set(REQ_URL "${CANN_3RD_LIB_PATH}/c-ares/c-ares-1.19.1.tar.gz")
+        message(STATUS "[ThirdPartyLib][c-ares] ${REQ_URL} found.")
+    elseif(EXISTS ${CANN_3RD_LIB_PATH}/c-ares-1.19.1.tar.gz)
+        set(REQ_URL "${CANN_3RD_LIB_PATH}/c-ares-1.19.1.tar.gz")
+        message(STATUS "[ThirdPartyLib][c-ares] ${REQ_URL} found.")
     else()
-      message(STATUS "[ThirdPartyLib][c-ares] ${REQ_URL} not found, need download.")
-      set(REQ_URL "https://gitcode.com/cann-src-third-party/c-ares/releases/download/v1.19.1/c-ares-1.19.1.tar.gz")
+        message(STATUS "[ThirdPartyLib][c-ares] ${REQ_URL} not found, need download.")
+        set(REQ_URL "https://gitcode.com/cann-src-third-party/c-ares/releases/download/v1.19.1/c-ares-1.19.1.tar.gz")
     endif()
 
+    include(ExternalProject)
     ExternalProject_Add(cares_build
-                        URL ${REQ_URL}
-                        DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/pkg
-                        SOURCE_DIR ${CARES_INTALL_PATH}
-                        CONFIGURE_COMMAND ""
-                        BUILD_COMMAND ""
-                        INSTALL_COMMAND ""
-                        EXCLUDE_FROM_ALL TRUE
-                        DWONLOAD_NO_PROGRESS TRUE
+        URL ${REQ_URL}
+        DOWNLOAD_DIR ${CARES_PKG_PATH}
+        SOURCE_DIR ${CARES_INTALL_PATH}
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ""
+        EXCLUDE_FROM_ALL TRUE
+        DWONLOAD_NO_PROGRESS TRUE
     )
 endif()

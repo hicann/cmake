@@ -157,8 +157,6 @@ else()
                         URL ${REQ_URL}
                         ${GRPC_EXTRA_ARGS}
                         PATCH_COMMAND ${CMAKE_COMMAND} -E make_directory <SOURCE_DIR>/third_party/opencensus-proto/src
-                            # 低版本cmake无法通过DRE2_ROOT_DIR找到re2路径，拷贝一份到build路径下
-                            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CANN_3RD_LIB_PATH}/lib_cache/re2/re2 <SOURCE_DIR>/re2
                             COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/grpc-fix-compile-bug-in-device.patch
                         CONFIGURE_COMMAND ${CMAKE_COMMAND}
                             # zlib
@@ -166,14 +164,14 @@ else()
                             -DZLIB_ROOT_DIR=${ZLIB_SRC_DIR}
                             # cares
                             -DgRPC_CARES_PROVIDER=module
-                            -DCARES_ROOT_DIR=${CANN_3RD_LIB_PATH}/lib_cache/c-ares
+                            -DCARES_ROOT_DIR=${CARES_INTALL_PATH}
                             -DCARES_BUILD_TOOLS=OFF
                             # re2
                             -DgRPC_RE2_PROVIDER=module
-                            -DRE2_ROOT_DIR=${CANN_3RD_LIB_PATH}/lib_cache/re2
+                            -DRE2_ROOT_DIR=${RE2_PKG_PATH}
                             # absl
                             -DgRPC_ABSL_PROVIDER=module
-                            -DABSL_ROOT_DIR=${CANN_3RD_LIB_PATH}/lib_cache/abseil-cpp
+                            -DABSL_ROOT_DIR=${ABS_INSTALL_DIR}
                             # protobuf
                             -DgRPC_PROTOBUF_PROVIDER=module
                             -DPROTOBUF_ROOT_DIR=${PROTOBUF_SRC_DIR}
@@ -246,13 +244,13 @@ else()
                             -DgRPC_ZLIB_PROVIDER=none
                             # cares
                             -DgRPC_CARES_PROVIDER=module
-                            -DCARES_ROOT_DIR=${CANN_3RD_LIB_PATH}/lib_cache/c-ares
+                            -DCARES_ROOT_DIR=${CARES_INTALL_PATH}
                             # re2
                             -DgRPC_RE2_PROVIDER=module
-                            -DRE2_ROOT_DIR=${CANN_3RD_LIB_PATH}/lib_cache/re2
+                            -DRE2_ROOT_DIR=${RE2_PKG_PATH}
                             # absl
                             -DgRPC_ABSL_PROVIDER=module
-                            -DABSL_ROOT_DIR=${CANN_3RD_LIB_PATH}/lib_cache/abseil-cpp
+                            -DABSL_ROOT_DIR=${ABS_INSTALL_DIR}
                             # protobuf
                             -DgRPC_PROTOBUF_PROVIDER=module
                             -DPROTOBUF_ROOT_DIR=${PROTOBUF_SRC_DIR}
