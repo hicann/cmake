@@ -168,7 +168,7 @@ else()
                             -DCARES_BUILD_TOOLS=OFF
                             # re2
                             -DgRPC_RE2_PROVIDER=module
-                            -DRE2_ROOT_DIR=${RE2_PKG_PATH}
+                            -DRE2_ROOT_DIR=${RE2_INTALL_PATH}
                             # absl
                             -DgRPC_ABSL_PROVIDER=module
                             -DABSL_ROOT_DIR=${ABS_INSTALL_DIR}
@@ -247,7 +247,7 @@ else()
                             -DCARES_ROOT_DIR=${CARES_INTALL_PATH}
                             # re2
                             -DgRPC_RE2_PROVIDER=module
-                            -DRE2_ROOT_DIR=${RE2_PKG_PATH}
+                            -DRE2_ROOT_DIR=${RE2_INTALL_PATH}
                             # absl
                             -DgRPC_ABSL_PROVIDER=module
                             -DABSL_ROOT_DIR=${ABS_INSTALL_DIR}
