@@ -174,7 +174,7 @@ set(PROTOBUF_SRC_DIR ${SOURCE_DIR})
 # Target: ascend_protobuf (Shared)
 # ---------------------------------------------------------
 add_library(ascend_protobuf SHARED IMPORTED GLOBAL)
-add_library(ascend_protobuf_shared_headers INTERFACE IMPORTED)
+add_library(ascend_protobuf_shared_headers INTERFACE IMPORTED GLOBAL)
 if(ASCEND_PROTOBUF_SHARED_INCLUDE AND ASCEND_PROTOBUF_SHARED_LIB)
     set_target_properties(ascend_protobuf PROPERTIES
         IMPORTED_LOCATION ${ASCEND_PROTOBUF_SHARED_LIB}
