@@ -110,8 +110,8 @@ macro(init_cann_project)
 
         # Init third_party default path witch not set in services.
         if(NOT CANN_3RD_LIB_PATH)
-            message("set third_party default path: ${CMAKE_SOURCE_DIR}/third_party.")
             set(CANN_3RD_LIB_PATH ${CMAKE_SOURCE_DIR}/third_party)
+            message("set third_party default path: ${CANN_3RD_LIB_PATH}.")
         endif()
 
         __cann_get_target_arch()
