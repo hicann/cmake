@@ -16,10 +16,6 @@ if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
 endif()
 
-if(NOT CANN_3RD_LIB_PATH)
-    set(CANN_3RD_LIB_PATH ${CMAKE_SOURCE_DIR}/third_party)
-endif()
-
 if(PRODUCT_SIDE STREQUAL "device")
     set(RDMA_CORE_SRC_DIR ${CANN_3RD_LIB_PATH}/lib_cache/device/rdma_core_src)
     set(RDMA_CORE_BUILD_DIR ${CANN_3RD_LIB_PATH}/lib_cache/device/rdma_core_build)

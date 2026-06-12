@@ -19,10 +19,6 @@ if(NOT OPEN_PKG_PATH)
   set(OPEN_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg)
 endif()
 
-if(NOT CANN_3RD_LIB_PATH)
-    set(CANN_3RD_LIB_PATH ${CMAKE_SOURCE_DIR}/third_party)
-endif()
-
 set(JSON_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
 set(JSON_SOURCE_PATH ${CANN_3RD_LIB_PATH}/json)
 

@@ -14,10 +14,6 @@ if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
 endif()
 
-if(NOT CANN_3RD_LIB_PATH)
-    set(CANN_3RD_LIB_PATH ${CMAKE_SOURCE_DIR}/third_party)
-endif()
-
 if(PRODUCT_SIDE STREQUAL "device")
     set(RE2_INTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/device/re2)
     set(RE2_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg/device)
