@@ -11,7 +11,7 @@ include_guard(GLOBAL)
 include(ExternalProject)
 
 unset(boost_FOUND CACHE)
-unset(boost_INCLUDE CACHE)
+unset(BOOST_INCLUDE CACHE)
 
 if(NOT OPEN_PKG_PATH)
     set(OPEN_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg)
