@@ -247,19 +247,31 @@ build_project() {
   echo "build success!"
 }
 
-main() {
+function main() {
   checkopts "$@"
 
   # build start
-  echo "---------------- build start ----------------"
-  g++ -v
+  local start_time=$(date +%s)
+  echo "---------------- build start $(date '+%Y-%m-%d %H:%M:%S') ----------------"
 
   build_project
   if [[ "$?" -ne 0 ]]; then
     echo "build failed.";
     exit 1;
   fi
-  echo "---------------- build finished ----------------"
+
+  echo "---------------- build end  $(date '+%Y-%m-%d %H:%M:%S') ----------------"
+  local end_time=$(date +%s)
+
+  # 计算耗时（秒）
+  local duration=$((end_time - start_time))
+
+  # 格式化输出耗时（时:分:秒）
+  local hours=$((duration / 3600))
+  local minutes=$(( (duration % 3600) / 60 ))
+  local seconds=$((duration % 60))
+  echo "---------------- Total duration: ${hours} hour ${minutes} min ${seconds} sec ----------------"
+ 
 }
 
 main "$@"
