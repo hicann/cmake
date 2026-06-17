@@ -218,7 +218,38 @@ function(set_cann_cpack_config component)
         endif()
     endif()
 
-    cmake_parse_arguments(CANN "NO_COMPONENT_INSTALL;NO_CLEAN" "ENABLE_DEVICE;COMPUTE_UNIT;SHARE_INFO_NAME;OUTPUT" "" ${ARGN})
+    cmake_parse_arguments(CANN
+        "NO_COMPONENT_INSTALL;NO_CLEAN;TGZ"
+        "ENABLE_DEVICE;COMPUTE_UNIT;SHARE_INFO_NAME;OUTPUT;ARCHIVE_FILE_NAME"
+        ""
+        ${ARGN}
+    )
+
+    set(CPACK_COMPONENTS_ALL "${component}")
+
+    if(CANN_OUTPUT)
+        if(ENABLE_UNIFIED_BUILD)
+            set(CPACK_CMAKE_INSTALL_PREFIX "${CANN_CMAKE_DIR}/build_out")
+        else()
+            set(CPACK_CMAKE_INSTALL_PREFIX "${CANN_OUTPUT}")
+        endif()
+    else()
+        set(CPACK_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
+    endif()
+
+    if(CANN_TGZ)
+        string(TOUPPER "${component}" UPPER_COMPONENT)
+
+        set(CPACK_GENERATOR TGZ)
+        set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
+
+        if(CANN_ARCHIVE_FILE_NAME)
+            set(CPACK_ARCHIVE_${UPPER_COMPONENT}_FILE_NAME "${CANN_ARCHIVE_FILE_NAME}")
+        endif()
+        set(CPACK_POST_BUILD_SCRIPTS "${CANN_CMAKE_DIR}/scripts/package/post_package.cmake")  # 需要使用CPACK_CMAKE_INSTALL_PREFIX
+        include(CPack)  # 需要使用CPACK_COMPONENTS_ALL
+        return()
+    endif()
 
     if(ENABLE_UNIFIED_BUILD)
         if(component IN_LIST DEVICE_CANN_PACKAGES AND SUPERBUILD_ENABLE_DEVICE)
@@ -240,16 +271,6 @@ function(set_cann_cpack_config component)
         set(CPACK_PACKAGE_PARAM_NAME "${component}")
     endif()
 
-    if(CANN_OUTPUT)
-        if(ENABLE_UNIFIED_BUILD)
-            set(CPACK_CMAKE_INSTALL_PREFIX "${CANN_CMAKE_DIR}/build_out")
-        else()
-            set(CPACK_CMAKE_INSTALL_PREFIX "${CANN_OUTPUT}")
-        endif()
-    else()
-        set(CPACK_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
-    endif()
-
     set(CPACK_PACKAGE_NAME "${component}")
     set(CPACK_PACKAGE_VERSION "${CANN_VERSION_${component}_VERSION}")
     set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}")
@@ -260,7 +281,6 @@ function(set_cann_cpack_config component)
     if(CANN_NO_CLEAN)
         set(CPACK_CANN_NO_CLEAN True)
     endif()
-    set(CPACK_COMPONENTS_ALL "${component}")
     set(CPACK_CMAKE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
     set(CPACK_CMAKE_BINARY_DIR "${CMAKE_BINARY_DIR}")
     set(CPACK_ENABLE_DEVICE "${CANN_ENABLE_DEVICE}")
