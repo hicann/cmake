@@ -323,7 +323,6 @@ function(set_cann_cpack_config component)
     endif()
 
     set(RUN_DEPENDENCIES_LIST "")
-    include("${CMAKE_CURRENT_SOURCE_DIR}/version.cmake")
     list(REMOVE_DUPLICATES RUN_DEPENDENCIES_LIST)
     set(DEB_DEPENDS "")
     set(RPM_REQUIRES "")
