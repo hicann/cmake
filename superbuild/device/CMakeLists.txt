@@ -12,7 +12,7 @@ cmake_minimum_required(VERSION 3.16.3)
 project(cann_superbuild)
 
 include(../../function/function.cmake)
-init_cann_superbuild_project(PRODUCT_SIDE "device")
+init_cann_superbuild_project(PRODUCT_SIDE "device" PREPEND_MODULE_PATH)
 
 get_package_dirs(CANN_DEPEND_PACKAGE_DIRS "${CANN_DEPEND_PACKAGES}" "cmake/device")
 foreach(CANN_DEPEND_PACKAGE_DIR IN LISTS CANN_DEPEND_PACKAGE_DIRS)

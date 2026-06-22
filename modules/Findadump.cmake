@@ -9,7 +9,6 @@
 # -----------------------------------------------------------------------------------------------------------
 
 if (adump_FOUND)
-    message(STATUS "Package adump has been found.")
     return()
 endif()
 
@@ -44,24 +43,25 @@ unset(_cmake_targets_defined)
 unset(_cmake_targets_not_defined)
 unset(_cmake_expected_targets)
 
-find_path(_PKG_INC_DIR
+find_path(_CANN_ADUMP_PUB_INC_DIR
         NAMES dump/adump_pub.h
+        PATH_SUFFIXES pkg_inc
         NO_CMAKE_SYSTEM_PATH
         NO_CMAKE_FIND_ROOT_PATH)
 
-find_library(adump_server_STATIC_LIBRARY
+find_library(_CANN_ADUMP_SERVER_STATIC_LIBRARY
         NAMES libadump_server.a
         PATH_SUFFIXES lib64
         NO_CMAKE_SYSTEM_PATH
         NO_CMAKE_FIND_ROOT_PATH)
 
-find_library(adcore_STATIC_LIBRARY
+find_library(_CANN_ADCORE_STATIC_LIBRARY
     NAMES libadcore.a
     PATH_SUFFIXES lib64
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH)
 
-find_library(ascend_dump_SHARED_LIBRARY
+find_library(_CANN_ASCEND_DUMP_SHARED_LIBRARY
     NAMES libascend_dump.so
     PATH_SUFFIXES lib64
     NO_CMAKE_SYSTEM_PATH
@@ -69,62 +69,35 @@ find_library(ascend_dump_SHARED_LIBRARY
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(adump
-    FOUND_VAR
-        adump_FOUND
     REQUIRED_VARS
-        _PKG_INC_DIR
-        adump_server_STATIC_LIBRARY
-        adcore_STATIC_LIBRARY
-        ascend_dump_SHARED_LIBRARY
+        _CANN_ADUMP_PUB_INC_DIR
+        _CANN_ADUMP_SERVER_STATIC_LIBRARY
+        _CANN_ADCORE_STATIC_LIBRARY
+        _CANN_ASCEND_DUMP_SHARED_LIBRARY
 )
 
 if(adump_FOUND)
-    set(adump_PKG_INC_DIR "${_PKG_INC_DIR}")
-    include(CMakePrintHelpers)
-    message(STATUS "Variables in adump module:")
-    cmake_print_variables(adump_PKG_INC_DIR)
-    cmake_print_variables(adump_server_STATIC_LIBRARY)
-    cmake_print_variables(adcore_STATIC_LIBRARY)
-    cmake_print_variables(ascend_dump_SHARED_LIBRARY)
-
     add_library(adump_server STATIC IMPORTED)
     set_target_properties(adump_server PROPERTIES
         INTERFACE_LINK_LIBRARIES "adump_headers"
-        IMPORTED_LOCATION "${adump_server_STATIC_LIBRARY}"
+        IMPORTED_LOCATION "${_CANN_ADUMP_SERVER_STATIC_LIBRARY}"
     )
 
     add_library(adump_headers INTERFACE IMPORTED)
     set_target_properties(adump_headers PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${adump_PKG_INC_DIR}/dump"
+        INTERFACE_INCLUDE_DIRECTORIES "${_CANN_ADUMP_PUB_INC_DIR}/dump"
     )
 
     add_library(adcore STATIC IMPORTED)
     set_target_properties(adcore PROPERTIES
         INTERFACE_LINK_LIBRARIES "-Wl,--no-as-needed;\$<LINK_ONLY:c_sec>;\$<LINK_ONLY:mmpa>;-Wl,--as-needed;\$<LINK_ONLY:ascend_hal_stub>"
-        IMPORTED_LOCATION "${adcore_STATIC_LIBRARY}"
+        IMPORTED_LOCATION "${_CANN_ADCORE_STATIC_LIBRARY}"
     )
 
     add_library(ascend_dump SHARED IMPORTED)
     set_target_properties(ascend_dump PROPERTIES
         INTERFACE_LINK_LIBRARIES "adump_headers"
         IMPORTED_LINK_DEPENDENT_LIBRARIES "ascend_protobuf;slog;runtime"
-        IMPORTED_LOCATION "${ascend_dump_SHARED_LIBRARY}"
-    )
-
-    include(CMakePrintHelpers)
-    cmake_print_properties(TARGETS adump_server
-        PROPERTIES INTERFACE_LINK_LIBRARIES IMPORTED_LOCATION
-    )
-    cmake_print_properties(TARGETS adump_headers
-        PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-    )
-    cmake_print_properties(TARGETS adcore
-        PROPERTIES INTERFACE_LINK_LIBRARIES IMPORTED_LOCATION
-    )
-    cmake_print_properties(TARGETS ascend_dump
-        PROPERTIES INTERFACE_LINK_LIBRARIES IMPORTED_LINK_DEPENDENT_LIBRARIES IMPORTED_LOCATION
+        IMPORTED_LOCATION "${_CANN_ASCEND_DUMP_SHARED_LIBRARY}"
     )
 endif()
-
-# Cleanup temporary variables.
-set(_PKG_INC_DIR)

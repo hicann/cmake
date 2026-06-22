@@ -12,11 +12,13 @@ cmake_minimum_required(VERSION 3.16.3)
 project(cann_superbuild)
 
 include(../function/function.cmake)
-init_cann_superbuild_project(PRODUCT_SIDE "host")
+init_cann_superbuild_project(PRODUCT_SIDE "host" PREPEND_MODULE_PATH)
 set(BUILD_OPEN_PROJECT TRUE)
 set(PACKAGE_OPEN_PROJECT TRUE)
 # opbase编译依赖BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG设置为TRUE
 set(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG TRUE)
+# 默认开启打包
+set(ENABLE_PACKAGE TRUE)
 
 # GE编译依赖这个路径，路径区别于子包编译
 set(METADEF_INC_PATH "${CANN_TOP_DIR}/metadef/inc/external")
