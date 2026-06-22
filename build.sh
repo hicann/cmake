@@ -40,6 +40,8 @@ usage() {
                            Only build host target"
   echo "    --build-type=<TYPE>"
   echo "                   Specify build type (TYPE options: Release/Debug), Default: Release"
+  echo "    --pkg-type=<TYPE>"
+  echo "                   Specify pkg type （TYPE options: run/rpm/deb, Default: run"
   echo "    -v, --verbose  Display build command"
   echo "    -j<N>          Set the number of threads used for building, default is 8"
   echo "    -p, --cann_path=<PATH>"
@@ -77,9 +79,10 @@ checkopts() {
   CANN_SUPERBUILD_CONFIG=""
   CHECK_CANN_PATH="0"
   LAUNCH_RULE=""
+  PACKAGE_TYPE="run"
 
   # Process the options
-  parsed_args=$(getopt -a -o j:hp:v -l help,pkgs:,superbuild-config:,binary-pkgs:,verbose,cov,build_host_only,cann_path:,build-type:,cann_3rd_lib_path:,asan,sign-script:,enable-sign,rule-launch:,rule_launch: -- "$@") || {
+  parsed_args=$(getopt -a -o j:hp:v -l help,pkgs:,superbuild-config:,binary-pkgs:,verbose,cov,build_host_only,cann_path:,build-type:,pkg-type:,cann_3rd_lib_path:,asan,sign-script:,enable-sign,rule-launch:,rule_launch: -- "$@") || {
     usage
     exit 1
   }
@@ -127,6 +130,10 @@ checkopts() {
         BUILD_TYPE=$2
         shift 2
         ;;
+      --pkg-type)
+        PACKAGE_TYPE=$2
+        shift 2
+        ;; 
       --cann_path | -p)
         CANN_PATH="$(realpath $2)"
         shift 2
@@ -146,7 +153,7 @@ checkopts() {
       --rule-launch | --rule_launch)
         LAUNCH_RULE="$2"
         shift 2
-        ;;  
+        ;;
       --)
         shift
         break
@@ -224,6 +231,7 @@ build_project() {
     "-DENABLE_SIGN=${ENABLE_SIGN}"
     "-DENABLE_BUILD_DEVICE=${ENABLE_BUILD_DEVICE}"
     "-DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT}"
+    "-DPACKAGE_TYPE=${PACKAGE_TYPE}"
   )
 
   if [ -n "${LAUNCH_RULE}" ]; then

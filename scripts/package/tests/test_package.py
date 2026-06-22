@@ -1219,9 +1219,17 @@ class TestGenerateFilelistFileByXmlConfig:
             def pkg_soft_links(self):
                 return []
         
-        # Should not raise
+        # Mock generate_modules_yaml 避免它去读物理文件
+        monkeypatch.setattr(package_module, "generate_modules_yaml", lambda *args, **kwargs: None)
         package_module.generate_filelist_file_by_xml_config(
-            MockXmlConfig(), ['all'], str(tmp_path), False
+            MockXmlConfig(),      # xml_config
+            ['all'],              # filter_key
+            str(tmp_path),        # delivery_dir
+            False,                # package_check
+            'deb',                # suffix
+            'test_pkg',           # pkg_name
+            '9.1.0',              # version
+            str(tmp_path)         # source_dir
         )
         
         # Verify file was created
@@ -1635,15 +1643,16 @@ class TestGetCompressCmd:
     def test_get_compress_cmd_unsupported_suffix(monkeypatch, tmp_path):
         """Test get_compress_cmd with unsupported suffix."""
         mock_xml_config = Namespace(
-            package_attr={'suffix': 'zip'}
+            package_attr={'suffix': 'zip'},
+            version='9.0.0'
         )
 
         pkg_args = Namespace(
             pkg_output_dir=str(tmp_path),
             makeself_dir='/makeself',
-            independent_pkg=True
+            independent_pkg=True,
         )
-
+        monkeypatch.setattr(package_module, 'PackageName', MockPackageName)
         # Mock sys.exit to capture exit code using an exception to stop execution
         exit_calls = []
 

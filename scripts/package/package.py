@@ -19,12 +19,14 @@ import traceback
 import csv
 from argparse import Namespace
 from collections import namedtuple
+from collections import defaultdict
 from datetime import datetime, timezone
 from functools import partial
 from itertools import chain
 from typing import Dict, Iterator, List, Set, Tuple, TextIO
 import shutil
 import shlex
+import json
 
 from utils import pkg_utils
 from filelist import (
@@ -43,6 +45,7 @@ from utils.pkg_utils import (
     FilelistError, GenerateFilelistError, PackageNameEmptyError, SUCC,
     UnknownOperateTypeError, path_join
 )
+from gen_postinst_prerm import (generate_postinst, generate_prerm, generate_set_permission)
 from utils.funcbase import invoke, pipe
 from utils.comm_log import CommLog
 
@@ -66,8 +69,8 @@ def get_compress_cmd(delivery_dir: str,
                      xml_config: XmlConfig) -> str:
     """获取makeself压缩命令"""
     suffix = xml_config.package_attr.get('suffix')
+    package_name = PackageName(xml_config.package_attr, pkg_args, xml_config.version)
     if suffix == "run":
-        package_name = PackageName(xml_config.package_attr, pkg_args, xml_config.version)
         factory = create_makeself_pkg_params_factory(
             pkg_args.pkg_output_dir, package_name.getvalue(), get_comments(package_name)
         )
@@ -79,16 +82,19 @@ def get_compress_cmd(delivery_dir: str,
             raise CompressError(package_name.getvalue())
         if pkg_args.independent_pkg:
             exec_pack_cmd(delivery_dir, pack_cmd, package_name.getvalue())
+        try:
+            makeself_dir = os.path.join(build_dir, "makeself.txt")
+            with open(makeself_dir, 'w') as f:
+                f.write(pack_cmd)
+        except Exception as exception:
+            CommLog.cilog_error(f"save makeself.txt failed!{str(exception)}")
+            sys.exit(FAIL) 
+    elif suffix == "rpm" or suffix == "deb":
+        CommLog.cilog_info("Processing package type: %s", suffix)         
     else:
         CommLog.cilog_error("the repack type '%s' is not support!", suffix)
         sys.exit(FAIL)
-    try:
-        makeself_dir = os.path.join(build_dir, "makeself.txt")
-        with open(makeself_dir, 'w') as f:
-            f.write(pack_cmd)
-    except Exception as exception:
-        CommLog.cilog_error(f"save makeself.txt failed!{str(exception)}")
-        sys.exit(FAIL)
+    
     return package_name.getvalue()
 
 
@@ -687,10 +693,53 @@ def get_share_info_name(package_attr: dict) -> str:
     return package_attr['func_name']
 
 
+def generate_modules_yaml(items, module_name, version, source_dir, output_txt, script_dir=None):
+    modules = defaultdict(list)
+    module_set = set()
+
+    for item in items:
+        block = item.block
+        softlinks = item.softlink
+        target = item.relative_install_path
+
+        if not block or block.upper() == 'NA':
+            continue
+        if not softlinks:
+            continue
+        if not target:
+            continue
+        module_set.add(block)
+        for softlink in softlinks:
+            symlink_entry = {'target': target, 'link': softlink}
+            if symlink_entry not in modules[block]:
+                modules[block].append(symlink_entry)
+    permission_lines = generate_set_permission(items, version, script_dir)
+    postinst_content = generate_postinst(module_name, version, modules, source_dir, permission_lines)
+    prerm_content = generate_prerm(module_name, version, modules, source_dir)
+    output_postinst = "postinst"
+    output_prerm = "prerm"
+    with open(output_postinst, 'w') as f:
+        f.write(postinst_content)
+    os.chmod(output_postinst, 0o755)
+
+    with open(output_prerm, 'w') as f:
+        f.write(prerm_content)
+    os.chmod(output_prerm, 0o755)
+
+    CommLog.cilog_info("Generated: %s, %s", output_postinst, output_prerm)
+    with open(output_txt, 'w') as f:
+        json.dump(modules, f, indent=2, ensure_ascii=False)
+    CommLog.cilog_info("Generated %s with %d modules", output_txt, len(modules))
+
+
 def generate_filelist_file_by_xml_config(xml_config: XmlConfig,
                                          filter_key: List[str],
                                          delivery_dir: str,
-                                         package_check: bool):
+                                         package_check: bool,
+                                         suffix: str,
+                                         pkg_name: str,
+                                         version: str,
+                                         source_dir: str):
     """生成文件列表文件。"""
     check_move = xml_config.package_attr.get('use_move', False)
     transform_nested_path_func = get_transform_nested_path_func(
@@ -706,6 +755,10 @@ def generate_filelist_file_by_xml_config(xml_config: XmlConfig,
         ),
         xml_config, filter_key
     )
+    # 根据suffix，生成postin和prein
+    if suffix == "rpm" or suffix == "deb":
+        script_dir = f"share/info/{get_share_info_name(xml_config.package_attr)}/script"
+        generate_modules_yaml(file_install_list, pkg_name, version, source_dir, "modules.txt", script_dir)
     generate_filelist(
         file_install_list,
         'filelist.csv',
@@ -716,7 +769,6 @@ def generate_filelist_file_by_xml_config(xml_config: XmlConfig,
     # 先生成再检查，有利于问题定位
     if package_check:
         check_filelist(file_install_list, check_features, check_move)
-
     if xml_config.package_attr.get('copy_all'):
         # 验证dst_path和install_path的一致性
         validate_path_consistency(file_install_list)
@@ -785,8 +837,11 @@ def main(pkg_name='', xml_file='', main_args=None):
         CommLog.cilog_error("Delivery dir is empty.")
         return FAIL
 
-    delivery_dir = os.path.join(main_args.delivery_dir, "_CPack_Packages/makeself_staging")
-
+    delivery_dir = ""
+    if main_args.suffix == "rpm" or main_args.suffix == "deb":
+        delivery_dir = main_args.delivery_dir
+    else:
+        delivery_dir = os.path.join(main_args.delivery_dir, "_CPack_Packages/makeself_staging")
     if not os.path.exists(delivery_dir):
         CommLog.cilog_error(f"Delivery dir does not exist: {delivery_dir}")
         return FAIL
@@ -809,7 +864,7 @@ def main(pkg_name='', xml_file='', main_args=None):
     try:
         generate_filelist_file_by_xml_config(
             xml_config, get_filter_key(pkg_name), delivery_dir,
-            main_args.package_check or xml_config.package_attr.get('package_check')
+            main_args.package_check or xml_config.package_attr.get('package_check'), main_args.suffix, main_args.pkg_name, main_args.version_dir, main_args.source_dir
         )
     except PackageNameEmptyError:
         CommLog.cilog_error(f'package name is empty in {xml_file}, please check it')
@@ -821,7 +876,8 @@ def main(pkg_name='', xml_file='', main_args=None):
         CommLog.cilog_error('check filelist error! %s', str(ex))
         return FAIL
 
-    generate_config_inc(xml_config.package_attr, main_args.delivery_dir)
+    if main_args.suffix not in ("rpm", "deb"):
+        generate_config_inc(xml_config.package_attr, main_args.delivery_dir)
 
     package_option = PackageOption(
         main_args.os_arch, main_args.package_suffix, main_args.not_in_name, main_args.pkg_version, main_args.ext_name,
@@ -837,6 +893,10 @@ def main(pkg_name='', xml_file='', main_args=None):
     # 生成打包命令
     return execute_repack_process(xml_config, delivery_dir, main_args,
                                   package_name=package_name, package_option=package_option)
+
+
+def lower_arg(value):
+    return value.lower()
 
 
 def args_parse():
@@ -866,7 +926,7 @@ def args_parse():
                         default='', help="This parameter define the package's ext_name")
     parser.add_argument('--package_suffix', nargs='?', const='none',
                         default='none', help="This parameter define the package suffix, debug or none")
-    parser.add_argument('--suffix', metavar='suffix', required=False, dest='suffix', nargs='?', const='',
+    parser.add_argument('--suffix', metavar='suffix', type=lower_arg, required=False, dest='suffix', nargs='?', const='',
                         default=None, help="This parameter define the package suffix, for example such as tar.gz")
     parser.add_argument('-b', '--build_type', metavar='build_type', required=False, dest='build_type', nargs='?',
                         const='',

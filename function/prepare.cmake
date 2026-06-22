@@ -49,6 +49,57 @@ macro(add_cann_target_options)
     include(${CANN_CMAKE_DIR}/intf_pub/intf_pub_linux.cmake)
 endmacro()
 
+# 生成 DEB 和 RPM 依赖字符串
+# 辅助函数：规范化版本比较符，确保操作符与版本号之间有空格
+function(normalize_version_cond input_str output_var)
+    # 将 ">=8.5" 变成 ">= 8.5"
+    string(REGEX REPLACE "([><=]+)([0-9])" "\\1 \\2" normalized "${input_str}")
+    set(${output_var} "${normalized}" PARENT_SCOPE)
+endfunction()
+
+function(convert_dependencies_to_package_formats DEP_LIST OUT_DEB OUT_RPM)
+    # 获取依赖列表的值
+    set(dependencies ${${DEP_LIST}})
+
+    set(DEB_DEPENDS "")
+    set(RPM_REQUIRES "")
+
+    foreach(dep_entry ${dependencies})
+        # dep_entry 格式: "pkg >=8.5" 或 "pkg >= 8.5"
+        string(REGEX MATCH "^([^ ]+) +(.*)" _ ${dep_entry})
+        if(CMAKE_MATCH_COUNT GREATER 1)
+            set(pkg_name "${CMAKE_MATCH_1}")
+            set(raw_cond "${CMAKE_MATCH_2}")
+        else()
+            message(WARNING "Invalid dependency entry: ${dep_entry}")
+            continue()
+        endif()
+
+        # 规范化版本条件，确保操作符后有空格
+        normalize_version_cond("${raw_cond}" cond_normalized)
+
+        # ---- DEB 格式: "pkg (op version)" ----
+        set(deb_entry "${pkg_name} (${cond_normalized})")
+        if(DEB_DEPENDS)
+            set(DEB_DEPENDS "${DEB_DEPENDS}, ${deb_entry}")
+        else()
+            set(DEB_DEPENDS "${deb_entry}")
+        endif()
+
+        # ---- RPM 格式: "pkg op version" ----
+        set(rpm_entry "${pkg_name} ${cond_normalized}")
+        if(RPM_REQUIRES)
+            set(RPM_REQUIRES "${RPM_REQUIRES}, ${rpm_entry}")
+        else()
+            set(RPM_REQUIRES "${rpm_entry}")
+        endif()
+    endforeach()
+
+    # 将结果返回给父作用域
+    set(${OUT_DEB} "${DEB_DEPENDS}" PARENT_SCOPE)
+    set(${OUT_RPM} "${RPM_REQUIRES}" PARENT_SCOPE)
+endfunction()
+
 # 设置cann工程公共参数
 macro(init_cann_project)
     # 联合构建时，init函数可能被调用多次，保证第一次调用时生效，忽略后续调用
@@ -220,7 +271,7 @@ function(set_cann_cpack_config component)
 
     cmake_parse_arguments(CANN
         "NO_COMPONENT_INSTALL;NO_CLEAN;TGZ"
-        "ENABLE_DEVICE;COMPUTE_UNIT;SHARE_INFO_NAME;OUTPUT;ARCHIVE_FILE_NAME"
+        "ENABLE_DEVICE;PACKAGE_TYPE;COMPUTE_UNIT;SHARE_INFO_NAME;OUTPUT;ARCHIVE_FILE_NAME"
         ""
         ${ARGN}
     )
@@ -271,9 +322,25 @@ function(set_cann_cpack_config component)
         set(CPACK_PACKAGE_PARAM_NAME "${component}")
     endif()
 
-    set(CPACK_PACKAGE_NAME "${component}")
+    set(RUN_DEPENDENCIES_LIST "")
+    include("${CMAKE_CURRENT_SOURCE_DIR}/version.cmake")
+    list(REMOVE_DUPLICATES RUN_DEPENDENCIES_LIST)
+    set(DEB_DEPENDS "")
+    set(RPM_REQUIRES "")
+    message(STATUS "RUN_DEPENDENCIES_LIST: ${RUN_DEPENDENCIES_LIST}")
+    convert_dependencies_to_package_formats(RUN_DEPENDENCIES_LIST DEB_DEPENDS RPM_REQUIRES)
+
+    # 将生成的依赖字符串传递给 Cpack
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "${DEB_DEPENDS}")
+    set(CPACK_RPM_PACKAGE_REQUIRES "${RPM_REQUIRES}")
+    message(STATUS "DEB depends: ${CPACK_DEBIAN_PACKAGE_DEPENDS}")
+    message(STATUS "RPM requires: ${CPACK_RPM_PACKAGE_REQUIRES}")
+    set(CPACK_PACKAGE_NAME "cann-${component}")
+    string(TOLOWER "${CMAKE_SYSTEM_NAME}" CPACK_SYSTEM_NAME)
+    set(CPACK_ARCHITECTURE "${CMAKE_SYSTEM_PROCESSOR}")
     set(CPACK_PACKAGE_VERSION "${CANN_VERSION_${component}_VERSION}")
-    set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}")
+    set(PACKAGE_FILE_NAME_TEMPLATE "${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${CPACK_SYSTEM_NAME}-${CPACK_ARCHITECTURE}")
+    set(CPACK_PACKAGE_FILE_NAME "${PACKAGE_FILE_NAME_TEMPLATE}")
 
     if(NOT CANN_NO_COMPONENT_INSTALL)
         set(CPACK_CANN_INSTALL_COMPONENT "${component}")
@@ -284,13 +351,36 @@ function(set_cann_cpack_config component)
     set(CPACK_CMAKE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
     set(CPACK_CMAKE_BINARY_DIR "${CMAKE_BINARY_DIR}")
     set(CPACK_ENABLE_DEVICE "${CANN_ENABLE_DEVICE}")
-    set(CPACK_GENERATOR External)
+    set(CPACK_SET_DESTDIR OFF)
+    set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local/Ascend/cann-${CPACK_PACKAGE_VERSION}")
+    if(CANN_PACKAGE_TYPE STREQUAL "rpm")
+        set(CPACK_GENERATOR "RPM")
+    elseif(CANN_PACKAGE_TYPE STREQUAL "deb")
+        set(CPACK_GENERATOR "DEB")
+    elseif(CANN_PACKAGE_TYPE STREQUAL "all")
+        set(CPACK_GENERATOR "DEB;RPM;External")
+    else()
+        set(CPACK_GENERATOR External)
+    endif()
+    set(CPACK_RPM_COMPONENT_INSTALL ON)
+    set(CPACK_DEB_COMPONENT_INSTALL ON)
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA 
+        "${CMAKE_BINARY_DIR}/postinst"
+        "${CMAKE_BINARY_DIR}/prerm")
+    set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE 
+        "${CMAKE_BINARY_DIR}/postinst"
+    )
+    set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE 
+        "${CMAKE_BINARY_DIR}/prerm"
+    )
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "huawei")
     set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CANN_CMAKE_DIR}/scripts/package/makeself.cmake")
     set(CPACK_EXTERNAL_ENABLE_STAGING TRUE)
     set(CPACK_PACKAGE_DIRECTORY "${CMAKE_BINARY_DIR}")
     set(CPACK_MAKESELF_PATH "${MAKESELF_PATH}")
     set(CPACK_BUILD_MODE "RUN_COPY")
     set(CPACK_TARGET_ARCH "${TARGET_ARCH}")
+    set(CPACK_PRE_BUILD_SCRIPTS "${CANN_CMAKE_DIR}/scripts/package/pre_package.cmake")
     include(CPack)
 endfunction()
 
@@ -368,6 +458,8 @@ function(set_cann_run_dependencies pkg_name depend)
     __cann_replace_cur_major_minor_ver()
     list(APPEND CANN_VERSION_${CANN_VERSION_CURRENT_PACKAGE}_RUN_DEPS "${pkg_name}" "${depend}")
     set(CANN_VERSION_${CANN_VERSION_CURRENT_PACKAGE}_RUN_DEPS "${CANN_VERSION_${CANN_VERSION_CURRENT_PACKAGE}_RUN_DEPS}" PARENT_SCOPE)
+    list(APPEND RUN_DEPENDENCIES_LIST "${pkg_name}" "${depend}")
+    set(RUN_DEPENDENCIES_LIST "${RUN_DEPENDENCIES_LIST}" PARENT_SCOPE)
 endfunction()
 
 # 检查构建依赖

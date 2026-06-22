@@ -35,7 +35,7 @@ file(MAKE_DIRECTORY "${STAGING_DIR}")
 # 执行安装到临时目录
 if(CPACK_CANN_INSTALL_COMPONENT)
     execute_process(
-        COMMAND "${CMAKE_COMMAND}" --install "${CPACK_CMAKE_BINARY_DIR}" --prefix "${STAGING_DIR}" --component "${CPACK_PACKAGE_NAME}"
+        COMMAND "${CMAKE_COMMAND}" --install "${CPACK_CMAKE_BINARY_DIR}" --prefix "${STAGING_DIR}" --component "${CPACK_CANN_INSTALL_COMPONENT}"
         RESULT_VARIABLE INSTALL_RESULT
     )
 else()
@@ -52,15 +52,15 @@ endif()
 if(CPACK_ENABLE_DEVICE)
     # 解压子工程包
     execute_process(
-        COMMAND tar --keep-old-files -zxpf "${STAGING_DIR}/device-${CPACK_PACKAGE_NAME}.tar.gz" -C "${STAGING_DIR}"
+        COMMAND tar --keep-old-files -zxpf "${STAGING_DIR}/device-${CPACK_CANN_INSTALL_COMPONENT}.tar.gz" -C "${STAGING_DIR}"
         RESULT_VARIABLE RETCODE
     )
     if(RETCODE)
-        message(FATAL_ERROR "Extract device-${CPACK_PACKAGE_NAME}.tar.gz failed, return code is ${RETCODE}.")
+        message(FATAL_ERROR "Extract device-${CPACK_CANN_INSTALL_COMPONENT}.tar.gz failed, return code is ${RETCODE}.")
     endif()
 
     # 刪除子工程压缩包，避免打到run包中
-    file(REMOVE "${STAGING_DIR}/device-${CPACK_PACKAGE_NAME}.tar.gz")
+    file(REMOVE "${STAGING_DIR}/device-${CPACK_CANN_INSTALL_COMPONENT}.tar.gz")
 endif()
 
 # 生成安装配置文件
