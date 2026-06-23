@@ -47,6 +47,7 @@ else()
         set(REQ_URL "https://gitcode.com/cann-src-third-party/symengine/releases/download/v0.12.0/symengine-0.12.0.tar.gz")
         list(APPEND SYMENGINE_EXTRA_ARGS
             URL ${REQ_URL}
+            URL_HASH SHA256=1b5c3b0bc6a9f187635f93585649f24a18e9c7f2167cebcd885edeaaf211d956
             DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/symengine
             PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/symengine_add_mod.patch
         )

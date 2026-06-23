@@ -19,8 +19,8 @@ unset(GMOCK_MAIN_STATIC_LIBRARY CACHE)
 
 set(GTEST_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/gtest)
 set(GTEST_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
-message(STATUS "[ThirdPartyLib][gtest] GTEST_INSTALL_PATH=${GTEST_INSTALL_PATH}")
-message(STATUS "[ThirdPartyLib][gtest] GTEST_DOWNLOAD_PATH=${GTEST_DOWNLOAD_PATH}")
+message(STATUS "[ThirdParty][gtest] GTEST_INSTALL_PATH=${GTEST_INSTALL_PATH}")
+message(STATUS "[ThirdParty][gtest] GTEST_DOWNLOAD_PATH=${GTEST_DOWNLOAD_PATH}")
 
 find_path(GTEST_INCLUDE
     NAMES gtest/gtest.h
@@ -69,14 +69,14 @@ find_package_handle_standard_args(gtest
     GMOCK_MAIN_STATIC_LIBRARY
 )
 
-message(STATUS "[ThirdPartyLib][gtest] Found GTest: ${gtest_FOUND}")
+message(STATUS "[ThirdParty][gtest] Found GTest: ${gtest_FOUND}")
 
 if(gtest_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
-    message(STATUS "[ThirdPartyLib][gtest] GTest found in ${GTEST_INSTALL_PATH}, and not force rebuild")
+    message(STATUS "[ThirdParty][gtest] GTest found in ${GTEST_INSTALL_PATH}, and not force rebuild")
 else()
     set(GTEST_ARCHIVE ${CANN_3RD_LIB_PATH}/gtest/googletest-1.14.0.tar.gz)
     if(EXISTS ${CANN_3RD_LIB_PATH}/googletest-1.14.0.tar.gz AND NOT EXISTS ${GTEST_ARCHIVE})
-        message(STATUS "[ThirdPartyLib][gtest] Found googletest archive in ${CANN_3RD_LIB_PATH}, moving to ${CANN_3RD_LIB_PATH}/gtest")
+        message(STATUS "[ThirdParty][gtest] Found googletest archive in ${CANN_3RD_LIB_PATH}, moving to ${CANN_3RD_LIB_PATH}/gtest")
         # adapt the user's offline scene.
         file(COPY ${CANN_3RD_LIB_PATH}/googletest-1.14.0.tar.gz DESTINATION ${CANN_3RD_LIB_PATH}/gtest)
     endif()
@@ -85,13 +85,13 @@ else()
     set(GTEST_LOCAL_SRC "${CANN_3RD_LIB_PATH}/../llt/third_party/gtest/googletest-1.10.x")
 
     if(EXISTS "${GTEST_ARCHIVE}")
-        message(STATUS "[ThirdPartyLib][gtest] Found local gtest archive: ${GTEST_ARCHIVE}")
+        message(STATUS "[ThirdParty][gtest] Found local gtest archive: ${GTEST_ARCHIVE}")
         set(GTEST_PROJECT_URL ${GTEST_ARCHIVE})
     elseif(EXISTS ${GTEST_LOCAL_SRC})
-        message(STATUS "[ThirdPartyLib][gtest] Found local gtest source: ${GTEST_LOCAL_SRC}")
+        message(STATUS "[ThirdParty][gtest] Found local gtest source: ${GTEST_LOCAL_SRC}")
         set(GTEST_PROJECT_URL ${GTEST_LOCAL_SRC})
     else()
-        message(STATUS "[ThirdPartyLib][gtest] Downloading GTest.")
+        message(STATUS "[ThirdParty][gtest] Downloading GTest.")
         set(GTEST_PROJECT_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/googletest/googletest-1.14.0.tar.gz")
     endif()
 
@@ -106,6 +106,7 @@ else()
     # adaptive the gtest upgrade scenario, reset the installation path.
     ExternalProject_Add(third_party_gtest
         URL ${GTEST_PROJECT_URL}
+        URL_HASH SHA256=8ad598c73ad796e0d8280b082cebd82a630d73e73cd3c70057938a6501bba5d7
         DOWNLOAD_DIR ${GTEST_DOWNLOAD_PATH}
         CONFIGURE_COMMAND ${CMAKE_COMMAND}
             -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
@@ -149,4 +150,4 @@ set_target_properties(GTest::gmock PROPERTIES
     IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib/libgmock.a
 )
 
-message(STATUS "[ThirdPartyLib][gtest] configured successfully.")
+message(STATUS "[ThirdParty][gtest] configured successfully.")

@@ -24,12 +24,13 @@ elseif(IS_DIRECTORY "${CANN_3RD_LIB_PATH}/eigen")
     set(REQ_URL "${CANN_3RD_LIB_PATH}/eigen")
 else()
   message("[ThirdParty][eigen] package needs to be downloaded.")
-  set(REQ_URL "https://gitcode.com/cann-src-third-party/eigen/releases/download/5.0.0-h0.trunk/eigen-5.0.0.tar.gz")
+  set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/eigen/eigen-5.0.0.tar.gz")
 endif()
 
 include(ExternalProject)
 ExternalProject_Add(external_eigen
     URL ${REQ_URL}
+    URL_HASH SHA256=93f7f0462988b934e632a9fba58af55192ffceae38e8f46233f4f62cb1e79370
     DOWNLOAD_DIR download/eigen
     PREFIX third_party
     INSTALL_COMMAND ""

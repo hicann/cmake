@@ -14,8 +14,9 @@ set(JPEG_TAR_PKG_PATH ${CANN_3RD_LIB_PATH}/libjpeg-turbo/libjpeg-turbo-3.0.1.tar
 if(EXISTS "${JPEG_TAR_PKG_PATH}")
     set(REQ_URL "${JPEG_TAR_PKG_PATH}")
 else()
-    set(REQ_URL "https://gitcode.com/cann-src-third-party/libjpeg-turbo/releases/download/v3.0.1/libjpeg-turbo-3.0.1.tar.gz")
+    set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/libjpeg-turbo/libjpeg-turbo-3.0.1.tar.gz")
 endif()
+message("[ThirdParty][libjpeg-turbo] valued url path: ${REQ_URL}.")
 
 set(JPEG_C_FLAGS "-fPIC -fexceptions -D_FORTIFY_SOURCE=2 -O2 -fvisibility=hidden -DCONFIG_MASK_JWARN")
 set(JPEG_INSTALL_PATH ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo)
@@ -24,6 +25,7 @@ set(JPEG_INSTALL_PATH ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo)
 include(ExternalProject)
 ExternalProject_Add(third_party_jpeg
     URL ${REQ_URL}
+    URL_HASH SHA256=22429507714ae147b3acacd299e82099fce5d9f456882fc28e252e4579ba2a75
     DOWNLOAD_EXTRACT_TIMESTAMP true
     CONFIGURE_COMMAND ${CMAKE_COMMAND}
         -DCMAKE_C_COMPILER_LAUNCHER=${CCACHE_PROGRAM}

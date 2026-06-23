@@ -135,17 +135,17 @@ set_target_properties(gRPC::grpc++ PROPERTIES
 )
  	 
 if(EXISTS ${GRPC_STATIC_LIB} AND EXISTS ${GRPCXX_STATIC_LIB})
-    message(STATUS "[ThirdPartyLib][grpc] grpc found, skip compiling.")
+    message(STATUS "[ThirdParty][grpc] grpc found, skip compiling.")
 else()
-    message(STATUS "[ThirdPartyLib][grpc] grpc not found, finding binary file.")
+    message(STATUS "[ThirdParty][grpc] grpc not found, finding binary file.")
 
     set(REQ_URL "${CANN_3RD_LIB_PATH}/grpc/grpc-1.60.0.tar.gz")
     # 初始化可选参数列表
     set(GRPC_EXTRA_ARGS "")
     if(EXISTS ${REQ_URL})
-        message(STATUS "[ThirdPartyLib][grpc] ${REQ_URL} found.")
+        message(STATUS "[ThirdParty][grpc] ${REQ_URL} found.")
     else()
-        message(STATUS "[ThirdPartyLib][grpc] ${REQ_URL} not found, need download.")
+        message(STATUS "[ThirdParty][grpc] ${REQ_URL} not found, need download.")
         set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/grpc/grpc-1.60.0.tar.gz")
         list(APPEND GRPC_EXTRA_ARGS
             DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/pkg
@@ -154,51 +154,52 @@ else()
     
     set(GRPC_CXX_FLAGS "-Wl,-z,relro,-z,now,-z,noexecstack -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-all -s -D_GLIBCXX_USE_CXX11_ABI=${USE_CXX11_ABI}")
     ExternalProject_Add(grpc_build
-                        URL ${REQ_URL}
-                        ${GRPC_EXTRA_ARGS}
-                        PATCH_COMMAND ${CMAKE_COMMAND} -E make_directory <SOURCE_DIR>/third_party/opencensus-proto/src
-                            COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/grpc-fix-compile-bug-in-device.patch
-                        CONFIGURE_COMMAND ${CMAKE_COMMAND}
-                            # zlib
-                            -DgRPC_ZLIB_PROVIDER=module
-                            -DZLIB_ROOT_DIR=${ZLIB_SRC_DIR}
-                            # cares
-                            -DgRPC_CARES_PROVIDER=module
-                            -DCARES_ROOT_DIR=${CARES_INTALL_PATH}
-                            -DCARES_BUILD_TOOLS=OFF
-                            # re2
-                            -DgRPC_RE2_PROVIDER=module
-                            -DRE2_ROOT_DIR=${RE2_INTALL_PATH}
-                            # absl
-                            -DgRPC_ABSL_PROVIDER=module
-                            -DABSL_ROOT_DIR=${ABS_INSTALL_DIR}
-                            # protobuf
-                            -DgRPC_PROTOBUF_PROVIDER=module
-                            -DPROTOBUF_ROOT_DIR=${PROTOBUF_SRC_DIR}
-                            -Dprotobuf_BUILD_PROTOC_BINARIES=OFF
-                            # ssl
-                            -DgRPC_SSL_PROVIDER=package
-                            -DOPENSSL_ROOT_DIR=${OPENSSL_INSTALL_PATH}
-                            -DOPENSSL_USE_STATIC_LIBS=TRUE
-                            # grpc option
-                            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-                            -DCMAKE_CXX_STANDARD=14
-                            -DCMAKE_CXX_FLAGS=${GRPC_CXX_FLAGS}
-                            -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
-                            -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
-                            -DCMAKE_BUILD_TYPE=Release
-                            -DgRPC_BUILD_TESTS=OFF
-                            -DCMAKE_INSTALL_LIBDIR=lib
-                            -DLLVM_PATH=${LLVM_PATH}
-                            -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
-                            -DgRPC_BUILD_CSHARP_EXT=OFF
-                            -DgRPC_BUILD_CODEGEN=OFF
-                            -DgRPC_BUILD_GRPC_CPP_PLUGIN=OFF
-                            -DCMAKE_INSTALL_PREFIX=${GRPC_INSTALL_PATH}
-                            <SOURCE_DIR>
-                        BUILD_COMMAND $(MAKE)
-                        INSTALL_COMMAND $(MAKE) install && ${CMAKE_COMMAND} -E touch ${GRPC_INSTALL_PATH}/lib/cmake/grpc/gRPCPluginTargets.cmake
-                        EXCLUDE_FROM_ALL TRUE
+        URL ${REQ_URL}
+        URL_HASH SHA256=437068b8b777d3b339da94d3498f1dc20642ac9bfa76db43abdd522186b1542b
+        ${GRPC_EXTRA_ARGS}
+        PATCH_COMMAND ${CMAKE_COMMAND} -E make_directory <SOURCE_DIR>/third_party/opencensus-proto/src
+            COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/grpc-fix-compile-bug-in-device.patch
+        CONFIGURE_COMMAND ${CMAKE_COMMAND}
+            # zlib
+            -DgRPC_ZLIB_PROVIDER=module
+            -DZLIB_ROOT_DIR=${ZLIB_SRC_DIR}
+            # cares
+            -DgRPC_CARES_PROVIDER=module
+            -DCARES_ROOT_DIR=${CARES_INTALL_PATH}
+            -DCARES_BUILD_TOOLS=OFF
+            # re2
+            -DgRPC_RE2_PROVIDER=module
+            -DRE2_ROOT_DIR=${RE2_INTALL_PATH}
+            # absl
+            -DgRPC_ABSL_PROVIDER=module
+            -DABSL_ROOT_DIR=${ABS_INSTALL_DIR}
+            # protobuf
+            -DgRPC_PROTOBUF_PROVIDER=module
+            -DPROTOBUF_ROOT_DIR=${PROTOBUF_SRC_DIR}
+            -Dprotobuf_BUILD_PROTOC_BINARIES=OFF
+            # ssl
+            -DgRPC_SSL_PROVIDER=package
+            -DOPENSSL_ROOT_DIR=${OPENSSL_INSTALL_PATH}
+            -DOPENSSL_USE_STATIC_LIBS=TRUE
+            # grpc option
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+            -DCMAKE_CXX_STANDARD=14
+            -DCMAKE_CXX_FLAGS=${GRPC_CXX_FLAGS}
+            -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+            -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+            -DCMAKE_BUILD_TYPE=Release
+            -DgRPC_BUILD_TESTS=OFF
+            -DCMAKE_INSTALL_LIBDIR=lib
+            -DLLVM_PATH=${LLVM_PATH}
+            -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
+            -DgRPC_BUILD_CSHARP_EXT=OFF
+            -DgRPC_BUILD_CODEGEN=OFF
+            -DgRPC_BUILD_GRPC_CPP_PLUGIN=OFF
+            -DCMAKE_INSTALL_PREFIX=${GRPC_INSTALL_PATH}
+            <SOURCE_DIR>
+        BUILD_COMMAND $(MAKE)
+        INSTALL_COMMAND $(MAKE) install && ${CMAKE_COMMAND} -E touch ${GRPC_INSTALL_PATH}/lib/cmake/grpc/gRPCPluginTargets.cmake
+        EXCLUDE_FROM_ALL TRUE
     )
     add_dependencies(grpc_build openssl_project re2_build zlib_src cares_build abseil_build protobuf_src)
     add_dependencies(gRPC::grpc grpc_build)
@@ -215,16 +216,16 @@ set_target_properties(grpc_cpp_plugin PROPERTIES
 )
 
 if(EXISTS ${GRPC_CPP_PLUGIN_PROGRAM})
-    message(STATUS "[ThirdPartyLib][protoc grpc] protoc_grpc found, skip compiling.")
+    message(STATUS "[ThirdParty][protoc grpc] protoc_grpc found, skip compiling.")
 else()
-    message(STATUS "[ThirdPartyLib][protoc grpc] protoc_grpc not found, finding binary file.")
+    message(STATUS "[ThirdParty][protoc grpc] protoc_grpc not found, finding binary file.")
     set(REQ_URL "${CANN_3RD_LIB_PATH}/grpc/grpc-1.60.0.tar.gz")
     # 初始化可选参数列表
     set(GRPC_EXTRA_ARGS "")
     if(EXISTS ${REQ_URL})
-        message(STATUS "[ThirdPartyLib][protoc grpc] ${REQ_URL} found, start compile.")
+        message(STATUS "[ThirdParty][protoc grpc] ${REQ_URL} found, start compile.")
     else()
-        message(STATUS "[ThirdPartyLib][protoc grpc] ${REQ_URL} not found, need download.")
+        message(STATUS "[ThirdParty][protoc grpc] ${REQ_URL} not found, need download.")
         set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/grpc/grpc-1.60.0.tar.gz")
         list(APPEND GRPC_EXTRA_ARGS
             DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/pkg
@@ -234,43 +235,43 @@ else()
     set(GRPC_CXX_FLAGS "-Wl,-z,relro,-z,now,-z,noexecstack -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-all -s -D_GLIBCXX_USE_CXX11_ABI=${USE_CXX11_ABI}")
 
     ExternalProject_Add(protoc_grpc_build
-                        URL ${REQ_URL}
-                        TLS_VERIFY OFF
-                        ${GRPC_EXTRA_ARGS}
-                        PATCH_COMMAND ${CMAKE_COMMAND} -E make_directory <SOURCE_DIR>/third_party/opencensus-proto/src
-                            COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/grpc-fix-compile-bug-in-device.patch
-                        CONFIGURE_COMMAND ${CMAKE_COMMAND}
-                            # zlib
-                            -DgRPC_ZLIB_PROVIDER=none
-                            # cares
-                            -DgRPC_CARES_PROVIDER=module
-                            -DCARES_ROOT_DIR=${CARES_INTALL_PATH}
-                            # re2
-                            -DgRPC_RE2_PROVIDER=module
-                            -DRE2_ROOT_DIR=${RE2_INTALL_PATH}
-                            # absl
-                            -DgRPC_ABSL_PROVIDER=module
-                            -DABSL_ROOT_DIR=${ABS_INSTALL_DIR}
-                            # protobuf
-                            -DgRPC_PROTOBUF_PROVIDER=module
-                            -DPROTOBUF_ROOT_DIR=${PROTOBUF_SRC_DIR}
-                            # ssl
-                            -DgRPC_SSL_PROVIDER=none
-                            # grpc option
-                            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-                            -DCMAKE_CXX_STANDARD=14
-                            -DCMAKE_CXX_FLAGS=${GRPC_CXX_FLAGS}
-                            -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
-                            -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
-                            -DCMAKE_BUILD_TYPE=Release
-                            -DgRPC_BUILD_TESTS=OFF
-                            -DCMAKE_INSTALL_LIBDIR=lib
-                            -DgRPC_BUILD_CSHARP_EXT=OFF
-                            -DCMAKE_INSTALL_PREFIX=${PROTOC_GRPC_INSTALL_PATH}
-                            <SOURCE_DIR>
-                        BUILD_COMMAND $(MAKE) protoc grpc_cpp_plugin
-                        INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${PROTOC_GRPC_INSTALL_PATH} && ${CMAKE_COMMAND} -E copy <BINARY_DIR>/grpc_cpp_plugin ${PROTOC_GRPC_INSTALL_PATH}
-                        EXCLUDE_FROM_ALL TRUE
+        URL ${REQ_URL}
+        URL_HASH SHA256=437068b8b777d3b339da94d3498f1dc20642ac9bfa76db43abdd522186b1542b
+        ${GRPC_EXTRA_ARGS}
+        PATCH_COMMAND ${CMAKE_COMMAND} -E make_directory <SOURCE_DIR>/third_party/opencensus-proto/src
+            COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/grpc-fix-compile-bug-in-device.patch
+        CONFIGURE_COMMAND ${CMAKE_COMMAND}
+            # zlib
+            -DgRPC_ZLIB_PROVIDER=none
+            # cares
+            -DgRPC_CARES_PROVIDER=module
+            -DCARES_ROOT_DIR=${CARES_INTALL_PATH}
+            # re2
+            -DgRPC_RE2_PROVIDER=module
+            -DRE2_ROOT_DIR=${RE2_INTALL_PATH}
+            # absl
+            -DgRPC_ABSL_PROVIDER=module
+            -DABSL_ROOT_DIR=${ABS_INSTALL_DIR}
+            # protobuf
+            -DgRPC_PROTOBUF_PROVIDER=module
+            -DPROTOBUF_ROOT_DIR=${PROTOBUF_SRC_DIR}
+            # ssl
+            -DgRPC_SSL_PROVIDER=none
+            # grpc option
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+            -DCMAKE_CXX_STANDARD=14
+            -DCMAKE_CXX_FLAGS=${GRPC_CXX_FLAGS}
+            -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+            -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+            -DCMAKE_BUILD_TYPE=Release
+            -DgRPC_BUILD_TESTS=OFF
+            -DCMAKE_INSTALL_LIBDIR=lib
+            -DgRPC_BUILD_CSHARP_EXT=OFF
+            -DCMAKE_INSTALL_PREFIX=${PROTOC_GRPC_INSTALL_PATH}
+            <SOURCE_DIR>
+        BUILD_COMMAND $(MAKE) protoc grpc_cpp_plugin
+        INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${PROTOC_GRPC_INSTALL_PATH} && ${CMAKE_COMMAND} -E copy <BINARY_DIR>/grpc_cpp_plugin ${PROTOC_GRPC_INSTALL_PATH}
+        EXCLUDE_FROM_ALL TRUE
     )
     add_dependencies(protoc_grpc_build re2_build cares_build abseil_build protobuf_src)
     add_dependencies(grpc_cpp_plugin protoc_grpc_build)

@@ -24,18 +24,18 @@ set_target_properties(benchmark::benchmark PROPERTIES
 )
 
 if(EXISTS ${BENCHMARK_SHARED_LLIBRARY_DIR})
-    message(STATUS "[ThirdPartyLib][benchmark] benchmark found in: ${BENCHMARK_SHARED_LLIBRARY_DIR}")
+    message(STATUS "[ThirdParty][benchmark] benchmark found in: ${BENCHMARK_SHARED_LLIBRARY_DIR}")
     return()
 endif()
 
-message(STATUS "[ThirdPartyLib][benchmark] benchmark not found, finding binary file.")
+message(STATUS "[ThirdParty][benchmark] benchmark not found, finding binary file.")
 
 set(REQ_URL "${BENCHMARK_DOWNLOAD_PATH}/benchmark-1.8.3.tar.gz")
 set(BENCHMARK_EXTRA_ARGS "")
 if(EXISTS ${REQ_URL})
-    message(STATUS "[ThirdPartyLib][benchmark] ${REQ_URL} found.")
+    message(STATUS "[ThirdParty][benchmark] ${REQ_URL} found.")
 else()
-    message(STATUS "[ThirdPartyLib][benchmark] ${REQ_URL} not found, need download.")
+    message(STATUS "[ThirdParty][benchmark] ${REQ_URL} not found, need download.")
     set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/benchmark/benchmark-1.8.3.tar.gz")
     list(APPEND BENCHMARK_EXTRA_ARGS
         DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/pkg

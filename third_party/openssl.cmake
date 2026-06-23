@@ -52,7 +52,7 @@ find_package_handle_standard_args(openssl
 )
 
 if (openssl_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
-    message(STATUS "[ThirdPartyLib][openssl] use local libcrypto: ${CRYPTO_LIB_PATH}")
+    message(STATUS "[ThirdParty][openssl] use local libcrypto: ${CRYPTO_LIB_PATH}")
     # the key use for hcomm services online
     set(OPENSSL_INCLUDE_DIR ${OPENSSL_INSTALL_PATH}/include)
     add_custom_target(openssl_project)
@@ -143,7 +143,7 @@ else()
     endif()
 endif()
 
-message(STATUS "[ThirdPartyLib][openssl] libcrypto: ${CRYPTO_LIB_PATH} libssl: ${SSL_LIB_PATH} include: ${OPENSSL_INCLUDE}")
+message(STATUS "[ThirdParty][openssl] libcrypto: ${CRYPTO_LIB_PATH} libssl: ${SSL_LIB_PATH} include: ${OPENSSL_INCLUDE}")
 if(NOT TARGET crypto_static)
     add_library(crypto_static STATIC IMPORTED GLOBAL)
     add_dependencies(crypto_static openssl_project)

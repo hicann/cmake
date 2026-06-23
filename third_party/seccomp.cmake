@@ -26,7 +26,7 @@ else()
         set(REQ_URL "${CANN_3RD_LIB_PATH}/libseccomp-2.5.4.tar.gz")
     elseif(NOT EXISTS "${CANN_3RD_LIB_PATH}/libseccomp-2.5.4/")
         message("[ThirdParty][seccomp] not use cache in ${CANN_3RD_LIB_PATH}, download seccomp.")
-        set(REQ_URL "https://gitcode.com/cann-src-third-party/libseccomp/releases/download/v2.5.4/libseccomp-2.5.4.tar.gz")
+        set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/libseccomp/libseccomp-2.5.4.tar.gz")
     else()
         message("[ThirdParty][seccomp] use cache.")
         set(REQ_URL "${CANN_3RD_LIB_PATH}/libseccomp-2.5.4/")
@@ -34,6 +34,7 @@ else()
     include(ExternalProject)
     ExternalProject_Add(external_seccomp
         URL ${REQ_URL}
+        URL_HASH SHA256=96bbadb4384716272a6d2be82801dc564f7aab345febfe9b698b70fc606e3f75
         DOWNLOAD_DIR download/seccomp
         PREFIX third_party
         CONFIGURE_COMMAND cd <SOURCE_DIR> && ./autogen.sh && ./configure --prefix=<INSTALL_DIR>

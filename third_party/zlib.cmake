@@ -62,22 +62,22 @@ if(EXISTS ${ZLIB_LIBRARY} AND EXISTS ${MINIZIP_LIBRARY})
 else()
     set(ZLIB_C_FLAGS "-fPIC -fexceptions -O2")
     ExternalProject_Add(zlib_bin_build
-                        DOWNLOAD_COMMAND ""
-                        UPDATE_COMMAND ""
-                        SOURCE_DIR ${ZLIB_SRC_DIR}
-                        CONFIGURE_COMMAND ${CMAKE_COMMAND}
-                            -DCMAKE_INSTALL_PREFIX=${ZLIB_INSTALL_DIR}
-                            -DCMAKE_C_FLAGS=${ZLIB_C_FLAGS}
-                            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-                            -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
-                            -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
-                            -DLLVM_PATH=${LLVM_PATH}
-                            -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
-                            <SOURCE_DIR>
-                        BUILD_COMMAND $(MAKE)
-                        INSTALL_COMMAND $(MAKE) install
-                        DEPENDS zlib_src
-                        EXCLUDE_FROM_ALL TRUE
+        DOWNLOAD_COMMAND ""
+        UPDATE_COMMAND ""
+        SOURCE_DIR ${ZLIB_SRC_DIR}
+        CONFIGURE_COMMAND ${CMAKE_COMMAND}
+            -DCMAKE_INSTALL_PREFIX=${ZLIB_INSTALL_DIR}
+            -DCMAKE_C_FLAGS=${ZLIB_C_FLAGS}
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+            -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+            -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+            -DLLVM_PATH=${LLVM_PATH}
+            -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
+            <SOURCE_DIR>
+        BUILD_COMMAND $(MAKE)
+        INSTALL_COMMAND $(MAKE) install
+        DEPENDS zlib_src
+        EXCLUDE_FROM_ALL TRUE
     )
     add_dependencies(zlib_static zlib_bin_build)
     add_dependencies(minizip_static zlib_bin_build)

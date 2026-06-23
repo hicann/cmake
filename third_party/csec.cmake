@@ -40,8 +40,10 @@ else()
     set(LOCAL_SRC_DIR "${CANN_3RD_LIB_PATH}/libboundscheck-v1.1.16")
     if(EXISTS "${CANN_3RD_LIB_PATH}/libboundscheck-v1.1.16.tar.gz")
         set(REQ_URL "${CANN_3RD_LIB_PATH}/libboundscheck-v1.1.16.tar.gz")
+        message(STATUS "[ThirdParty][csec] ${REQ_URL} found.")
     else()
-        set(REQ_URL "https://gitcode.com/cann-src-third-party/libboundscheck/releases/download/v1.1.16/libboundscheck-v1.1.16.tar.gz")
+        set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/libboundscheck/libboundscheck-v1.1.16.tar.gz")
+        message("[ThirdParty][csec] ${REQ_URL} not found, need download.")
     endif()
     set(SO_NEW_NAME libc_sec.so)
     set(STATIC_NEW_NAME libc_sec.a)
@@ -81,6 +83,7 @@ else()
         message(STATUS "download csec from gitcode")
         ExternalProject_Add(csec_src
             URL ${REQ_URL}
+            URL_HASH SHA256=aee8368ef04a42a499edd5bfebce529e7f32dd138bfed383d316e48af4e45d2c
             DOWNLOAD_DIR ${CSEC_DOWNLOAD_DIR}
             SOURCE_DIR ${CSEC_SOURCE_DIR}
             PATCH_COMMAND ${CMAKE_COMMAND}

@@ -35,13 +35,14 @@ else()
         set(REQ_URL "${CANN_3RD_LIB_PATH}/c-ares-1.19.1.tar.gz")
         message(STATUS "[ThirdPartyLib][c-ares] ${REQ_URL} found.")
     else()
+        set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/c-ares/c-ares-1.19.1.tar.gz")
         message(STATUS "[ThirdPartyLib][c-ares] ${REQ_URL} not found, need download.")
-        set(REQ_URL "https://gitcode.com/cann-src-third-party/c-ares/releases/download/v1.19.1/c-ares-1.19.1.tar.gz")
     endif()
 
     include(ExternalProject)
     ExternalProject_Add(cares_build
         URL ${REQ_URL}
+        URL_HASH SHA256=321700399b72ed0e037d0074c629e7741f6b2ec2dda92956abe3e9671d3e268e
         DOWNLOAD_DIR ${CARES_PKG_PATH}
         SOURCE_DIR ${CARES_INTALL_PATH}
         CONFIGURE_COMMAND ""

@@ -42,24 +42,25 @@ find_package_handle_standard_args(abseil-cpp
 )
 
 if(abseil-cpp_FOUND)
-    message(STATUS "[ThirdPartyLib][abseil-cpp] Found abseil-cpp in: ${ABS_INSTALL_DIR}")
+    message(STATUS "[ThirdParty][abseil-cpp] Found abseil-cpp in: ${ABS_INSTALL_DIR}")
     add_custom_target(abseil_build)
 else()
     # 检查 abseil-cpp 路径
     if(EXISTS ${CANN_3RD_LIB_PATH}/abseil-cpp/${ABSEIL_VERSION_PKG})
-        message(STATUS "[ThirdPartyLib][abseil-cpp] found in ${CANN_3RD_LIB_PATH}/abseil-cpp/${ABSEIL_VERSION_PKG}.")
+        message(STATUS "[ThirdParty][abseil-cpp] found in ${CANN_3RD_LIB_PATH}/abseil-cpp/${ABSEIL_VERSION_PKG}.")
         set(REQ_URL ${CANN_3RD_LIB_PATH}/abseil-cpp/${ABSEIL_VERSION_PKG})
     elseif(EXISTS ${CANN_3RD_LIB_PATH}/${ABSEIL_VERSION_PKG})
-        message(STATUS "[ThirdPartyLib][abseil-cpp] Found abseil-cpp in ${CANN_3RD_LIB_PATH}")
+        message(STATUS "[ThirdParty][abseil-cpp] Found abseil-cpp in ${CANN_3RD_LIB_PATH}")
         set(REQ_URL ${CANN_3RD_LIB_PATH}/${ABSEIL_VERSION_PKG})
     else()
-        message(STATUS "[ThirdPartyLib][abseil-cpp] not found, need download.")
+        message(STATUS "[ThirdParty][abseil-cpp] not found, need download.")
         set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/abseil-cpp/abseil-cpp-20230802.1.tar.gz")
     endif()
 
     include(ExternalProject)
     ExternalProject_Add(abseil_build
         URL ${REQ_URL}
+        URL_HASH SHA256=987ce98f02eefbaf930d6e38ab16aa05737234d7afbab2d5c4ea7adbe50c28ed
         DOWNLOAD_DIR ${ABS_PKG_DIR}
         SOURCE_DIR ${ABS_INSTALL_DIR}
         PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/protobuf-hide_absl_symbols.patch

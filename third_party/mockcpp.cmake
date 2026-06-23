@@ -45,11 +45,11 @@ set(MOCKCPP_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
 set(MOCKCPP_SOURCE_PATH ${CANN_3RD_LIB_PATH}/mockcpp)
 set(MOCK_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/mockcpp)
 
-message(STATUS "[ThirdPartyLib][mockcpp] cmake install prefix ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "[ThirdParty][mockcpp] cmake install prefix ${CMAKE_INSTALL_PREFIX}")
 # use for offline
 if (EXISTS ${CANN_3RD_LIB_PATH}/mockcpp-2.7-h5.patch)
     set(PATCH_FILE "${CANN_3RD_LIB_PATH}/mockcpp-2.7-h5.patch")
-    message(STATUS "[ThirdPartyLib][mockcpp] patch use cache: ${PATCH_FILE}")
+    message(STATUS "[ThirdParty][mockcpp] patch use cache: ${PATCH_FILE}")
 else()
     # the path can not same with the mockcpp source path which will be cleaned by building
     set(PATCH_FILE ${CANN_3RD_LIB_PATH}/pkg/mockcpp-2.7-h5.patch)
@@ -63,20 +63,21 @@ else()
 endif()
 
 include(ExternalProject)
-message(STATUS, "[ThirdPartyLib][mockcpp] CMAKE_COMMAND is ${CMAKE_COMMAND}")
+message(STATUS, "[ThirdParty][mockcpp] CMAKE_COMMAND is ${CMAKE_COMMAND}")
 if(EXISTS ${CANN_3RD_LIB_PATH}/mockcpp/${FILE_NAME})
     set(REQ_URL ${CANN_3RD_LIB_PATH}/mockcpp/${FILE_NAME})
-    message("[ThirdPartyLib][mockcpp] use cache file: ${REQ_URL}")
+    message("[ThirdParty][mockcpp] use cache file: ${REQ_URL}")
 elseif(EXISTS ${CANN_3RD_LIB_PATH}/${FILE_NAME})
     set(REQ_URL ${CANN_3RD_LIB_PATH}/${FILE_NAME})
-    message("[ThirdPartyLib][mockcpp] use local tar.gz: ${REQ_URL}")
+    message("[ThirdParty][mockcpp] use local tar.gz: ${REQ_URL}")
 else()
     set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/mockcpp/mockcpp-2.7.tar.gz")
-    message("[ThirdPartyLib][mockcpp] not use cache, new url file: ${REQ_URL}")
+    message("[ThirdParty][mockcpp] not use cache, new url file: ${REQ_URL}")
 endif()
 
 ExternalProject_Add(mockcpp_static_build
     URL ${REQ_URL}
+    URL_HASH SHA256=73ab0a8b6d1052361c2cebd85e022c0396f928d2e077bf132790ae3be766f603
     DEPENDS third_party_boost
     DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/pkg
     SOURCE_DIR ${MOCKCPP_SOURCE_PATH}

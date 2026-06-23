@@ -134,18 +134,18 @@ message("[ThirdParty][protobuf] ASCEND_PROTOBUF_SHARED_LIB : ${ASCEND_PROTOBUF_S
 
 # 解析 protobuf 源码包路径
 if (EXISTS ${CANN_3RD_LIB_PATH}/protobuf-all-25.1.tar.gz)
-    set(PROTOBUF_PATH ${CANN_3RD_LIB_PATH}/protobuf-all-25.1.tar.gz)
+    set(REQ_URL ${CANN_3RD_LIB_PATH}/protobuf-all-25.1.tar.gz)
 elseif (EXISTS ${CANN_3RD_LIB_PATH}/protobuf-25.1.tar.gz)
-    set(PROTOBUF_PATH ${CANN_3RD_LIB_PATH}/protobuf-25.1.tar.gz)
+    set(REQ_URL ${CANN_3RD_LIB_PATH}/protobuf-25.1.tar.gz)
 elseif (EXISTS ${CANN_3RD_LIB_PATH}/protobuf/protobuf-all-25.1.tar.gz)
-    set(PROTOBUF_PATH ${CANN_3RD_LIB_PATH}/protobuf/protobuf-all-25.1.tar.gz)
+    set(REQ_URL ${CANN_3RD_LIB_PATH}/protobuf/protobuf-all-25.1.tar.gz)
 else()
-    set(PROTOBUF_PATH ${CANN_3RD_LIB_PATH}/protobuf/protobuf-25.1.tar.gz)
+    set(REQ_URL ${CANN_3RD_LIB_PATH}/protobuf/protobuf-25.1.tar.gz)
 endif()
 
-if(NOT EXISTS ${PROTOBUF_PATH})
-    message("[ThirdParty][protobuf] ${PROTOBUF_PATH} not found, need download.")
-    set(PROTOBUF_PATH "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/protobuf/protobuf-25.1.tar.gz")
+if(NOT EXISTS ${REQ_URL})
+    message("[ThirdParty][protobuf] ${REQ_URL} not found, need download.")
+    set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/protobuf/protobuf-25.1.tar.gz")
 endif()
 
 # 避免host和device同时编译时下载路径冲突
@@ -156,15 +156,15 @@ else()
 endif()
 
 ExternalProject_Add(protobuf_src
-                    URL ${PROTOBUF_PATH}
-                    DOWNLOAD_DIR ${PROTOBUF_DOWNLOAD_DIR}
-                    TLS_VERIFY OFF
-                    PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/protobuf_25.1_change_version.patch
-                    CONFIGURE_COMMAND ""
-                    BUILD_COMMAND ""
-                    INSTALL_COMMAND ""
-                    EXCLUDE_FROM_ALL TRUE
-                    DEPENDS abseil_build
+    URL ${REQ_URL}
+    URL_HASH SHA256=9bd87b8280ef720d3240514f884e56a712f2218f0d693b48050c836028940a42
+    DOWNLOAD_DIR ${PROTOBUF_DOWNLOAD_DIR}
+    PATCH_COMMAND patch --forward --batch -p1 < ${CMAKE_CURRENT_LIST_DIR}/protobuf_25.1_change_version.patch
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+    EXCLUDE_FROM_ALL TRUE
+    DEPENDS abseil_build
 )
 
 ExternalProject_Get_Property(protobuf_src SOURCE_DIR)
@@ -176,13 +176,14 @@ set(PROTOBUF_SRC_DIR ${SOURCE_DIR})
 add_library(ascend_protobuf SHARED IMPORTED GLOBAL)
 add_library(ascend_protobuf_shared_headers INTERFACE IMPORTED GLOBAL)
 if(ASCEND_PROTOBUF_SHARED_INCLUDE AND ASCEND_PROTOBUF_SHARED_LIB)
+    message("[ThirdParty][protobuf] protobuf_shared use cache.")
     set_target_properties(ascend_protobuf PROPERTIES
         IMPORTED_LOCATION ${ASCEND_PROTOBUF_SHARED_LIB}
         INTERFACE_INCLUDE_DIRECTORIES ${ASCEND_PROTOBUF_SHARED_INCLUDE}
     )
     set(_ASCEND_PROTOBUF_SHARED_INCLUDE ${ASCEND_PROTOBUF_SHARED_INCLUDE})
 else()
-    message("[ThirdParty][protobuf_shared] shared build.")
+    message("[ThirdParty][protobuf] protobuf_shared build.")
     ExternalProject_Add(protobuf_shared_build
         DEPENDS protobuf_src
         SOURCE_DIR ${PROTOBUF_SRC_DIR}
@@ -228,10 +229,10 @@ set(PROTOBUF_SHARED_LIB_DIR "${PROTOBUF_SHARED_PKG_DIR}/lib")
 # ---------------------------------------------------------
 add_executable(host_protoc IMPORTED GLOBAL)
 if(PROTOC_PROGRAM)
-    message("[ThirdParty][protoc] protoc use cache.")
+    message("[ThirdParty][protobuf] protoc use cache.")
     set_target_properties(host_protoc PROPERTIES IMPORTED_LOCATION ${PROTOC_PROGRAM})
 else()
-    message("[ThirdParty][protoc] protoc build.")
+    message("[ThirdParty][protobuf] protoc build.")
     ExternalProject_Add(protobuf_host_build
         DEPENDS protobuf_src
         SOURCE_DIR ${PROTOBUF_SRC_DIR}
@@ -266,6 +267,7 @@ add_custom_target(protoc DEPENDS host_protoc)
 add_library(ascend_protobuf_static STATIC IMPORTED GLOBAL)
 add_library(ascend_protobuf_static_headers INTERFACE IMPORTED)
 if(ASCEND_PROTOBUF_STATIC_INCLUDE AND ASCEND_PROTOBUF_STATIC_LIB)
+    message("[ThirdParty][protobuf] protobuf_static use cache.")
     set_target_properties(ascend_protobuf_static PROPERTIES
         IMPORTED_LOCATION ${ASCEND_PROTOBUF_STATIC_LIB}
         INTERFACE_INCLUDE_DIRECTORIES ${ASCEND_PROTOBUF_STATIC_INCLUDE}
@@ -273,7 +275,7 @@ if(ASCEND_PROTOBUF_STATIC_INCLUDE AND ASCEND_PROTOBUF_STATIC_LIB)
     set(_ASCEND_PROTOBUF_STATIC_INCLUDE ${ASCEND_PROTOBUF_STATIC_INCLUDE})
     set(PROTOBUF_STATIC_FINAL_PATH ${ASCEND_PROTOBUF_STATIC_LIB})
 else()
-    message("[ThirdParty][protobuf_static] static build.")
+    message("[ThirdParty][protobuf] protobuf_static build.")
     ExternalProject_Add(protobuf_static_build
         DEPENDS protobuf_src
         SOURCE_DIR ${PROTOBUF_SRC_DIR}
@@ -318,13 +320,14 @@ create_imported_interface_include_directories(ascend_protobuf_static)
 # ---------------------------------------------------------
 add_library(protobuf_static STATIC IMPORTED GLOBAL)
 if(HOST_PROTOBUF_STATIC_INCLUDE AND HOST_PROTOBUF_STATIC_LIB)
+    message("[ThirdParty][protobuf] protobuf_host_static use cache.")
     set_target_properties(protobuf_static PROPERTIES 
         IMPORTED_LOCATION ${HOST_PROTOBUF_STATIC_LIB}
         INTERFACE_INCLUDE_DIRECTORIES "${HOST_PROTOBUF_STATIC_INCLUDE}"
     )
     set(PROTOBUF_HOST_STATIC_FINAL_PATH ${HOST_PROTOBUF_STATIC_LIB})
 else()
-    message("[ThirdParty][protobuf_host_static] host static build.")
+    message("[ThirdParty][protobuf] protobuf_host_static build.")
     ExternalProject_Add(protobuf_host_static_build
         DEPENDS protobuf_src
         SOURCE_DIR ${PROTOBUF_SRC_DIR}
