@@ -15,5 +15,6 @@ set(CANN_PACKAGE_DIR_ge-executor "ge")
 set(CANN_PACKAGE_DIR_ge-compiler "ge")
 set(CANN_PACKAGE_DIR_dflow-executor "ge")
 
-set(CANN_PACKAGE_COMPONENTS_asc-devkit "acl_rtc" "ascendc_runtime" "ASC")
+set(CANN_PACKAGE_COMPONENTS_runtime "acl_rt" "adump" "ascend_dump" "ascend_hal" "ascendcl" "error_manager" "mmpa" "msprof" "platform" "runtime" "securec" "slog" "unified_dlog")
+set(CANN_PACKAGE_COMPONENTS_asc-devkit "acl_rtc" "ascendc_runtime" "ASC" "asc_devkit" "tiling_api")
 set(CANN_PACKAGE_COMPONENTS_ge-executor "graph")

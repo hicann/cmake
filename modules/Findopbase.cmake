@@ -66,6 +66,10 @@ if(OPBASE_FOUND)
     ${OPBASE_INC_DIR}/op_common
     ${OPBASE_INC_DIR}/op_common/op_host
   )
+  add_library(opbase_headers INTERFACE IMPORTED)
+  set_target_properties(opbase_headers PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${OPBASE_INC_DIRS}"
+  )
 endif()
 
 if(PRODUCT_SIDE STREQUAL "device")
