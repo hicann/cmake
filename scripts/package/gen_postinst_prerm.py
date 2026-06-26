@@ -69,7 +69,7 @@ def generate_postinst(package_name, version, modules_data, source_dir, permissio
             link_dir = f"$(dirname \"{link}\")"
             lines.append(f"mkdir -p \"$INSTALL_PATH\"/{link_dir}")
             # 如果是EngineeringCommon模块，创建实体目录
-            lines.append(f"if [ \"{module}\" = \"EngineeringCommon\" ]; then")
+            lines.append(f"if [ \"{module}\" = \"EngineeringCommon\" -o \"{module}\" = \"DevlibCommon\" ]; then")
             lines.append(f"    mkdir -p \"$INSTALL_PATH\"/{target}")
             lines.append("fi")
             lines.append(f"ln -sfnr \"$INSTALL_PATH\"/\"{target}\" \"$INSTALL_PATH\"/\"{link}\"")
@@ -177,7 +177,7 @@ def generate_prerm(package_name, version, modules_data, source_dir):
                 link = sym['link']
                 target = sym['target']
                 # 如果是EngineeringCommon模块，删除实体目录
-                lines.append(f"        if [ \"{module}\" = \"EngineeringCommon\" ]; then")
+                lines.append(f"        if [ \"{module}\" = \"EngineeringCommon\" -o \"{module}\" = \"DevlibCommon\" ]; then")
                 lines.append(f"            if [ -d \"$INSTALL_PATH\"/\"{target}\" ]; then")
                 lines.append(f"                rm -rf \"$INSTALL_PATH\"/\"{target}\"")
                 lines.append(f"            fi")

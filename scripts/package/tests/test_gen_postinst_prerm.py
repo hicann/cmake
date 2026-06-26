@@ -101,7 +101,7 @@ class TestGenPostinstPrerm:
         }
         result = gen_postinst_prerm.generate_postinst("cann-ops", "9.0.0", modules_data, str(tmp_path))
 
-        assert 'if [ "EngineeringCommon" = "EngineeringCommon" ]; then' in result
+        assert 'if [ "EngineeringCommon" = "EngineeringCommon" -o "EngineeringCommon" = "DevlibCommon" ]; then' in result
         assert 'mkdir -p "$INSTALL_PATH"/ops/kernel' in result
 
     @staticmethod
