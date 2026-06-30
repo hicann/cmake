@@ -191,7 +191,7 @@ def generate_prerm(package_name, version, modules_data, source_dir):
             lines.append(f"        echo \"Removed module {module} from database\"")
             lines.append("         cleanup_db_and_var")
             lines.append("    else")
-            lines.append(f"        sed -i 's/^{module}|.*$/{module}|$new_components/' \"$DB_FILE\"")
+            lines.append(f'        sed -i "s/^{module}|.*$/{module}|$new_components/" "$DB_FILE"')
             lines.append(f"        echo \"Removed $PACKAGE_NAME from module {module}, remaining: $new_components\"")
             lines.append("    fi")
             lines.append("else")
