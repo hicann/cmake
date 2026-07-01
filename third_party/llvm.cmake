@@ -51,28 +51,28 @@ endif()
 
 find_path(LLVM_INCLUDE
     NAMES llvm/IR/Module.h
-    PATHS ${LLVM_INSTALL_PATH}/include
+    PATHS ${LLVM_SOURCE_PATH}/llvm/include
     NO_DEFAULT_PATH
 )
 
 find_library(LLVM_CORE_LIBRARY
     NAMES LLVMCore libLLVMCore.so.19.1
     PATH_SUFFIXES lib lib64
-    PATHS ${LLVM_INSTALL_PATH}
+    PATHS ${LLVM_INSTALL_PATH}/build-shared
     NO_DEFAULT_PATH
 )
 
 find_library(MLIR_IR_LIBRARY
     NAMES MLIRIR libMLIRIR.so.19.1
     PATH_SUFFIXES lib lib64
-    PATHS ${LLVM_INSTALL_PATH}
+    PATHS ${LLVM_INSTALL_PATH}/build-shared
     NO_DEFAULT_PATH
 )
 
 find_library(MLIR_SUPPORT_LIBRARY
     NAMES MLIRSupport libMLIRSupport.so.19.1
     PATH_SUFFIXES lib lib64
-    PATHS ${LLVM_INSTALL_PATH}
+    PATHS ${LLVM_INSTALL_PATH}/build-shared
     NO_DEFAULT_PATH
 )
 
