@@ -243,7 +243,9 @@ function(set_cann_all_targets pkg_dirs)
     endforeach()
 
     add_custom_target(cann_all_targets ALL)
-    add_dependencies(cann_all_targets ${build_targets})
+    if(build_targets)
+        add_dependencies(cann_all_targets ${build_targets})
+    endif()
 endfunction()
 
 # 计算device编译相关参数
