@@ -103,6 +103,8 @@ if(metadef_FOUND)
         ${_CANN_METADEF_INCLUDE_DIR}/external
         ${_CANN_METADEF_INCLUDE_DIR}/external/ge_common
         ${_CANN_METADEF_INCLUDE_DIR}/register
+        ${_CANN_METADEF_INCLUDE_DIR}/experiment/metadef
+        ${_CANN_METADEF_INCLUDE_DIR}/experiment/metadef/common/util/error_manager
         ${_CANN_METADEF_PKG_INC_DIR}
         ${_CANN_METADEF_PKG_INC_DIR}/base
         ${_CANN_METADEF_PKG_INC_DIR}/common
