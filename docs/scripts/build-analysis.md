@@ -1,4 +1,16 @@
+<!-- -----------------------------------------------------------------------------------------------------------
+ Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ CANN Open Software License Agreement Version 2.0 (the "License").
+ Please refer to the License for details. You may not use this file except in compliance with the License.
+ THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ See LICENSE in the root of the software repository for the full text of the License.
+----------------------------------------------------------------------------------------------------------- -->
+
 # IWYU Log Parser
+
+> 脚本位置：`scripts/build_analysis/iwyu_log_parser.py`
 
 解析 IWYU (Include What You Use) 日志，自动识别和修复 C/C++ 头文件依赖问题。
 
@@ -18,7 +30,7 @@
 
 ## 前置要求
 
-- Python 3.6+
+- Python 3.7+
 - 已安装并配置好 IWYU 工具
 
 安装 IWYU：

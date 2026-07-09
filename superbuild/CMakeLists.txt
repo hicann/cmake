@@ -11,6 +11,9 @@
 cmake_minimum_required(VERSION 3.16.3)
 project(cann_superbuild)
 
+# superbuild 入口：负责 host 侧直接 add_subdirectory 编译，并在需要时通过
+# ExternalProject 启动独立 CMake 进程交叉编译 device 侧（见文件末尾）。
+# 整体流程：解析依赖 -> host 子目录编译 -> (可选) device 交叉编译 -> 打包。
 include(../function/function.cmake)
 init_cann_superbuild_project(PRODUCT_SIDE "host" PREPEND_MODULE_PATH)
 set(BUILD_OPEN_PROJECT TRUE)
@@ -24,31 +27,47 @@ set(ENABLE_PACKAGE TRUE)
 set(METADEF_INC_PATH "${CANN_TOP_DIR}/metadef/inc/external")
 set(BUILD_METADEF TRUE)
 
+# ---------- 依赖解析与 device 编译判定 ----------
+# 递归解析 --pkgs 指定包的构建依赖链，结果写入 CANN_DEPEND_PACKAGES；
+# calc_device_packages 进一步从中筛出含 cmake/device 子目录的包。
 get_pkg_dependencies("${CANN_PACKAGES}")
 calc_device_packages()
 set(ENABLE_BUILD_DEVICE FALSE)
 
+# 仅当存在 device 包，且不全是 ge-executor/ge-compiler 这类纯 host 侧包时，
+# 才真正启用 device 交叉编译。
 if(DEVICE_CANN_PACKAGES AND NOT DEVICE_CANN_PACKAGES STREQUAL "ge-executor" AND NOT DEVICE_CANN_PACKAGES STREQUAL "ge-compiler")
     set(SUPERBUILD_ENABLE_DEVICE TRUE)
 else()
     set(SUPERBUILD_ENABLE_DEVICE FALSE)
 endif()
 
+# ---------- host 侧编译 ----------
+# 将所有依赖包以 add_subdirectory 引入，直接在当前进程编译（区别于 device 的独立进程）。
 get_package_dirs(CANN_DEPEND_PACKAGE_DIRS "${CANN_DEPEND_PACKAGES}")
 foreach(CANN_DEPEND_PACKAGE_DIR IN LISTS CANN_DEPEND_PACKAGE_DIRS)
     # 这里不可以使用EXCLUDE_FROM_ALL，cmake会排除install命令，这不是期望的
     add_subdirectory(${CANN_TOP_DIR}/${CANN_DEPEND_PACKAGE_DIR} ${CANN_DEPEND_PACKAGE_DIR})
 endforeach()
 
+# set_cann_all_targets 的作用：先将 CMAKE_SOURCE_DIR 下所有 target 标记为
+# EXCLUDE_FROM_ALL（默认不参与编译，避免 --pkgs 未指定的冗余包被构建），
+# 再为实际要构建的目标建立聚合目标 cann_all_targets 并 add_dependencies，
+# 使仅这些目标随 ALL 一起编译。这样未在 --pkgs 中指定的组件会被排除。
 get_package_dirs(CANN_PACKAGE_DIRS "${CANN_PACKAGES}")
 set_cann_all_targets("${CANN_PACKAGE_DIRS}")
 
+# ---------- device 交叉编译准备 ----------
+# ExternalProject 通过命令行传递 CMAKE_ARGS，CMake 列表的分号 ";" 会被破坏，
+# 故先将其替换为自定义分隔符 "::"，再由下方 LIST_SEPARATOR :: 还原。
 set(TOOLCHAIN_DIR ${ASCEND_INSTALL_PATH}/toolkit/toolchain/hcc)
 string(REPLACE ";" "::" EP_DEVICE_CANN_PACKAGES "${DEVICE_CANN_PACKAGES}")
 string(REPLACE ";" "::" EP_CANN_BINARY_PACKAGES "${CANN_BINARY_PACKAGES}")
 string(REPLACE ";" "::" EP_DEVICE_CANN_DEPEND_PACKAGES "${DEVICE_CANN_DEPEND_PACKAGES}")
 
 if(SUPERBUILD_ENABLE_DEVICE)
+    # 以 ExternalProject 启动独立 CMake 进程，使用 aarch64 工具链交叉编译 device 侧，
+    # 编译完成后执行 cpack 打包，产物为 device-<pkg>.tar.gz。
     include(ExternalProject)
     ExternalProject_Add(cann_device
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/device
@@ -74,12 +93,15 @@ if(SUPERBUILD_ENABLE_DEVICE)
         LIST_SEPARATOR ::
         BUILD_ALWAYS TRUE
     )
+    # 在 configure 前创建 CMake File API 的 codemodel-v2 查询文件，
+    # 使 CMake 写出 codemodel 响应，供 IDE/工具感知 device 构建结构。
     ExternalProject_Add_Step(cann_device query_codemodel
  	    COMMAND ${CMAKE_COMMAND} -E make_directory <BINARY_DIR>/.cmake/api/v1/query
  	    COMMAND ${CMAKE_COMMAND} -E touch <BINARY_DIR>/.cmake/api/v1/query/codemodel-v2
  	    DEPENDEES patch
  	    DEPENDERS configure
  	)
+    # 将 device 侧产物 device-<pkg>.tar.gz 收集到对应组件，供 host 侧打包流程统一组装。
     foreach(CANN_PACKAGE IN LISTS DEVICE_CANN_PACKAGES)
         install(FILES
             ${CMAKE_BINARY_DIR}/device_build/device-${CANN_PACKAGE}.tar.gz

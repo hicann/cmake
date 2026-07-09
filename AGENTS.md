@@ -10,26 +10,29 @@ Shared CMake/Python build, packaging, and install framework for the CANN ecosyst
 
 ```bash
 # --pkgs is REQUIRED. Comma-separated package names (e.g. runtime,asc-devkit).
-sh build.sh --pkgs=<PACKAGES> [-j<N>] [-v] [--pkg-type=run|rpm|deb] [--build-type=Release|Debug]
+sh build.sh --pkgs=<PACKAGES> [-j<N>] [-v] [--pkg-type=run|rpm|deb] [--build-type=Release|Debug] [--build_host_only] [--asan]
 ```
 
 - Build dir: `build/`. Output (packaged artifacts): `build_out/`.
 - `build.sh` runs `cmake -S superbuild -B build` then `cmake --build build --target package`.
-- A full build requires the sibling CANN repos present under `CANN_TOP_DIR` and a CANN toolkit install (`ASCEND_CANN_PACKAGE_PATH`, defaults to `~/Ascend/cann` or `/usr/local/Ascend/cann`). Without these the superbuild cannot resolve dependencies — do not attempt to "fix" this by making the repo standalone.
+- A full build requires the sibling CANN repos present under `CANN_TOP_DIR` and a CANN toolkit install. Without these the superbuild cannot resolve dependencies — do not attempt to "fix" this by making the repo standalone.
+- `ASCEND_CANN_PACKAGE_PATH` (toolkit install) resolution order in `build.sh`: `-p/--cann_path` → `ASCEND_HOME_PATH` → `ASCEND_OPP_PATH` → default dirs (`~/Ascend/cann` non-root, `/usr/local/Ascend/cann` root).
+- `--build_host_only` skips the device cross-compile step (see host/device split below).
 
 ## Tests
 
 ```bash
-python3 -m pytest scripts/package/tests/          # all tests (from repo root)
+python3 -m pytest scripts/package/tests/          # packaging tests (from repo root)
+python3 -m pytest scripts/build_analysis/tests/   # IWYU log parser tests
 python3 -m pytest scripts/package/tests/test_package.py::TestClass -v   # single test
 ```
 
-- No `pytest.ini`/`pyproject.toml`. `scripts/package/tests/conftest.py` prepends `scripts/package` to `sys.path` so modules import without install.
+- No `pytest.ini`/`pyproject.toml`. Each test dir has its own `conftest.py` that prepends its parent to `sys.path` so modules import without install.
 - `classify_rule.yaml` sets `llt.ut_check: true` — keep tests green when changing `scripts/package/**`.
 
 ## Architecture notes that are not obvious from filenames
 
-- **Two integration modes, gated by `TOPLEVEL_PROJECT`:** When this repo's `superbuild/` is the top-level project (`TOPLEVEL_PROJECT ON`, set in `function/prepare.cmake:14`), functions like `set_cann_cpack_config`, `add_cann_device_project`, and `check_cann_pkg_build_deps` execute. When consumed by a sibling repo (`TOPLEVEL_PROJECT OFF`), they early-return. `ENABLE_UNIFIED_BUILD` re-enables some of them for multi-repo unified builds. Always check both branches when editing `function/prepare.cmake`.
+- **Two integration modes, gated by `TOPLEVEL_PROJECT`:** When this repo's `superbuild/` is the top-level project (`TOPLEVEL_PROJECT ON`, set in `function/prepare.cmake:15`), functions like `set_cann_cpack_config`, `add_cann_device_project`, and `check_cann_pkg_build_deps` execute. When consumed by a sibling repo (`TOPLEVEL_PROJECT OFF`), they early-return. `ENABLE_UNIFIED_BUILD` re-enables some of them for multi-repo unified builds. Always check both branches when editing `function/prepare.cmake`.
 - **`CANN_TOP_DIR`** is resolved as the parent of this repo (`function/function.cmake:31`). Package dependency resolution reads `version.cmake` files from `${CANN_TOP_DIR}/${pkg_dir}` — package→directory mappings live in `superbuild/config.cmake`.
 - **Device cross-compile** uses `toolchain/aarch64-hcc-toolchain.cmake` (aarch64 target via hcc). Host and device builds are separate ExternalProject steps; `PRODUCT_SIDE` (`host`/`device`) controls which source dirs are added (`<pkg>` vs `<pkg>/cmake/device`).
 - **`__FILE__` macro rewriting:** Both `prepare.cmake` (non-Ninja) and the toolchain file override `CMAKE_C/CXX_COMPILE_OBJECT` to emit only the basename in `__FILE__`, plus `-Wno-builtin-macro-redefined`. Preserve this when touching compile rules.
@@ -45,14 +48,17 @@ Functions in `function/prepare.cmake` are the framework's public API: `init_cann
 | Path | Purpose |
 |------|---------|
 | `function/` | Core framework: `prepare.cmake` (public API), `function.cmake` (superbuild init + dep resolution) |
-| `superbuild/` | Superbuild entrypoints (`CMakeLists.txt` host, `device/CMakeLists.txt` device, `sub_project.cmake` sub-project template, `config.cmake` package→dir map) |
+| `superbuild/` | Superbuild entrypoints (`CMakeLists.txt` host, `device/CMakeLists.txt` device, `config.cmake` package→dir map) |
 | `modules/` | `Find<dep>.cmake` modules; added to `CMAKE_MODULE_PATH` via `PREPEND_MODULE_PATH` |
 | `third_party/` | `<name>.cmake` scripts for building external deps (abseil, boost, grpc, protobuf, ...), included via `add_cann_third_party(name)` |
 | `intf_pub/` | `intf_pub_linux.cmake` — shared compile/link flags (security hardening, sanitizers, ABI) applied via `add_cann_target_options` |
 | `toolchain/` | `aarch64-hcc-toolchain.cmake` for device cross-compile |
+| `docs/` | Detailed architecture/integration docs (`architecture.md`, `framework/`, `superbuild/`) |
 | `scripts/package/` | Python packaging logic + pytest suite; invoked by CMake at `package` time |
 | `scripts/version/` | `check_build_dependencies.py`, `generate_version_info.py` — invoked by CMake functions |
 | `scripts/sign/` | Code signing scripts invoked by `add_cann_sign_file` |
+| `scripts/signtool/` | Python image pack/extract/ESBC-header tools used by the sign flow |
+| `scripts/build_analysis/` | IWYU log parser (`iwyu_log_parser.py`) + pytest suite in `tests/` |
 | `scripts/install/` | Shell install scripts shipped in the packages |
 
 ## Conventions

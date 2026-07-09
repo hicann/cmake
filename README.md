@@ -27,6 +27,7 @@
 
 ```
 cmake/
+├── docs/                           # 详细技术文档
 ├── scripts/                        # 脚本目录
 │   ├── package/                    # 打包相关脚本
 │   └── install/                    # 安装相关脚本
@@ -96,6 +97,14 @@ cmake/
 
     init_cann_project()
     ```
+
+## 详细文档
+
+更多内容请参阅 [docs/README.md](./docs/README.md)：
+
+- **子包接入与独立构建**：[framework/](./docs/framework/)
+- **多仓联合编译**：[superbuild/](./docs/superbuild/)
+- **整体架构**：[architecture.md](./docs/architecture.md)
 
 ## 相关信息
 
