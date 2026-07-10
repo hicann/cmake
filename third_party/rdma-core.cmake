@@ -134,6 +134,6 @@ else()
     add_dependencies(rdma_core_headers rdma_core_build)
 endif()
 
-target_include_directories(rdma_core_headers INTERFACE
+target_include_directories(rdma_core_headers SYSTEM INTERFACE
     ${RDMA_CORE_INCLUDE_DIR}
 )
