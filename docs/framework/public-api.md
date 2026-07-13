@@ -99,7 +99,7 @@ set_cann_build_dependencies(runtime "CUR_MAJOR_MINOR_VER")
 | `MANIFEST` | manifest 文件名（相对路径） |
 | `TAR_ROOT_DIR` | tar 包内根目录名 |
 | `SIZE_LIMIT` | 大小限制（KB），Release 模式下超出则报错 |
-| `GEN_INI` | 自动生成 .ini 文件 |
+| `GEN_INI` | 传入该选项时生成 .ini 文件（另需 `CANN_VERSION_CURRENT_PACKAGE` 以解析版本号） |
 
 ## 第三方依赖
 

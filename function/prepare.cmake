@@ -632,10 +632,11 @@ function(cann_pack_targets_and_files)
         set(tar_src ".")
     endif()
     
-    # Generate .ini file if CANN_VERSION_CURRENT_PACKAGE is set
+    # 仅当调用方传入 GEN_INI 选项时才生成 .ini 文件；同时需要
+    # CANN_VERSION_CURRENT_PACKAGE 以解析版本号
     set(ini_file "")
     set(ini_version "")
-    if(CANN_VERSION_CURRENT_PACKAGE)
+    if(ARG_GEN_INI AND CANN_VERSION_CURRENT_PACKAGE)
         set(pkg_version "${CANN_VERSION_${CANN_VERSION_CURRENT_PACKAGE}_VERSION}")
         if(pkg_version)
             get_filename_component(output_dir "${ARG_OUTPUT}" DIRECTORY)
