@@ -594,10 +594,11 @@ endfunction()
 # OUTPUT - 输出文件路径
 # MANIFEST - 可选，manifest文件名
 # OUTPUT_TARGET - 输出目标名
+# TAR_ROOT_DIR - 可选，打包根目录
 # SIZE_LIMIT - 可选，大小限制（单位KB），超出则报错
 # TARGETS - 目标列表
 # FILES - 文件列表
-# 说明：如果设置了 CANN_VERSION_CURRENT_PACKAGE，会自动生成 .ini 文件并打包
+# GEN_INI - 可选标志，传入且设置了 CANN_VERSION_CURRENT_PACKAGE 时生成 .ini 文件并打包
 function(cann_pack_targets_and_files)
     cmake_parse_arguments(ARG
         "GEN_INI"
