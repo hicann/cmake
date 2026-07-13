@@ -168,7 +168,7 @@ ExternalProject_Add(protobuf_src
 )
 
 ExternalProject_Get_Property(protobuf_src SOURCE_DIR)
-set(PROTOBUF_SRC_DIR ${SOURCE_DIR})
+set(PROTOBUF_SRC_DIR ${SOURCE_DIR} CACHE INTERNAL "protobuf src dir")
 
 # ---------------------------------------------------------
 # Target: ascend_protobuf (Shared)

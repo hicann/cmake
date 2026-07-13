@@ -19,11 +19,11 @@ unset(ABSL_SOURCE_DIR CACHE)
 set(ABSEIL_VERSION_PKG abseil-cpp-20230802.1.tar.gz)
 
 if(PRODUCT_SIDE STREQUAL "device")
-    set(ABS_INSTALL_DIR ${CANN_3RD_LIB_PATH}/lib_cache/device/abseil-cpp)
-    set(ABS_PKG_DIR ${CANN_3RD_LIB_PATH}/pkg/device)
+    set(ABS_INSTALL_DIR ${CANN_3RD_LIB_PATH}/lib_cache/device/abseil-cpp CACHE INTERNAL "abseil cpp install dir")
+    set(ABS_PKG_DIR ${CANN_3RD_LIB_PATH}/pkg/device CACHE INTERNAL "abseil cpp pkg dir")
 else()
-    set(ABS_INSTALL_DIR ${CANN_3RD_LIB_PATH}/lib_cache/abseil-cpp)
-    set(ABS_PKG_DIR ${CANN_3RD_LIB_PATH}/pkg)
+    set(ABS_INSTALL_DIR ${CANN_3RD_LIB_PATH}/lib_cache/abseil-cpp CACHE INTERNAL "abseil cpp install dir")
+    set(ABS_PKG_DIR ${CANN_3RD_LIB_PATH}/pkg CACHE INTERNAL "abseil cpp pkg dir")
 endif()
 
 # use for online pipeline building acceleration
