@@ -9,6 +9,9 @@
 # the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 include_guard(GLOBAL)
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
 
 set(JPEG_TAR_PKG_PATH ${CANN_3RD_LIB_PATH}/libjpeg-turbo/libjpeg-turbo-3.0.1.tar.gz)
 if(EXISTS "${JPEG_TAR_PKG_PATH}")
@@ -25,8 +28,8 @@ set(JPEG_INSTALL_PATH ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo)
 include(ExternalProject)
 ExternalProject_Add(third_party_jpeg
     URL ${REQ_URL}
-    URL_HASH SHA256=22429507714ae147b3acacd299e82099fce5d9f456882fc28e252e4579ba2a75
     DOWNLOAD_EXTRACT_TIMESTAMP true
+    URL_HASH SHA256=22429507714ae147b3acacd299e82099fce5d9f456882fc28e252e4579ba2a75
     CONFIGURE_COMMAND ${CMAKE_COMMAND}
         -DCMAKE_C_COMPILER_LAUNCHER=${CCACHE_PROGRAM}
         -DTOOLCHAIN_DIR=${TOOLCHAIN_DIR}
