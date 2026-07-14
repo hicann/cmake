@@ -37,22 +37,22 @@ find_package_handle_standard_args(json
 )
 
 if(NOT json_FOUND OR FORCE_REBUILD_CANN_3RD)
-    if(EXISTS "${CANN_3RD_LIB_PATH}/json-3.11.3.tar.gz")
+    if(EXISTS "${CANN_3RD_LIB_PATH}/json-3.12.0.tar.gz")
         # Users's offline scene.
         message(STATUS "[ThirdParty][json] use local json cache.")
-        set(REQ_URL ${CANN_3RD_LIB_PATH}/json-3.11.3.tar.gz)
-    elseif(EXISTS "${CANN_3RD_LIB_PATH}/json/json-3.11.3.tar.gz")
+        set(REQ_URL ${CANN_3RD_LIB_PATH}/json-3.12.0.tar.gz)
+    elseif(EXISTS "${CANN_3RD_LIB_PATH}/json/json-3.12.0.tar.gz")
         message(STATUS "[ThirdParty][json] pipeline use json cache.")
-        set(REQ_URL ${CANN_3RD_LIB_PATH}/json/json-3.11.3.tar.gz)
+        set(REQ_URL ${CANN_3RD_LIB_PATH}/json/json-3.12.0.tar.gz)
     else()
         message(STATUS "[ThirdParty][json] not use cache, download json source.")
-        set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/json/json-3.11.3.tar.gz")
+        set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/json/json-3.12.0.tar.gz")
     endif()
 
     include(ExternalProject) 
     ExternalProject_Add(third_party_json 
         URL ${REQ_URL}
-        URL_HASH SHA256=0d8ef5af7f9794e3263480193c491549b2ba6cc74bb018906202ada498a79406
+        URL_HASH SHA256=4b92eb0c06d10683f7447ce9406cb97cd4b453be18d7279320f7b2f025c10187
         DOWNLOAD_DIR ${JSON_DOWNLOAD_PATH}
         SOURCE_DIR ${JSON_SOURCE_PATH}
         CONFIGURE_COMMAND ""

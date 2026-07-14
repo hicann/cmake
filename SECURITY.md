@@ -22,7 +22,7 @@
 |  依赖  | 不涉及  | third_party/eigen.cmake | https://gitcode.com/cann-src-third-party/eigen/releases/download/5.0.0-h0.trunk/eigen-5.0.0.tar.gz | 从gitcode下载eigen源码，作用编译依赖 |
 |  依赖  | 不涉及  | third_party/gtest.cmake | https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/googletest-1.14.0.tar.gz | 从gitcode下载googletest源码，作用编译依赖 |
 |  依赖  | 不涉及  | third_party/gtest_shared.cmake | https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/googletest-1.14.0.tar.gz | 从gitcode下载googletest源码，作用编译依赖 |
-|  依赖  | 不涉及  | third_party/json.cmake | https://gitcode.com/cann-src-third-party/json/releases/download/v3.11.3/include.zip | 从gitcode下载json源码，作用编译依赖 |
+|  依赖  | 不涉及  | third_party/json.cmake | https://gitcode.com/cann-src-third-party/json/releases/download/v3.12.0/json-3.12.0.tar.gz | 从gitcode下载json源码，作用编译依赖 |
 |  依赖  | 不涉及  | third_party/libboundscheck.cmake | https://gitcode.com/cann-src-third-party/libboundscheck/releases/download/v1.1.16/libboundscheck-v1.1.16.tar.gz | 从gitcode下载libboundscheck源码，作用编译依赖 |
 |  依赖  | 不涉及  | third_party/makeself-fetch.cmake | https://gitcode.com/cann-src-third-party/makeself/releases/download/release-2.5.0-patch1.0/makeself-release-2.5.0-patch1.tar.gz | 从gitcode下载makeself源码，作用编译依赖 |
 |  依赖  | 不涉及  | third_party/openssl.cmake | https://gitcode.com/cann-src-third-party/openssl/releases/download/openssl-3.0.9/openssl-openssl-3.0.9.tar.gz | 从gitcode下载openssl源码，作用编译依赖 |
