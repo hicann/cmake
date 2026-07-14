@@ -57,13 +57,30 @@ else()
         set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/abseil-cpp/abseil-cpp-20230802.1.tar.gz")
     endif()
 
+    # use for offline
+    if(EXISTS ${CANN_3RD_LIB_PATH}/abseil-cpp/backport-CVE-2025-0838.patch)
+        set(ABSL_CVE_PATCH_FILE ${CANN_3RD_LIB_PATH}/abseil-cpp/backport-CVE-2025-0838.patch)
+        message(STATUS "[ThirdParty][abseil-cpp] patch use cache: ${ABSL_CVE_PATCH_FILE}")
+    else()
+        # 路径不能与 abseil 源码目录相同,构建时会清理
+        set(ABSL_CVE_PATCH_FILE ${ABS_PKG_DIR}/backport-CVE-2025-0838.patch)
+        if(NOT EXISTS ${ABSL_CVE_PATCH_FILE})
+            file(DOWNLOAD
+                "https://gitcode.com/cann-src-third-party/abseil-cpp/releases/download/20230802.1-h0/backport-CVE-2025-0838.patch"
+                ${ABSL_CVE_PATCH_FILE}
+                TIMEOUT 60
+            )
+        endif()
+        message(STATUS "[ThirdParty][abseil-cpp] patch use: ${ABSL_CVE_PATCH_FILE}")
+    endif()
+
     include(ExternalProject)
     ExternalProject_Add(abseil_build
         URL ${REQ_URL}
         URL_HASH SHA256=987ce98f02eefbaf930d6e38ab16aa05737234d7afbab2d5c4ea7adbe50c28ed
         DOWNLOAD_DIR ${ABS_PKG_DIR}
         SOURCE_DIR ${ABS_INSTALL_DIR}
-        PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/protobuf-hide_absl_symbols.patch
+        PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/protobuf-hide_absl_symbols.patch && patch -p1 < ${ABSL_CVE_PATCH_FILE}
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
