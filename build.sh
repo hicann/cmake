@@ -43,7 +43,7 @@ usage() {
   echo "    --pkg-type=<TYPE>"
   echo "                   Specify pkg type （TYPE options: run/rpm/deb, Default: run"
   echo "    -v, --verbose  Display build command"
-  echo "    -j<N>          Set the number of threads used for building, default is 8"
+  echo "    -j<N>          Set the number of threads used for building, default is the number of processors"
   echo "    -p, --cann_path=<PATH>"
   echo "                   Set ascend package install path, default /usr/local/Ascend/cann"
   echo "    --cann_3rd_lib_path=<PATH>"
@@ -58,10 +58,7 @@ usage() {
 }
 
 trans_commas() {
-  local _outvar="$1"
-  read -r "$_outvar" <<EOF
-$(echo "$2" | tr "," ";")
-EOF
+  printf -v "$1" '%s' "${2//,/;}"
 }
 
 # parse and set options
@@ -69,6 +66,7 @@ checkopts() {
   VERBOSE=""
   THREAD_NUM=$(grep -c ^processor /proc/cpuinfo)
   ENABLE_GCOV="off"
+  ENABLE_ASAN="off"
   CANN_3RD_LIB_PATH="$BASEPATH/output/third_party"
   BUILD_TYPE="Release"
   CUSTOM_SIGN_SCRIPT="${TOP_DIR}/runtime/scripts/sign/community_sign_build.py"
@@ -77,7 +75,6 @@ checkopts() {
   CANN_PACKAGES=""
   CANN_BINARY_PACKAGES=""
   CANN_SUPERBUILD_CONFIG=""
-  CHECK_CANN_PATH="0"
   LAUNCH_RULE=""
   PACKAGE_TYPE="run"
 
@@ -171,11 +168,21 @@ checkopts() {
     exit 1
   fi
 
+  case "$BUILD_TYPE" in
+    Release|Debug) ;;
+    *) echo "error: invalid --build-type '$BUILD_TYPE', must be Release or Debug."; exit 1 ;;
+  esac
+
+  case "$PACKAGE_TYPE" in
+    run|rpm|deb|deb,rpm|all) ;;
+    *) echo "error: invalid --pkg-type '$PACKAGE_TYPE', must be run, rpm, deb, deb,rpm or all."; exit 1 ;;
+  esac
+
   set_env
 }
 
 set_env() {
-  if [ "${USER_ID}" != "0" ]; then
+  if [ "$(id -u)" != "0" ]; then
     DEFAULT_TOOLKIT_INSTALL_DIR="${HOME}/Ascend/cann"
     DEFAULT_INSTALL_DIR="${HOME}/Ascend/cann"
   else
@@ -194,9 +201,6 @@ set_env() {
     ASCEND_CANN_PACKAGE_PATH=${DEFAULT_TOOLKIT_INSTALL_DIR}
   elif [ -d "${DEFAULT_INSTALL_DIR}" ];then
     ASCEND_CANN_PACKAGE_PATH=${DEFAULT_INSTALL_DIR}
-  elif [ "$CHECK_CANN_PATH" = "1" ]; then
-    echo "Error: Please set the cann package installation directory through parameter -p|--cann_path."
-    exit 1
   fi
 }
 
@@ -246,7 +250,7 @@ build_project() {
     return 1
   fi
 
-  cmake_cmd=(cmake --build "$BUILD_PATH" --target package "-j${THREAD_NUM}")
+  cmake_cmd=(cmake --build "$BUILD_PATH" --target package "-j${THREAD_NUM}" ${VERBOSE})
   "${cmake_cmd[@]}"
   if [ $? -ne 0 ]; then
     echo "execute command: ${cmake_cmd[@]} failed."

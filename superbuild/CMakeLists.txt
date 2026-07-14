@@ -32,11 +32,28 @@ set(BUILD_METADEF TRUE)
 # calc_device_packages 进一步从中筛出含 cmake/device 子目录的包。
 get_pkg_dependencies("${CANN_PACKAGES}")
 calc_device_packages()
+
+# ENABLE_BUILD_DEVICE 有两层语义：
+# 1. 命令行传入值（build.sh --build_host_only 控制）：表示用户是否要求编译 device 侧
+# 2. 子包读取值：表示子包是否应自行编译 device 侧代码
+#
+# CANN_SUPERBUILD_BUILD_DEVICE 保存命令行原始值供 superbuild 判定是否启动
+# device 交叉编译。用户直接调用 cmake（未经 build.sh）时该变量未定义，
+# 默认按启用处理（与 build.sh 默认行为一致）。
+if(DEFINED ENABLE_BUILD_DEVICE)
+    set(CANN_SUPERBUILD_BUILD_DEVICE "${ENABLE_BUILD_DEVICE}")
+else()
+    set(CANN_SUPERBUILD_BUILD_DEVICE TRUE)
+endif()
+
+# 将 ENABLE_BUILD_DEVICE 置 FALSE，防止子包各自启动 device 编译
+# （device 编译由 superbuild 的 ExternalProject_Add 统一处理）。
 set(ENABLE_BUILD_DEVICE FALSE)
 
-# 仅当存在 device 包，且不全是 ge-executor/ge-compiler 这类纯 host 侧包时，
-# 才真正启用 device 交叉编译。
-if(DEVICE_CANN_PACKAGES AND NOT DEVICE_CANN_PACKAGES STREQUAL "ge-executor" AND NOT DEVICE_CANN_PACKAGES STREQUAL "ge-compiler")
+# 仅当命令行允许(--build_host_only 未指定)、且存在需要编译 device 侧的包时，
+# 才启用 device 交叉编译。ge-executor/ge-compiler 等纯 host 侧包已在
+# calc_device_packages 中排除，DEVICE_CANN_PACKAGES 非空即代表存在真实 device 包。
+if(CANN_SUPERBUILD_BUILD_DEVICE AND DEVICE_CANN_PACKAGES)
     set(SUPERBUILD_ENABLE_DEVICE TRUE)
 else()
     set(SUPERBUILD_ENABLE_DEVICE FALSE)

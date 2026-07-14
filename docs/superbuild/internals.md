@@ -204,7 +204,7 @@ hcomm            → runtime, metadef, bisheng-compiler, asc-devkit
 
 #### device 包筛选
 
-**`calc_device_packages`**：遍历 `CANN_DEPEND_PACKAGES`，将所有有 `cmake/device/` 子目录的包加入 `DEVICE_CANN_DEPEND_PACKAGES`；其中属于目标包（在 `CANN_PACKAGES` 中）的再额外加入 `DEVICE_CANN_PACKAGES`。即 `DEVICE_CANN_PACKAGES` ⊆ `DEVICE_CANN_DEPEND_PACKAGES`。这两个列表用于步骤 7 决定是否启动 device 交叉编译。
+**`calc_device_packages`**：遍历 `CANN_DEPEND_PACKAGES`，将所有有 `cmake/device/` 子目录的包加入 `DEVICE_CANN_DEPEND_PACKAGES`；其中属于目标包（在 `CANN_PACKAGES` 中）的再额外加入 `DEVICE_CANN_PACKAGES`。即 `DEVICE_CANN_PACKAGES` ⊆ `DEVICE_CANN_DEPEND_PACKAGES`。`ge-executor`/`ge-compiler` 是纯 host 侧包（与 `dflow-executor` 共享 `ge` 仓源码目录），在遍历时直接跳过，不会出现在两个列表中。这两个列表用于步骤 7 决定是否启动 device 交叉编译。
 
 接上例，若 `runtime` 和 `hcomm` 有 `cmake/device/` 目录，`metadef` 和 `asc-devkit` 没有：
 
@@ -215,7 +215,7 @@ DEVICE_CANN_PACKAGES        = [hcomm]            (其中属于目标包的)
 
 ### 步骤 4：device 构建开关
 
-device 构建需同时满足：存在需要 device 编译的包，且不是仅构建 ge-executor 或 ge-compiler（这两个包的 device 部分由其它机制处理）。
+device 构建需同时满足：`CANN_SUPERBUILD_BUILD_DEVICE` 为真（用户未指定 `--build_host_only`），且 `DEVICE_CANN_PACKAGES` 非空（存在需要 device 编译的包）。`ge-executor`/`ge-compiler` 已在 `calc_device_packages` 中排除，不会误触发 device 构建。当用户直接调用 cmake（未经 `build.sh`）时，`ENABLE_BUILD_DEVICE` 未定义，默认按启用处理。
 
 ### 步骤 5：引入依赖包
 
@@ -362,8 +362,9 @@ cmake --build build --target package   ← 编译并打包
 |------|------|------|
 | `CANN_PACKAGES` | `build.sh --pkgs` | 用户指定的构建包名列表 |
 | `CANN_DEPEND_PACKAGES` | `get_pkg_dependencies()` 计算 | 完整依赖包列表（含间接依赖） |
-| `DEVICE_CANN_PACKAGES` | `calc_device_packages()` 计算 | 有 device 目录的目标包 |
-| `DEVICE_CANN_DEPEND_PACKAGES` | `calc_device_packages()` 计算 | 有 device 目录的依赖包 |
+| `DEVICE_CANN_PACKAGES` | `calc_device_packages()` 计算 | 有 device 目录的目标包（排除 ge-executor/ge-compiler） |
+| `DEVICE_CANN_DEPEND_PACKAGES` | `calc_device_packages()` 计算 | 有 device 目录的依赖包（排除 ge-executor/ge-compiler） |
+| `CANN_SUPERBUILD_BUILD_DEVICE` | `superbuild/CMakeLists.txt` 保存 | 命令行 `ENABLE_BUILD_DEVICE` 原始值（默认 TRUE） |
 | `SUPERBUILD_ENABLE_DEVICE` | host 侧 CMakeLists 判定 | 是否启动 device 构建 |
 | `CANN_TOP_DIR` | `init_cann_superbuild_project` 自动解析 | 组件仓的共同父目录 |
 | `CANN_CMAKE_DIR` | `init_cann_superbuild_project` 自动解析 | 本仓库根目录 |

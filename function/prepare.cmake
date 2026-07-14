@@ -65,7 +65,7 @@ function(convert_dependencies_to_package_formats DEP_LIST OUT_DEB OUT_RPM)
     set(RPM_REQUIRES "")
 
     foreach(dep_entry ${dependencies})
-        # dep_entry 格式: "pkg >=8.5" 或 "pkg >= 8.5"
+        # dep_entry 格式: "pkg >=8.5" 或 "pkg >= 8.5"（由 set_cann_run_dependencies 组合为单个字符串）
         string(REGEX MATCH "^([^ ]+) +(.*)" _ ${dep_entry})
         if(CMAKE_MATCH_COUNT GREATER 1)
             set(pkg_name "${CMAKE_MATCH_1}")
@@ -182,12 +182,14 @@ endmacro()
 
 # 添加device侧工程
 function(add_cann_device_project component)
-    # 多仓联编时跳过device工程
+    # 多仓联编时跳过device工程（superbuild 由 ExternalProject_Add 统一处理）
     if(NOT TOPLEVEL_PROJECT)
         return()
     endif()
 
     # ENABLE_BUILD_DEVICE为FALSE时跳过device工程
+    # 注意：superbuild 模式下 ENABLE_BUILD_DEVICE 被置为 FALSE（见 superbuild/CMakeLists.txt），
+    # 以避免子包各自启动 device 编译与 superbuild 的 ExternalProject_Add 冲突。
     if(DEFINED ENABLE_BUILD_DEVICE AND NOT ENABLE_BUILD_DEVICE)
         return()
     endif()
@@ -322,7 +324,8 @@ function(set_cann_cpack_config component)
         set(CPACK_PACKAGE_PARAM_NAME "${component}")
     endif()
 
-    set(RUN_DEPENDENCIES_LIST "")
+    # RUN_DEPENDENCIES_LIST 由 set_cann_run_dependencies 积累，格式为 "pkg >=version" 组合字符串。
+    # 此处不能 set(RUN_DEPENDENCIES_LIST "") 清空，否则会创建局部变量遮蔽调用方作用域的值。
     list(REMOVE_DUPLICATES RUN_DEPENDENCIES_LIST)
     set(DEB_DEPENDS "")
     set(RPM_REQUIRES "")
@@ -431,6 +434,9 @@ function(set_cann_package name)
 endfunction()
 
 # 设置构建依赖
+# pkg_name 和 depend 以配对形式追加到 CANN_VERSION_*_BUILD_DEPS 列表，
+# 格式为 pkg1;version1;pkg2;version2;...
+# 消费者 get_build_pkg_deps 以步长 2 遍历取包名，修改此处参数格式需同步修改该函数。
 function(set_cann_build_dependencies pkg_name depend)
     if(NOT CANN_VERSION_CURRENT_PACKAGE)
         message(FATAL_ERROR "The set_cann_package must be invoked first.")
@@ -458,9 +464,11 @@ function(set_cann_run_dependencies pkg_name depend)
         message(FATAL_ERROR "The depend parameter is not set in set_cann_run_dependencies.")
     endif()
     __cann_replace_cur_major_minor_ver()
+    # CANN_VERSION_*_RUN_DEPS 存储为 pkg;version 配对列表，供 generate_version_info.py 按对解析
     list(APPEND CANN_VERSION_${CANN_VERSION_CURRENT_PACKAGE}_RUN_DEPS "${pkg_name}" "${depend}")
     set(CANN_VERSION_${CANN_VERSION_CURRENT_PACKAGE}_RUN_DEPS "${CANN_VERSION_${CANN_VERSION_CURRENT_PACKAGE}_RUN_DEPS}" PARENT_SCOPE)
-    list(APPEND RUN_DEPENDENCIES_LIST "${pkg_name}" "${depend}")
+    # RUN_DEPENDENCIES_LIST 存储为 "pkg version" 组合字符串，供 convert_dependencies_to_package_formats 按 regex 解析
+    list(APPEND RUN_DEPENDENCIES_LIST "${pkg_name} ${depend}")
     set(RUN_DEPENDENCIES_LIST "${RUN_DEPENDENCIES_LIST}" PARENT_SCOPE)
 endfunction()
 
@@ -629,7 +637,7 @@ function(cann_pack_targets_and_files)
         set(staging_dir "${staging_root_dir}/${ARG_TAR_ROOT_DIR}")
         set(tar_src ${ARG_TAR_ROOT_DIR})
     else()
-        set(staging_dir "${staging_root_dir}/${ARG_TAR_ROOT_DIR}")
+        set(staging_dir "${staging_root_dir}")
         set(tar_src ".")
     endif()
     

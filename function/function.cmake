@@ -123,6 +123,10 @@ function(get_build_targets_in_directory out_var dirpath)
 endfunction()
 
 # 获取依赖包列表
+# 输入：ARGN 为 CANN_VERSION_*_BUILD_DEPS 列表，格式为 pkg1;version1;pkg2;version2;...
+#       该格式由 set_cann_build_dependencies(pkg_name depend) 每次追加两个元素构成。
+#       若 set_cann_build_dependencies 的参数格式变化，需同步修改此函数的步长。
+# 输出：仅提取偶数索引位置的包名列表（跳过版本号）
 function(get_build_pkg_deps out_var)
     set(build_pkg_deps)
     list(LENGTH ARGN len)
@@ -170,6 +174,11 @@ endfunction()
 
 # 1. 添加cann_all_targets目标
 # 2. 将其它目标标识为EXCLUDE_FROM_ALL，防止冗余编译
+#
+# 注意：此处对 target 设置 EXCLUDE_FROM_ALL 只影响该 target 是否参与 ALL 构建，
+# 不影响其 install 命令的执行（install 仍会被 cpack 收集）。
+# 不能改为对 add_subdirectory 设置 EXCLUDE_FROM_ALL，因为 CMake 会因此跳过
+# 该子目录的 install 命令，导致打包产物不完整。
 function(set_cann_all_targets pkg_dirs)
     set(build_targets)
     foreach(pkg_dir IN LISTS pkg_dirs)
@@ -190,11 +199,17 @@ function(set_cann_all_targets pkg_dirs)
 endfunction()
 
 # 计算device编译相关参数
+# ge-executor/ge-compiler 与 dflow-executor 共享 ge 仓源码目录，
+# 仅凭 cmake/device 子目录存在无法区分，这两个包是纯 host 侧，
+# 不需要编译 device 侧，在此显式排除。
 function(calc_device_packages)
     set(DEVICE_CANN_PACKAGES)
     set(DEVICE_CANN_DEPEND_PACKAGES)
 
     foreach(PKG IN LISTS CANN_DEPEND_PACKAGES)
+        if(PKG STREQUAL "ge-executor" OR PKG STREQUAL "ge-compiler")
+            continue()
+        endif()
         get_package_dir_by_package(PKG_DIR "${PKG}" "cmake/device")
 
         if(IS_DIRECTORY "${CANN_TOP_DIR}/${PKG_DIR}")
