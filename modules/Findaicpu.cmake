@@ -8,81 +8,41 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 if(aicpu_FOUND)
-  message(STATUS "aicpu has been found")
-  return()
+    return()
 endif()
-
-include(FindPackageHandleStandardArgs)
-
-if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
-  set(AICPU_INC_DIRS
-    ${ASCEND_DIR}/${SYSTEM_PREFIX}/include/experiment
-    ${ASCEND_DIR}/${SYSTEM_PREFIX}/include/experiment/msprof
-    ${ASCEND_DIR}/${SYSTEM_PREFIX}/include/aicpu_common/context
-    ${ASCEND_DIR}/${SYSTEM_PREFIX}/include/aicpu_common/context/common
-    ${ASCEND_DIR}/${SYSTEM_PREFIX}/include/aicpu_common/context/cpu_proto
-    ${ASCEND_DIR}/${SYSTEM_PREFIX}/include/aicpu_common/context/utils
-    ${ASCEND_DIR}/${SYSTEM_PREFIX}/include/experiment/datagw/aicpu/common
-    ${ASCEND_DIR}/${SYSTEM_PREFIX}/pkg_inc/aicpu
-  )
-else()
-  set(AICPU_INC_DIRS
-    ${TOP_DIR}/abl/msprof/inc
-    ${TOP_DIR}/ace/comop/inc
-    ${TOP_DIR}/inc/aicpu/cpu_kernels
-    ${TOP_DIR}/inc/external/aicpu
-    ${TOP_DIR}/asl/ops/cann/ops/built-in/aicpu/context/inc
-    ${TOP_DIR}/asl/ops/cann/ops/built-in/aicpu/impl/utils
-    ${TOP_DIR}/asl/ops/cann/ops/built-in/aicpu/impl
-    ${TOP_DIR}/ops-base/include/aicpu_common/context/common
-    ${TOP_DIR}/open_source/eigen
-  )
-endif()
-
-message(STATUS "Using AICPU include dirs: ${AICPU_INC_DIRS}")
 
 if(TARGET aicpu_headers)
-  return()
+    return()
 endif()
 
-find_path(aicpu_INCLUDE_DIR
+find_path(_CANN_AICPU_INCLUDE_DIR
     NAMES aicpu_engine_struct.h
     PATH_SUFFIXES pkg_inc/aicpu
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH
 )
 
+include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(aicpu
-    FOUND_VAR
-        aicpu_FOUND
     REQUIRED_VARS
-        aicpu_INCLUDE_DIR
+        _CANN_AICPU_INCLUDE_DIR
 )
 
 if(aicpu_FOUND)
-    if(NOT BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
-      set(AICPU_IMPORTED_INC_DIRS
-        ${aicpu_INCLUDE_DIR}/..
-        ${aicpu_INCLUDE_DIR}
-        ${aicpu_INCLUDE_DIR}/aicpu_schedule
-        ${aicpu_INCLUDE_DIR}/common
-        ${aicpu_INCLUDE_DIR}/cpu_kernels
-        ${aicpu_INCLUDE_DIR}/queue_schedule
-        ${aicpu_INCLUDE_DIR}/tsd
-      )
-      list(APPEND AICPU_INC_DIRS ${AICPU_IMPORTED_INC_DIRS})
-    endif()
+    set(_CANN_AICPU_INCLUDE_DIRECTORIES
+        ${_CANN_AICPU_INCLUDE_DIR}/..
+        ${_CANN_AICPU_INCLUDE_DIR}
+        ${_CANN_AICPU_INCLUDE_DIR}/aicpu_schedule
+        ${_CANN_AICPU_INCLUDE_DIR}/common
+        ${_CANN_AICPU_INCLUDE_DIR}/cpu_kernels
+        ${_CANN_AICPU_INCLUDE_DIR}/queue_schedule
+        ${_CANN_AICPU_INCLUDE_DIR}/tsd
+    )
 
-    if(NOT TARGET aicpu_headers)
-      add_library(aicpu_headers INTERFACE IMPORTED)
-      if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
-        set_target_properties(aicpu_headers PROPERTIES
-            INTERFACE_INCLUDE_DIRECTORIES "${AICPU_INC_DIRS}"
-        )
-      else()
-        set_target_properties(aicpu_headers PROPERTIES
-            INTERFACE_INCLUDE_DIRECTORIES "${AICPU_IMPORTED_INC_DIRS}"
-        )
-      endif()
-    endif()
+    add_library(aicpu_headers INTERFACE IMPORTED)
+    set_target_properties(aicpu_headers PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${_CANN_AICPU_INCLUDE_DIRECTORIES}"
+    )
+
+    unset(_CANN_AICPU_INCLUDE_DIRECTORIES)
 endif()
