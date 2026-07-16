@@ -765,7 +765,7 @@ function(add_cann_sign_file)
     if(DEFINED CUSTOM_SIGN_SCRIPT AND NOT CUSTOM_SIGN_SCRIPT STREQUAL "")
         set(SIGN_SCRIPT ${CUSTOM_SIGN_SCRIPT})
     else()
-        set(SIGN_SCRIPT)
+        set(SIGN_SCRIPT ${CANN_CMAKE_DIR}/scripts/sign/community_sign_build.py)
     endif()
 
     if(ENABLE_SIGN)

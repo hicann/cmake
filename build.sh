@@ -69,7 +69,7 @@ checkopts() {
   ENABLE_ASAN="off"
   CANN_3RD_LIB_PATH="$BASEPATH/output/third_party"
   BUILD_TYPE="Release"
-  CUSTOM_SIGN_SCRIPT="${TOP_DIR}/runtime/scripts/sign/community_sign_build.py"
+  CUSTOM_SIGN_SCRIPT=""
   ENABLE_SIGN="OFF"
   ENABLE_BUILD_DEVICE="ON"
   CANN_PACKAGES=""
