@@ -9,13 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 # makeself.cmake - 自定义 makeself 打包脚本
 
-message(STATUS "CPACK_CMAKE_SOURCE_DIR = ${CPACK_CMAKE_SOURCE_DIR}")
-message(STATUS "CPACK_CMAKE_CURRENT_SOURCE_DIR = ${CPACK_CMAKE_CURRENT_SOURCE_DIR}")
-message(STATUS "CPACK_CMAKE_BINARY_DIR = ${CPACK_CMAKE_BINARY_DIR}")
-message(STATUS "CPACK_CMAKE_INSTALL_PREFIX = ${CPACK_CMAKE_INSTALL_PREFIX}")
-message(STATUS "CMAKE_COMMAND = ${CMAKE_COMMAND}")
-message(STATUS "CPACK_TEMPORARY_DIRECTORY = ${CPACK_TEMPORARY_DIRECTORY}")
-message(STATUS "CPACK_VERSION_SRC = ${CPACK_VERSION_SRC}")
+include(CMakePrintHelpers)
 
 set(CMAKE_SYSTEM_PROCESSOR ${CPACK_TARGET_ARCH})
 # 设置 makeself 路径
@@ -25,128 +19,123 @@ if(NOT MAKESELF_EXE)
     message(FATAL_ERROR "makeself not found!")
 endif()
 
-# 创建临时安装目录
-set(STAGING_DIR "${CPACK_CMAKE_BINARY_DIR}/_CPack_Packages/makeself_staging")
-if(NOT CPACK_CANN_NO_CLEAN)
-    file(REMOVE_RECURSE "${STAGING_DIR}")
-endif()
-file(MAKE_DIRECTORY "${STAGING_DIR}")
+function(pack_run_package component share_info_name source_dir enable_device)
+    # 创建临时安装目录
+    set(STAGING_DIR "${CPACK_CMAKE_BINARY_DIR}/_CPack_Packages/makeself_staging")
+    if(NOT CPACK_CANN_NO_CLEAN)
+        file(REMOVE_RECURSE "${STAGING_DIR}")
+    endif()
+    file(MAKE_DIRECTORY "${STAGING_DIR}")
 
-# 执行安装到临时目录
-if(CPACK_CANN_INSTALL_COMPONENT)
-    execute_process(
-        COMMAND "${CMAKE_COMMAND}" --install "${CPACK_CMAKE_BINARY_DIR}" --prefix "${STAGING_DIR}" --component "${CPACK_CANN_INSTALL_COMPONENT}"
-        RESULT_VARIABLE INSTALL_RESULT
-    )
-else()
-    execute_process(
-        COMMAND "${CMAKE_COMMAND}" --install "${CPACK_CMAKE_BINARY_DIR}" --prefix "${STAGING_DIR}"
-        RESULT_VARIABLE INSTALL_RESULT
-    )
-endif()
-
-if(NOT INSTALL_RESULT EQUAL 0)
-    message(FATAL_ERROR "Installation to staging directory failed: ${INSTALL_RESULT}")
-endif()
-
-if(CPACK_ENABLE_DEVICE)
-    # 解压子工程包
-    execute_process(
-        COMMAND tar --keep-old-files -zxpf "${STAGING_DIR}/device-${CPACK_CANN_INSTALL_COMPONENT}.tar.gz" -C "${STAGING_DIR}"
-        RESULT_VARIABLE RETCODE
-    )
-    if(RETCODE)
-        message(FATAL_ERROR "Extract device-${CPACK_CANN_INSTALL_COMPONENT}.tar.gz failed, return code is ${RETCODE}.")
+    # 执行安装到临时目录
+    if(CPACK_CANN_INSTALL_COMPONENT)
+        execute_process(
+            COMMAND "${CMAKE_COMMAND}" --install "${CPACK_CMAKE_BINARY_DIR}" --prefix "${STAGING_DIR}" --component "${component}"
+            RESULT_VARIABLE INSTALL_RESULT
+        )
+    else()
+        execute_process(
+            COMMAND "${CMAKE_COMMAND}" --install "${CPACK_CMAKE_BINARY_DIR}" --prefix "${STAGING_DIR}"
+            RESULT_VARIABLE INSTALL_RESULT
+        )
     endif()
 
-    # 刪除子工程压缩包，避免打到run包中
-    file(REMOVE "${STAGING_DIR}/device-${CPACK_CANN_INSTALL_COMPONENT}.tar.gz")
-endif()
+    if(NOT INSTALL_RESULT EQUAL 0)
+        message(FATAL_ERROR "Installation to staging directory failed: ${INSTALL_RESULT}")
+    endif()
 
-# 生成安装配置文件
-execute_process(
-    COMMAND python3 ${CMAKE_CURRENT_LIST_DIR}/package.py --pkg_name ${CPACK_PACKAGE_PARAM_NAME} --chip_name ${CPACK_SOC} --os_arch linux-${CMAKE_SYSTEM_PROCESSOR} --version_dir ${CPACK_VERSION} --delivery_dir ${CPACK_CMAKE_BINARY_DIR} --source_dir ${CPACK_CMAKE_SOURCE_DIR}
-    WORKING_DIRECTORY ${CPACK_CMAKE_BINARY_DIR}
-    OUTPUT_VARIABLE result
-    ERROR_VARIABLE error
-    RESULT_VARIABLE code
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-if (NOT code EQUAL 0)
-    message(FATAL_ERROR "Filelist generation failed: ${result} ${error}")
-else ()
-    message(STATUS "Filelist generated successfully: ${result}")
-endif ()
+    if(enable_device)
+        # 解压子工程包
+        execute_process(
+            COMMAND tar --keep-old-files -zxpf "${STAGING_DIR}/device-${component}.tar.gz" -C "${STAGING_DIR}"
+            RESULT_VARIABLE RETCODE
+        )
+        if(RETCODE)
+            message(FATAL_ERROR "Extract device-${component}.tar.gz failed, return code is ${RETCODE}.")
+        endif()
 
-# 统一修正文件权限
-if(EXISTS "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/conf/path.cfg")
-    execute_process(COMMAND chmod 440 "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/conf/path.cfg")
-endif()
-if(EXISTS "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/bin")
-    execute_process(COMMAND find "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/bin" -type f -exec chmod 550 {} +)
-endif()
-if(EXISTS "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/lib64")
-    execute_process(COMMAND find "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/lib64" -type f -exec chmod 440 {} +)
-endif()
-if(EXISTS "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/devlib")
-    execute_process(COMMAND find "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/devlib" -type f -exec chmod 440 {} +)
-endif()
-if(EXISTS "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/include")
-    execute_process(COMMAND find "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/include" -type f -exec chmod 440 {} +)
-endif()
-if(EXISTS "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/lib64/device/lib64")
-    execute_process(COMMAND find "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/lib64/device/lib64" -type f -exec chmod 550 {} +)
-endif()
-if(EXISTS "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/pkg_inc")
-    execute_process(COMMAND find "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/pkg_inc" -type f -exec chmod 440 {} +)
-endif()
-if(EXISTS "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/include/version")
-    execute_process(COMMAND find "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/include/version" -type f -exec chmod 440 {} +)
-endif()
-if(EXISTS "${STAGING_DIR}/opp/built-in/op_impl")
-    execute_process(COMMAND find "${STAGING_DIR}/opp/built-in/op_impl" -type f -exec chmod 440 {} +)
-endif()
+        # 刪除子工程压缩包，避免打到run包中
+        file(REMOVE "${STAGING_DIR}/device-${component}.tar.gz")
+    endif()
 
-# makeself打包
-file(STRINGS ${CPACK_CMAKE_BINARY_DIR}/makeself.txt script_output)
-string(REPLACE " " ";" makeself_param_string "${script_output}")
-string(REGEX MATCH "cann.*\\.run" package_name "${makeself_param_string}")
+    # 生成安装配置文件
+    execute_process(
+        COMMAND python3 ${CMAKE_CURRENT_LIST_DIR}/package.py --pkg_name ${share_info_name} --chip_name ${CPACK_SOC} --os_arch linux-${CMAKE_SYSTEM_PROCESSOR} --version_dir ${CPACK_VERSION} --delivery_dir ${CPACK_CMAKE_BINARY_DIR} --source_dir ${source_dir}
+        WORKING_DIRECTORY ${CPACK_CMAKE_BINARY_DIR}
+        OUTPUT_VARIABLE result
+        ERROR_VARIABLE error
+        RESULT_VARIABLE code
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if (NOT code EQUAL 0)
+        message(FATAL_ERROR "Filelist generation failed: ${result} ${error}")
+    else ()
+        message(STATUS "Filelist generated successfully: ${result}")
+    endif ()
 
-list(LENGTH makeself_param_string LIST_LENGTH)
-math(EXPR INSERT_INDEX "${LIST_LENGTH} - 2")
-list(INSERT makeself_param_string ${INSERT_INDEX} "${STAGING_DIR}")
+    # 统一修正文件权限
+    if(EXISTS "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/conf/path.cfg")
+        execute_process(COMMAND chmod 440 "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/conf/path.cfg")
+    endif()
+    if(EXISTS "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/bin")
+        execute_process(COMMAND find "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/bin" -type f -exec chmod 550 {} +)
+    endif()
+    if(EXISTS "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/lib64")
+        execute_process(COMMAND find "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/lib64" -type f -exec chmod 440 {} +)
+    endif()
+    if(EXISTS "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/devlib")
+        execute_process(COMMAND find "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/devlib" -type f -exec chmod 440 {} +)
+    endif()
+    if(EXISTS "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/include")
+        execute_process(COMMAND find "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/include" -type f -exec chmod 440 {} +)
+    endif()
+    if(EXISTS "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/lib64/device/lib64")
+        execute_process(COMMAND find "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/lib64/device/lib64" -type f -exec chmod 550 {} +)
+    endif()
+    if(EXISTS "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/pkg_inc")
+        execute_process(COMMAND find "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/pkg_inc" -type f -exec chmod 440 {} +)
+    endif()
+    if(EXISTS "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/include/version")
+        execute_process(COMMAND find "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/include/version" -type f -exec chmod 440 {} +)
+    endif()
+    if(EXISTS "${STAGING_DIR}/opp/built-in/op_impl")
+        execute_process(COMMAND find "${STAGING_DIR}/opp/built-in/op_impl" -type f -exec chmod 440 {} +)
+    endif()
 
-message(STATUS "script output: ${script_output}")
-message(STATUS "makeself: ${makeself_param_string}")
-message(STATUS "package: ${package_name}")
+    # makeself打包
+    file(STRINGS ${CPACK_CMAKE_BINARY_DIR}/makeself.txt script_output)
+    string(REPLACE " " ";" makeself_param_string "${script_output}")
+    string(REGEX MATCH "cann.*\\.run" package_name "${makeself_param_string}")
 
-if(NOT DEFINED CPACK_HELP_HEADER_PATH)
-    set(CPACK_HELP_HEADER_PATH "share/info/${CPACK_PACKAGE_PARAM_NAME}/script/help.info")
-endif()
+    list(LENGTH makeself_param_string LIST_LENGTH)
+    math(EXPR INSERT_INDEX "${LIST_LENGTH} - 2")
+    list(INSERT makeself_param_string ${INSERT_INDEX} "${STAGING_DIR}")
 
-if(NOT DEFINED CPACK_INSTALL_PATH)
-    set(CPACK_INSTALL_PATH "share/info/${CPACK_PACKAGE_PARAM_NAME}/script/install.sh")
-endif()
+    message(STATUS "script output: ${script_output}")
+    message(STATUS "makeself: ${makeself_param_string}")
+    message(STATUS "package: ${package_name}")
 
+    if(NOT DEFINED CPACK_HELP_HEADER_PATH)
+        set(CPACK_HELP_HEADER_PATH "share/info/${share_info_name}/script/help.info")
+    endif()
 
-execute_process(COMMAND bash ${MAKESELF_EXE}
-        --header ${MAKESELF_HEADER_EXE}
-        --help-header ${CPACK_HELP_HEADER_PATH}
-        ${makeself_param_string} ${CPACK_INSTALL_PATH}
-        WORKING_DIRECTORY ${STAGING_DIR}
-        RESULT_VARIABLE EXEC_RESULT
-        ERROR_VARIABLE  EXEC_ERROR
-)
+    if(NOT DEFINED CPACK_INSTALL_PATH)
+        set(CPACK_INSTALL_PATH "share/info/${share_info_name}/script/install.sh")
+    endif()
 
-if(NOT EXEC_RESULT EQUAL 0)
-    message(FATAL_ERROR "makeself packaging failed: ${EXEC_ERROR}")
-endif()
+    execute_process(COMMAND bash ${MAKESELF_EXE}
+            --header ${MAKESELF_HEADER_EXE}
+            --help-header ${CPACK_HELP_HEADER_PATH}
+            ${makeself_param_string} ${CPACK_INSTALL_PATH}
+            WORKING_DIRECTORY ${STAGING_DIR}
+            RESULT_VARIABLE EXEC_RESULT
+            ERROR_VARIABLE  EXEC_ERROR
+    )
 
-if(NOT DEFINED CPACK_BUILD_MODE)
-    set(CPACK_BUILD_MODE "DIR_MOVE")
-endif()
+    if(NOT EXEC_RESULT EQUAL 0)
+        message(FATAL_ERROR "makeself packaging failed: ${EXEC_ERROR}")
+    endif()
 
-if(CPACK_BUILD_MODE STREQUAL "RUN_COPY")
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CPACK_CMAKE_INSTALL_PREFIX}
         RESULT_VARIABLE MKDIR_INSTALL_PREFIX
@@ -169,4 +158,19 @@ if(CPACK_BUILD_MODE STREQUAL "RUN_COPY")
     else()
         message(FATAL_ERROR "Failed to mkdir new directory: ${CPACK_CMAKE_INSTALL_PREFIX}")
     endif()
+endfunction()
+
+list(LENGTH CPACK_COMPONENTS_ALL len_components)
+list(LENGTH CPACK_PACKAGE_PARAM_NAME len_share_info_names)
+if(NOT len_components EQUAL len_share_info_names)
+    message(FATAL_ERROR "CPACK_COMPONENTS_ALL and CPACK_PACKAGE_PARAM_NAME is not one-to-one mapping.")
 endif()
+
+math(EXPR len_components "${len_components} - 1")
+foreach(index RANGE ${len_components})
+    list(GET CPACK_COMPONENTS_ALL ${index} component)
+    list(GET CPACK_PACKAGE_PARAM_NAME ${index} share_info_name)
+    list(GET CPACK_CMAKE_SOURCE_DIR ${index} source_dir)
+    list(GET CPACK_ENABLE_DEVICE ${index} enable_device)
+    pack_run_package("${component}" "${share_info_name}" "${source_dir}" "${enable_device}")
+endforeach()

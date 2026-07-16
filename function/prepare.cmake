@@ -254,7 +254,18 @@ function(add_cann_subdirectories_relative base_dir)
     endforeach()
 endfunction()
 
-# 设置打包配置
+# 模拟全局列表变量
+macro(__cann_append_global_property name value)
+    set_property(GLOBAL APPEND
+        PROPERTY ${name} "${value}"
+    )
+    get_property(${name}
+        GLOBAL
+        PROPERTY ${name}
+    )
+endmacro()
+
+# 设置打包配置，支持多次调用打多个包
 # component: 组件名
 # NO_COMPONENT_INSTALL: 不带--component参数安装
 # ENABLE_DEVICE: 是否解压device-${component}.tar.gz
@@ -278,7 +289,7 @@ function(set_cann_cpack_config component)
         ${ARGN}
     )
 
-    set(CPACK_COMPONENTS_ALL "${component}")
+    __cann_append_global_property(CPACK_COMPONENTS_ALL "${component}")
 
     if(CANN_OUTPUT)
         if(ENABLE_UNIFIED_BUILD)
@@ -319,9 +330,9 @@ function(set_cann_cpack_config component)
     endif()
 
     if(CANN_SHARE_INFO_NAME)
-        set(CPACK_PACKAGE_PARAM_NAME "${CANN_SHARE_INFO_NAME}")
+        __cann_append_global_property(CPACK_PACKAGE_PARAM_NAME "${CANN_SHARE_INFO_NAME}")
     else()
-        set(CPACK_PACKAGE_PARAM_NAME "${component}")
+        __cann_append_global_property(CPACK_PACKAGE_PARAM_NAME "${component}")
     endif()
 
     # RUN_DEPENDENCIES_LIST 由 set_cann_run_dependencies 积累，格式为 "pkg >=version" 组合字符串。
@@ -350,9 +361,9 @@ function(set_cann_cpack_config component)
     if(CANN_NO_CLEAN)
         set(CPACK_CANN_NO_CLEAN True)
     endif()
-    set(CPACK_CMAKE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+    __cann_append_global_property(CPACK_CMAKE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
     set(CPACK_CMAKE_BINARY_DIR "${CMAKE_BINARY_DIR}")
-    set(CPACK_ENABLE_DEVICE "${CANN_ENABLE_DEVICE}")
+    __cann_append_global_property(CPACK_ENABLE_DEVICE "${CANN_ENABLE_DEVICE}")
     set(CPACK_SET_DESTDIR OFF)
     set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local/Ascend/cann-${CPACK_PACKAGE_VERSION}")
     if(CANN_PACKAGE_TYPE STREQUAL "rpm")
@@ -381,11 +392,12 @@ function(set_cann_cpack_config component)
     set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CANN_CMAKE_DIR}/scripts/package/makeself.cmake")
     set(CPACK_EXTERNAL_ENABLE_STAGING TRUE)
     set(CPACK_PACKAGE_DIRECTORY "${CMAKE_BINARY_DIR}")
-    set(CPACK_MAKESELF_PATH "${MAKESELF_PATH}")
+    set(CPACK_MAKESELF_PATH "${CANN_3RD_LIB_PATH}/makeself")
     set(CPACK_BUILD_MODE "RUN_COPY")
     set(CPACK_TARGET_ARCH "${TARGET_ARCH}")
     set(CPACK_PRE_BUILD_SCRIPTS "${CANN_CMAKE_DIR}/scripts/package/pre_package.cmake")
     set(CPACK_POST_BUILD_SCRIPTS "${CANN_CMAKE_DIR}/scripts/package/post_package.cmake") 
+    # 每次include(CPack)都会重新生成CPackConfig.cmake
     include(CPack)
 endfunction()
 
