@@ -396,6 +396,7 @@ function(set_cann_cpack_config component)
     set(CPACK_BUILD_MODE "RUN_COPY")
     set(CPACK_TARGET_ARCH "${TARGET_ARCH}")
     set(CPACK_PRE_BUILD_SCRIPTS "${CANN_CMAKE_DIR}/scripts/package/pre_package.cmake")
+    set(CPACK_RPM_SPEC_MORE_DEFINE "%global __strip /bin/true")
     set(CPACK_POST_BUILD_SCRIPTS "${CANN_CMAKE_DIR}/scripts/package/post_package.cmake") 
     # 每次include(CPack)都会重新生成CPackConfig.cmake
     include(CPack)
