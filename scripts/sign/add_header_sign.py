@@ -216,7 +216,7 @@ def get_item_set(config_file, sign_file_dir, version) -> Tuple[int, Dict, List]:
 
 # 生成摘要文件，每个待签名文件生成一个，生成文件相关的参数放在image_info.xml文件中
 def build_inifile(item_size_set, sign_file_dir, bios_tool_path,
-                  sign_tmp_path, product_delivery_path, add_sign):
+                  sign_tmp_path, add_sign):
     '''
     功能：根据从bios_check_cfg.xml读取的配置，生成ini工具(ini_gen.py)的配置文件，
     然后调用ini工具读取该配置文件生成每个文件对应的ini文件
@@ -230,9 +230,8 @@ def build_inifile(item_size_set, sign_file_dir, bios_tool_path,
             read_cfg.write("<image_info>\n")
             for (infile, conf_item) in list(item_size_set.items()):
                 inputfile = os.path.join(sign_file_dir, infile)
-                relative_path = inputfile.replace(product_delivery_path + PATH_SEPARATOR, "")
                 output_path = os.path.dirname(
-                    os.path.join(sign_tmp_path, relative_path))
+                    os.path.join(sign_tmp_path, infile))
                 output_path = os.path.realpath(output_path)
                 if not os.path.isdir(output_path):
                     os.makedirs(output_path)
@@ -255,7 +254,7 @@ def build_inifile(item_size_set, sign_file_dir, bios_tool_path,
     return 0
 
 
-def build_sign(item_size_set, sign_file_dir, sign_tool_path, sign_tmp_path, root_dir, product_delivery_path):
+def build_sign(item_size_set, sign_file_dir, sign_tool_path, sign_tmp_path, root_dir):
     '''
     功能：制作签名文件
     输入：para1：待签名的镜像清单、para2：镜像根路径、para3：签名工具路径、
@@ -286,10 +285,8 @@ def build_sign(item_size_set, sign_file_dir, sign_tool_path, sign_tmp_path, root
     for file in sign_dict["cms"]:
         # 如果没配置sign_alg属性，默认使用RSA_PSS算法签名
         file_with_path = os.path.join(sign_file_dir, file)
-        # windows平台调试跟linux平台路径分隔符不一样，实际使用中需要替换
-        relative_path = file_with_path.replace(("{}" + PATH_SEPARATOR).format(product_delivery_path), "")
         # 临时目录下同层架子目录，包含文件名的完整路径
-        file_sign_des = os.path.realpath(os.path.join(sign_tmp_path, relative_path))
+        file_sign_des = os.path.realpath(os.path.join(sign_tmp_path, file))
         # 临时目录的路径，不包含文件名
         sign_path = os.path.dirname(file_sign_des)
 
@@ -403,7 +400,6 @@ def add_bios_header(item_size_set, sign_file_dir, bios_tool_path, sign_tool_path
 
     # 当需要签名时,调用build_inifile函数生成ini文件
     sign_tmp_path = os.path.join(root_dir, "sign_tmp")
-    product_delivery_path = os.path.join(root_dir)
     if not os.path.isdir(sign_tmp_path):
         os.makedirs(sign_tmp_path)
 
@@ -412,18 +408,18 @@ def add_bios_header(item_size_set, sign_file_dir, bios_tool_path, sign_tool_path
         return ret_code
 
     ret_code = build_inifile(
-        item_size_set, sign_file_dir, bios_tool_path, sign_tmp_path, product_delivery_path, add_sign)
+        item_size_set, sign_file_dir, bios_tool_path, sign_tmp_path, add_sign)
     if ret_code != 0:
         return ret_code
 
     if add_sign == "true":
         ret_code = build_sign(item_size_set, sign_file_dir, sign_tool_path, sign_tmp_path,
-                              root_dir, product_delivery_path)
+                              root_dir)
         if ret_code != 0:
             return ret_code
 
     # 将CRL文件转为der
-    signature_path = os.path.join(root_dir, "scripts", "signtool", "signature")
+    signature_path = os.path.dirname(sign_tool_path)
     crl_file = os.path.join(signature_path, "SWSCRL.crl")
     der_file = os.path.join(signature_path, "SWSCRL.der")
     # 如果der文件不存在，将CRL文件copy至sign_path目录下，并转为der格式
@@ -432,9 +428,8 @@ def add_bios_header(item_size_set, sign_file_dir, bios_tool_path, sign_tool_path
 
     for (input, conf_item) in list(item_size_set.items()):
         input_file = os.path.join(sign_file_dir, input)
-        relative_path = input_file.replace(("{}" + PATH_SEPARATOR).format(product_delivery_path), "")
         # 签名文件及ini文件存放目录
-        sign_file = os.path.realpath(os.path.join(sign_tmp_path, relative_path))
+        sign_file = os.path.realpath(os.path.join(sign_tmp_path, input))
         sign_path = os.path.dirname(sign_file)
 
         cmd = "sudo {} {}".format(os.environ["HI_PYTHON"], os.path.join(bios_tool_path, "image_pack.py"))

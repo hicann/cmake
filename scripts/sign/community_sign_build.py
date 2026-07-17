@@ -86,12 +86,12 @@ def _help():
     print("====================================== END =====================================")
 
 
-def get_sign_cmd(file, rootdir) -> list:
+def get_sign_cmd(file) -> list:
     """
     获取签名命令，返回【列表格式】，支持 shell=False
     彻底消除命令注入风险
     """
-    sign_crl = os.path.join(rootdir, "scripts/signtool/signature/SWSCRL.crl")
+    sign_crl = os.path.join(mypath, "SWSCRL.crl")
 
     # 拆分成纯参数列表 → 最安全
     cmd_list = [
@@ -110,7 +110,7 @@ def get_sign_cmd(file, rootdir) -> list:
     return cmd_list
 
 
-def _run_sign(inputfiles, rootdir):
+def _run_sign(inputfiles):
     """执行签名（安全版，shell=False）"""
     crlfile, cmstag = _get_sign_filename()
     ret = True
@@ -120,14 +120,21 @@ def _run_sign(inputfiles, rootdir):
             logging.warning("input file:%s is not exist", file)
             continue
 
+        cmd_list = [
+            'curl', '-sSL',
+            'https://ascend-ci.obs.cn-north-4.myhuaweicloud.com/cff6dec5-acc3-415b-9957-5d4effd59669.crl',
+            '-o', 'SWSCRL.crl'
+        ]
+        # 下载crl文件
+        subprocess.run(cmd_list, shell=False, check=True, cwd=mypath)
+
         # 获取【列表格式命令】
-        cmd_list = get_sign_cmd(file, rootdir)
+        cmd_list = get_sign_cmd(file)
 
         # 日志打印（把列表转成字符串方便查看）
         logging.info("run sign cmd: %s", ' '.join(cmd_list))
         logging.info("work dir: %s", mypath)
 
-        # ✅ 核心优化：shell=False，命令用列表，最安全
         result = subprocess.run(
             cmd_list,
             cwd=mypath,
@@ -157,10 +164,9 @@ def main(argv):
         print("argv number is error, it must >= 2, now " + str(argv))
         sys.exit(1)
 
-    rootdir = argv[1]
     inputfiles = argv[2:]
     # 初始化签名环境
-    ret = _run_sign(inputfiles, rootdir)
+    ret = _run_sign(inputfiles)
 
     if ret is not False:
         if not _check_result(inputfiles):
