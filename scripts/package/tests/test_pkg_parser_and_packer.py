@@ -43,7 +43,8 @@ def test_replace_env_and_join_dst_path_and_apply_func():
     assert pkg_parser.join_dst_path("/base", "real:/abs") == "/abs"
 
     # apply_func 支持 list / set / str
-    inc = lambda x: x + "_x"
+    def inc(x):
+        return x + "_x"
     assert pkg_parser.apply_func(inc, "a") == "a_x"
     assert pkg_parser.apply_func(inc, ["a", "b"]) == ["a_x", "b_x"]
     assert pkg_parser.apply_func(inc, {"a"}) == {"a_x"}
@@ -337,8 +338,10 @@ def test_block_element_and_blocks_and_read_version_info_and_parse_xml_config(tmp
     )
     monkeypatch.setattr(pkg_parser, "is_multi_version", lambda v: bool(v))
 
-    args = Namespace(version_dir=None, disable_multi_version=False, chip_name=None, suffix=None, func_name=None, tag=None)
-    parse_opt = pkg_parser.ParseOption(os_arch="ubuntu20.04-aarch64", pkg_version=None, build_type=None, package_check=False)
+    args = Namespace(version_dir=None, disable_multi_version=False, chip_name=None,
+                     suffix=None, func_name=None, tag=None)
+    parse_opt = pkg_parser.ParseOption(os_arch="ubuntu20.04-aarch64", pkg_version=None,
+                                       build_type=None, package_check=False)
 
     success, cfg = pkg_parser.parse_xml_config(str(tmp_path), "config.xml", str(tmp_path), parse_opt, args)
     assert success is True
@@ -443,6 +446,7 @@ def test_parse_env_and_cmd_and_exec_pack_cmd(monkeypatch):
     assert cmd_list[0] == "python"
 
     class DummyResult:
+
         def __init__(self, code, out):
             self.returncode = code
             self.stdout = out
@@ -770,8 +774,10 @@ def test_parse_xml_config_invalid_xml(tmp_path: Path, monkeypatch):
     invalid_xml = tmp_path / "invalid.xml"
     invalid_xml.write_text("<invalid><xml>", encoding="utf-8")
 
-    parse_opt = pkg_parser.ParseOption(os_arch="ubuntu20.04", pkg_version=None, build_type=None, package_check=False)
-    args = Namespace(version_dir="1.2.3", disable_multi_version=True, chip_name=None, suffix=None, func_name=None, tag=None)
+    parse_opt = pkg_parser.ParseOption(os_arch="ubuntu20.04", pkg_version=None,
+                                       build_type=None, package_check=False)
+    args = Namespace(version_dir="1.2.3", disable_multi_version=True, chip_name=None,
+                     suffix=None, func_name=None, tag=None)
 
     # mock读取version_info和parse_env_dict
     monkeypatch.setattr(pkg_parser, "read_version_info", lambda *args, **kwargs: ("1.2.3", ""))
@@ -789,14 +795,20 @@ def test_parse_xml_config_invalid_os_arch(tmp_path: Path, monkeypatch):
     xml_file = tmp_path / "config.xml"
     ET.ElementTree(ET.Element("root")).write(xml_file)
 
-    parse_opt = pkg_parser.ParseOption(os_arch="invalid", pkg_version=None, build_type=None, package_check=False)
-    args = Namespace(version_dir="1.2.3", disable_multi_version=True, chip_name=None, suffix=None, func_name=None, tag=None)
+    parse_opt = pkg_parser.ParseOption(os_arch="invalid", pkg_version=None,
+                                       build_type=None, package_check=False)
+    args = Namespace(version_dir="1.2.3", disable_multi_version=True, chip_name=None,
+                     suffix=None, func_name=None, tag=None)
 
     # mock sys.exit以避免退出测试
     monkeypatch.setattr(pkg_parser, "read_version_info", lambda: ("1.2.3", ""))
     original_exit = sys.exit
+
+    def fake_exit(*args):
+        return None
+
     try:
-        sys.exit = lambda *args: None
+        sys.exit = fake_exit
         pkg_parser.parse_xml_config(str(tmp_path), "config.xml", str(tmp_path), parse_opt, args)
     finally:
         sys.exit = original_exit
@@ -940,11 +952,13 @@ def test_package_name_getvalue_underline_style():
 def test_run_complex_cmd_with_cd(monkeypatch):
     """测试run_complex_cmd处理cd命令"""
     class DummyResult:
+
         def __init__(self):
             self.returncode = 0
             self.stdout = "success"
     
     calls = []
+
     def mock_run(*args, **kwargs):
         calls.append(kwargs.get('cwd'))
         return DummyResult()
@@ -958,3 +972,429 @@ def test_run_complex_cmd_no_cmd(monkeypatch):
     """测试run_complex_cmd没有命令时返回None"""
     result = packer.run_complex_cmd("cd /tmp")  # 只有cd，没有实际命令
     assert result is None
+
+
+# =============================================================================
+# #27: pkg_parser 复杂逻辑零覆盖补充测试
+# =============================================================================
+
+
+def _make_parse_env(tmp_path, env_dict=None, package_attr=None):
+    """构建测试用 ParseEnv，使用默认 ParseOption。"""
+    return pkg_parser.ParseEnv(
+        env_dict=env_dict if env_dict is not None else {},
+        parse_option=pkg_parser.ParseOption(
+            os_arch='linux-x86_64', pkg_version=None,
+            build_type='debug', package_check=False
+        ),
+        pkg_config_dir=str(tmp_path),
+        delivery_dir=str(tmp_path),
+        package_attr=package_attr if package_attr is not None else {}
+    )
+
+
+def _make_parse_args(**overrides):
+    """构建 parse_xml_config 所需的 Namespace 参数。"""
+    defaults = dict(
+        version_dir='', tag='', chip_name=None, func_name=None,
+        disable_multi_version=False, suffix='run'
+    )
+    defaults.update(overrides)
+    return Namespace(**defaults)
+
+
+def _make_parse_option(os_arch='linux-x86_64'):
+    """构建测试用 ParseOption。"""
+    return pkg_parser.ParseOption(
+        os_arch=os_arch, pkg_version=None,
+        build_type='debug', package_check=False
+    )
+
+
+class TestLoadBlockElement:
+    """load_block_element 块配置加载与异常测试。"""
+
+    @staticmethod
+    def test_load_block_element_file_not_exists(tmp_path):
+        """块配置 XML 文件不存在时抛 BlockConfigError。"""
+        parse_env = _make_parse_env(tmp_path)
+        block_element = pkg_parser.BlockElement(
+            name='NonExistent',
+            block_conf_path='module/ascend/NonExistent.xml',
+            dst_path='',
+            chips=set(),
+            features=set(),
+            attrs={}
+        )
+        with pytest.raises(pkg_parser.BlockConfigError, match="does not exist"):
+            pkg_parser.load_block_element(parse_env, {}, block_element)
+
+    @staticmethod
+    def test_load_block_element_invalid_xml(tmp_path):
+        """块配置 XML 解析失败时抛 BlockConfigError。"""
+        module_dir = tmp_path / 'module' / 'ascend'
+        module_dir.mkdir(parents=True)
+        (module_dir / 'BadBlock.xml').write_text('<not-closed>')
+
+        parse_env = _make_parse_env(tmp_path)
+        block_element = pkg_parser.BlockElement(
+            name='BadBlock',
+            block_conf_path='module/ascend/BadBlock.xml',
+            dst_path='',
+            chips=set(),
+            features=set(),
+            attrs={}
+        )
+        with pytest.raises(pkg_parser.BlockConfigError, match="parse failed"):
+            pkg_parser.load_block_element(parse_env, {}, block_element)
+
+    @staticmethod
+    def test_load_block_element_success(tmp_path):
+        """正常加载块配置 XML。"""
+        module_dir = tmp_path / 'module' / 'ascend'
+        module_dir.mkdir(parents=True)
+        (module_dir / 'GoodBlock.xml').write_text('<root><file_info value="test"/></root>')
+
+        parse_env = _make_parse_env(tmp_path, package_attr={'use_move': False})
+        block_element = pkg_parser.BlockElement(
+            name='GoodBlock',
+            block_conf_path='module/ascend/GoodBlock.xml',
+            dst_path='lib',
+            chips={'ascend910'},
+            features={'comm'},
+            attrs={}
+        )
+        result = pkg_parser.load_block_element(parse_env, {'use_move': False}, block_element)
+        assert isinstance(result, pkg_parser.LoadedBlockElement)
+        assert result.dst_path == 'lib'
+        assert result.chips == {'ascend910'}
+
+
+class TestReadVersionInfo:
+    """read_version_info 版本信息读取测试。"""
+
+    @staticmethod
+    def test_no_install_script():
+        """package_attr 中无 install_script 时抛 InstallScriptNotInPackageInfo。"""
+        with pytest.raises(pkg_parser.InstallScriptNotInPackageInfo):
+            pkg_parser.read_version_info('/tmp', {})
+
+    @staticmethod
+    def test_install_script_format_error():
+        """install_script 格式错误（路径层级不足）时抛 InstallScriptFormatError。"""
+        with pytest.raises(pkg_parser.InstallScriptFormatError):
+            pkg_parser.read_version_info('/tmp', {'install_script': 'install.sh'})
+
+    @staticmethod
+    def test_version_info_not_exist(tmp_path):
+        """version.info 文件不存在时抛 VersionInfoNotExist。"""
+        with pytest.raises(pkg_parser.VersionInfoNotExist):
+            pkg_parser.read_version_info(
+                str(tmp_path),
+                {'install_script': 'share/info/test/script/install.sh'}
+            )
+
+    @staticmethod
+    def test_read_version_info_success(tmp_path):
+        """正常读取 version.info。"""
+        version_dir = tmp_path / 'share' / 'info' / 'test'
+        version_dir.mkdir(parents=True)
+        (version_dir / 'version.info').write_text('Version=8.0.0\nversion_dir=cann\n')
+
+        version, version_dir_val = pkg_parser.read_version_info(
+            str(tmp_path),
+            {'install_script': 'share/info/test/script/install.sh'}
+        )
+        assert version == '8.0.0'
+        assert version_dir_val == 'cann'
+
+    @staticmethod
+    def test_read_version_info_invalid_format(tmp_path):
+        """version.info 中版本号含非法字符时抛 VersionFormatNotMatch。"""
+        version_dir = tmp_path / 'share' / 'info' / 'test'
+        version_dir.mkdir(parents=True)
+        (version_dir / 'version.info').write_text('Version=8.0.0/invalid\nversion_dir=cann\n')
+
+        with pytest.raises(pkg_parser.VersionFormatNotMatch):
+            pkg_parser.read_version_info(
+                str(tmp_path),
+                {'install_script': 'share/info/test/script/install.sh'}
+            )
+
+
+class TestParseXmlConfigErrors:
+    """parse_xml_config 异常处理分支测试。"""
+
+    @staticmethod
+    def test_parse_xml_config_install_script_not_configured(tmp_path):
+        """package_info 中未配置 install_script 时返回 (False, None)。"""
+        xml_content = '<package><package_info><func_name>test</func_name></package_info></package>'
+        xml_file = tmp_path / 'test.xml'
+        xml_file.write_text(xml_content)
+
+        args = _make_parse_args()
+        parse_option = _make_parse_option()
+        ret, config = pkg_parser.parse_xml_config(
+            str(tmp_path), 'test.xml', str(tmp_path), parse_option, args
+        )
+        assert ret is False
+        assert config is None
+
+    @staticmethod
+    def test_parse_xml_config_invalid_os_arch(tmp_path):
+        """os_arch 格式错误时返回 (False, None)。"""
+        version_dir = tmp_path / 'share' / 'info' / 'test'
+        version_dir.mkdir(parents=True)
+        (version_dir / 'version.info').write_text('Version=8.0.0\nversion_dir=cann\n')
+
+        xml_content = '''<package><package_info>
+        <func_name>test</func_name>
+        <install_script>share/info/test/script/install.sh</install_script>
+        </package_info></package>'''
+        xml_file = tmp_path / 'test.xml'
+        xml_file.write_text(xml_content)
+
+        args = _make_parse_args()
+        parse_option = _make_parse_option(os_arch='123invalid')
+        ret, config = pkg_parser.parse_xml_config(
+            str(tmp_path), 'test.xml', str(tmp_path), parse_option, args
+        )
+        assert ret is False
+        assert config is None
+
+    @staticmethod
+    def test_parse_xml_config_success(tmp_path):
+        """正常解析 XML 配置返回 (True, XmlConfig)。"""
+        version_dir = tmp_path / 'share' / 'info' / 'test'
+        version_dir.mkdir(parents=True)
+        (version_dir / 'version.info').write_text('Version=8.0.0\nversion_dir=cann\n')
+
+        xml_content = '''<package><package_info>
+        <func_name>test</func_name>
+        <install_script>share/info/test/script/install.sh</install_script>
+        </package_info>
+        <dir_info value="lib64"/>
+        </package>'''
+        xml_file = tmp_path / 'test.xml'
+        xml_file.write_text(xml_content)
+
+        args = _make_parse_args()
+        parse_option = _make_parse_option()
+        ret, config = pkg_parser.parse_xml_config(
+            str(tmp_path), 'test.xml', str(tmp_path), parse_option, args
+        )
+        assert ret is True
+        assert config is not None
+        assert config.version == '8.0.0'
+
+
+class TestParseDirInfoElements:
+    """parse_dir_info_elements 目录信息解析测试。"""
+
+    @staticmethod
+    def test_parse_dir_info_with_sub_elements(tmp_path):
+        """dir_info 包含子元素时正确解析。"""
+        root = ET.fromstring('''<root dst_path="lib">
+        <dir_info value="lib64">
+            <dir value="lib64/subdir"/>
+        </dir_info>
+        </root>''')
+        loaded_block = pkg_parser.make_loaded_block_element(root, dst_path='lib')
+        parse_env = _make_parse_env(
+            tmp_path, env_dict={'OS_NAME': 'linux'}, package_attr={'suffix': 'run'}
+        )
+        result = pkg_parser.parse_dir_info_elements(
+            loaded_block, {}, {'suffix': 'run'}, parse_env
+        )
+        assert len(result) == 1
+        assert result[0]['value'] == 'lib64/subdir'
+
+
+class TestParseFileInfoElements:
+    """parse_file_info_elements 文件信息解析测试。"""
+
+    @staticmethod
+    def test_parse_file_info_with_file_elements(tmp_path):
+        """file_info 包含多个 file 子元素时正确解析。"""
+        (tmp_path / 'lib64').mkdir()
+        (tmp_path / 'lib64' / 'liba.so').write_text('content')
+        (tmp_path / 'lib64' / 'libb.so').write_text('content')
+
+        root = ET.fromstring('''<root dst_path="lib">
+        <file_info value="lib64" install_path="lib" install_mod="755">
+            <file value="lib64/liba.so"/>
+            <file value="lib64/libb.so"/>
+        </file_info>
+        </root>''')
+        loaded_block = pkg_parser.make_loaded_block_element(root, dst_path='lib')
+        parse_env = _make_parse_env(
+            tmp_path, env_dict={'OS_NAME': 'linux'},
+            package_attr={'suffix': 'run', 'expand_asterisk': False}
+        )
+        results = list(pkg_parser.parse_file_info_elements(
+            loaded_block, {}, {'suffix': 'run', 'expand_asterisk': False}, parse_env
+        ))
+        assert len(results) == 2
+
+
+class TestRenderSemverEdgeCases:
+    """render_semver 预发布版本边界测试。"""
+
+    @staticmethod
+    def test_render_semver_no_pre_release():
+        """无预发布版本号时正常生成。"""
+        result = dict(pkg_parser.render_semver('PKG', '8.0.5'))
+        assert result['PKG_VERSION_NUM'] == '((8 * 10000000) + (0 * 100000) + (5 * 1000))'
+        assert result['PKG_PRERELEASE'] == '""'
+
+    @staticmethod
+    def test_render_semver_rc_with_dot():
+        """rc.1 格式（含点号）的预发布版本。"""
+        result = dict(pkg_parser.render_semver('PKG', '8.0.5-rc.1'))
+        assert result['PKG_PRERELEASE'] == '"rc.1"'
+        assert result['PKG_VERSION_NUM'] == '((8 * 10000000) + (0 * 100000) + (5 * 1000) - 100 + 1)'
+
+    @staticmethod
+    def test_render_semver_beta_no_dot():
+        """beta2 格式（无点号）的预发布版本。"""
+        result = dict(pkg_parser.render_semver('PKG', '8.0.5-beta2'))
+        assert result['PKG_PRERELEASE'] == '"beta2"'
+        assert result['PKG_VERSION_NUM'] == '((8 * 10000000) + (0 * 100000) + (5 * 1000) - 200 + 2)'
+
+    @staticmethod
+    def test_render_semver_alpha_multi_segment():
+        """alpha.1.2 多段序号预发布版本。"""
+        result = dict(pkg_parser.render_semver('PKG', '8.0.5-alpha.1.2'))
+        assert result['PKG_PRERELEASE'] == '"alpha.1.2"'
+        assert result['PKG_VERSION_NUM'] == '((8 * 10000000) + (0 * 100000) + (5 * 1000) - 300 + 12)'
+
+    @staticmethod
+    def test_render_semver_unknown_pre_type():
+        """未知预发布类型（如 dev.1）使用权重 400。"""
+        result = dict(pkg_parser.render_semver('PKG', '8.0.5-dev.1'))
+        assert result['PKG_PRERELEASE'] == '"dev.1"'
+        assert result['PKG_VERSION_NUM'] == '((8 * 10000000) + (0 * 100000) + (5 * 1000) - 400 + 1)'
+
+    @staticmethod
+    def test_render_semver_pre_release_no_number():
+        """预发布版本无序号（如 rc）时抛 IllegalVersionDir（已知行为）。"""
+        with pytest.raises(pkg_parser.IllegalVersionDir):
+            dict(pkg_parser.render_semver('PKG', '8.0.5-rc'))
+
+    @staticmethod
+    def test_render_semver_plus_build_metadata():
+        """带构建元数据（+build123）的版本号，构建元数据被移除。"""
+        result = dict(pkg_parser.render_semver('PKG', '8.0.5+build123'))
+        assert result['PKG_VERSION_STR'] == '"8.0.5"'
+
+
+_EXPAND_DIR_FILE_INFO = {
+    'value': 'target',
+    'dst_path': '',
+    'install_path': 'lib',
+    'src_path': '',
+    'install_mod': '755',
+    'install_softlink': '',
+    'pkg_inner_softlink': '',
+}
+
+
+class TestExpandDir:
+    """expand_dir 目录展开逻辑测试。"""
+
+    @staticmethod
+    def test_expand_dir_with_files(tmp_path):
+        """展开包含多个文件的目录。"""
+        target_dir = tmp_path / 'target'
+        target_dir.mkdir()
+        (target_dir / 'file1.so').write_text('a')
+        (target_dir / 'file2.so').write_text('b')
+
+        env = _make_parse_env(tmp_path)
+        get_dst_target = pkg_parser.partial(
+            pkg_parser.get_dst_target, env=env
+        )
+        file_list, dir_list = pkg_parser.expand_dir(
+            _EXPAND_DIR_FILE_INFO, get_dst_target, env
+        )
+        assert len(file_list) == 2
+        assert any(f['value'] == 'file1.so' for f in file_list)
+        assert any(f['value'] == 'file2.so' for f in file_list)
+
+    @staticmethod
+    def test_expand_dir_with_symlink_dir(tmp_path):
+        """展开包含软链接目录的情况。"""
+        real_dir = tmp_path / 'real_dir'
+        real_dir.mkdir()
+        (real_dir / 'file.so').write_text('content')
+
+        target_dir = tmp_path / 'target'
+        target_dir.mkdir()
+        os.symlink(real_dir, target_dir / 'link_dir')
+
+        env = _make_parse_env(tmp_path)
+        get_dst_target = pkg_parser.partial(
+            pkg_parser.get_dst_target, env=env
+        )
+        file_list, dir_list = pkg_parser.expand_dir(
+            _EXPAND_DIR_FILE_INFO, get_dst_target, env
+        )
+        assert len(file_list) >= 1
+
+
+class TestExpandFileInfoAsterisk:
+    """expand_file_info_asterisk 通配符展开测试。"""
+
+    @staticmethod
+    def test_expand_asterisk_with_exclude(tmp_path):
+        """通配符展开并排除指定文件。"""
+        (tmp_path / 'liba.so').write_text('a')
+        (tmp_path / 'libb.so').write_text('b')
+        (tmp_path / 'libc.so').write_text('c')
+
+        file_info = {
+            'value': 'lib*.so',
+            'dst_path': '',
+            'install_path': 'lib',
+            'exclude': 'libb.so',
+            'pkg_inner_softlink': '',
+        }
+        parsed_result = pkg_parser.FileInfoParsedResult(
+            file_info=file_info, move_infos=[], dir_infos=[], expand_infos=[]
+        )
+        env = _make_parse_env(tmp_path)
+        results = list(pkg_parser.expand_file_info_asterisk(parsed_result, env))
+        values = [r.file_info['value'] for r in results]
+        assert 'liba.so' in values
+        assert 'libb.so' not in values
+        assert 'libc.so' in values
+
+    @staticmethod
+    def test_expand_asterisk_no_match(tmp_path):
+        """通配符无匹配文件时返回空列表。"""
+        file_info = {
+            'value': 'nonexistent*.so',
+            'dst_path': '',
+            'install_path': 'lib',
+        }
+        parsed_result = pkg_parser.FileInfoParsedResult(
+            file_info=file_info, move_infos=[], dir_infos=[], expand_infos=[]
+        )
+        env = _make_parse_env(tmp_path)
+        results = list(pkg_parser.expand_file_info_asterisk(parsed_result, env))
+        assert len(results) == 0
+
+    @staticmethod
+    def test_expand_asterisk_no_asterisk(tmp_path):
+        """value 不含通配符时原样返回。"""
+        file_info = {
+            'value': 'lib/liba.so',
+            'dst_path': '',
+            'install_path': 'lib',
+        }
+        parsed_result = pkg_parser.FileInfoParsedResult(
+            file_info=file_info, move_infos=[], dir_infos=[], expand_infos=[]
+        )
+        env = _make_parse_env(tmp_path)
+        results = list(pkg_parser.expand_file_info_asterisk(parsed_result, env))
+        assert len(results) == 1

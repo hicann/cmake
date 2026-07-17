@@ -25,9 +25,6 @@ DELIVERY_PATH = "build/_CPack_Packages/makeself_staging"
 CONFIG_SCRIPT_PATH = 'package'
 BLOCK_CONFIG_PATH = 'package/module'
 
-SUCC = 0
-FAIL = -1
-
 
 A = TypeVar('A')
 

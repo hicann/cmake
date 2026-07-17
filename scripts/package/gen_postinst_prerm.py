@@ -16,6 +16,8 @@ import os
 import platform
 from typing import List
 
+from utils.comm_log import CommLog
+
 # 特殊模块列表，需要维护数据库
 SPECIAL_MODULES = {"EngineeringCommon", "DevlibCommon", "SetEnvCommon"}
 

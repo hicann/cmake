@@ -129,6 +129,7 @@ class MockPackerConfig:
 def create_mock_factory():
     """Create a mock factory function for create_makeself_pkg_params_factory."""
     def mock_factory(*args):
+
         def inner(*args):
             return Namespace()
         return inner
@@ -596,7 +597,7 @@ class TestGenerateCustomizedFile:
         monkeypatch.setattr("builtins.open", mock_open)
         
         result = package_module.generate_customized_file(target_conf, '', str(tmp_path))
-        assert result == package_module.FAIL
+        assert result is False
 
     def test_generate_customized_file_info(self, tmp_path):
         """Test generate_customized_file with info generator."""
@@ -607,7 +608,7 @@ class TestGenerateCustomizedFile:
             'dst_path': ''
         }
         result = package_module.generate_customized_file(target_conf, '', str(tmp_path))
-        assert result == package_module.SUCC
+        assert result is True
         
         content = (tmp_path / 'test.info').read_text()
         assert 'key1=value1' in content
@@ -621,7 +622,7 @@ class TestGenerateCustomizedFile:
             'dst_path': ''
         }
         result = package_module.generate_customized_file(target_conf, '', str(tmp_path))
-        assert result == package_module.SUCC
+        assert result is True
         
         content = (tmp_path / 'version.h').read_text()
         assert '#define DEFINE_A 100' in content
@@ -684,7 +685,7 @@ class TestCheckPathIsConflict:
             ]
         
         result = package_module.check_path_is_conflict(MockXmlConfig())
-        assert result == package_module.SUCC
+        assert result is True
 
     def test_check_path_is_conflict_with_conflict(self):
         """Test check_path_is_conflict with conflict."""
@@ -702,7 +703,7 @@ class TestCheckPathIsConflict:
             ]
         
         result = package_module.check_path_is_conflict(MockXmlConfig())
-        assert result == package_module.FAIL
+        assert result is False
 
 
 class TestChecksumValue:
@@ -829,7 +830,7 @@ class TestMainFunction:
         )
         
         result = package_module.main('test', '', args)
-        assert result == package_module.FAIL
+        assert result is False
 
 
 class TestGenerateHashFile:
@@ -847,7 +848,7 @@ class TestGenerateHashFile:
         monkeypatch.setattr(subprocess, 'run', mock_run)
         
         result = package_module.generate_hash_file(str(tmp_path), "file1=hash1\nfile2=hash2\n")
-        assert result == package_module.SUCC
+        assert result is True
         
         hash_file = tmp_path / 'bin_hash.cfg'
         assert hash_file.exists()
@@ -983,7 +984,7 @@ class TestGenerateHashList:
         monkeypatch.setattr(package_module.subprocess, 'run', lambda *args, **kwargs: MockResult())
         
         result, hash_str = package_module.generate_hash_list(target_conf, '', str(tmp_path))
-        assert result == package_module.SUCC
+        assert result is True
         assert 'renamed.txt=' in hash_str
 
     def test_generate_hash_list_failure(self, monkeypatch, tmp_path):
@@ -1000,7 +1001,7 @@ class TestGenerateHashList:
         monkeypatch.setattr(package_module.subprocess, 'run', lambda *args, **kwargs: MockResult())
         
         result, hash_str = package_module.generate_hash_list(target_conf, '', str(tmp_path))
-        assert result == package_module.FAIL
+        assert result is False
         assert hash_str is None
 
 
@@ -1032,7 +1033,7 @@ class TestGenerateHashFile:
         monkeypatch.setattr(package_module.subprocess, 'run', lambda *args, **kwargs: MockResult())
         
         result = package_module.generate_hash_file(str(tmp_path), "new content")
-        assert result == package_module.SUCC
+        assert result is True
         assert hash_path.read_text() == "new content"
 
     def test_generate_hash_file_touch_failure(self, monkeypatch, tmp_path):
@@ -1051,7 +1052,7 @@ class TestExecuteRepackProcess:
             default_config = {'name': 'test'}
             generate_infos = [{'value': 'test.info'}]
         
-        monkeypatch.setattr(package_module, 'generate_customized_file', lambda *args: package_module.FAIL)
+        monkeypatch.setattr(package_module, 'generate_customized_file', lambda *args: False)
         
         pkg_opt = package_module.PackageOption(
             os_arch='', package_suffix='', not_in_name='', pkg_version='',
@@ -1060,7 +1061,7 @@ class TestExecuteRepackProcess:
         )
         args = Namespace(ext_name='')
         result = package_module.execute_repack_process(MockXmlConfig(), '/tmp', args, package_option=pkg_opt)
-        assert result == package_module.FAIL
+        assert result is False
 
 
 class TestGenFileInstallList:
@@ -1255,7 +1256,7 @@ class TestDoCopyExtended:
         monkeypatch.setattr(package_module, 'create_softlink', mock_create_softlink)
         
         result = package_module.do_copy(target_conf, str(tmp_path), str(tmp_path), None)
-        assert result == package_module.SUCC
+        assert result is True
 
     @staticmethod
     def test_do_copy_with_pkg_softlink_failure(monkeypatch, tmp_path):
@@ -1273,7 +1274,7 @@ class TestDoCopyExtended:
         monkeypatch.setattr(package_module, 'create_softlink', mock_create_softlink)
         
         result = package_module.do_copy(target_conf, str(tmp_path), str(tmp_path), None)
-        assert result == package_module.FAIL
+        assert result is False
 
 
 class TestDoChmod:
@@ -1284,7 +1285,7 @@ class TestDoChmod:
         """Test do_chmod when pkg_mod is not set."""
         target_conf = {'value': 'file.txt'}
         result = package_module.do_chmod(target_conf, '/release')
-        assert result == package_module.SUCC
+        assert result is True
 
     @staticmethod
     def test_do_chmod_with_pkg_mod(monkeypatch, tmp_path):
@@ -1309,7 +1310,7 @@ class TestDoChmod:
         monkeypatch.setattr(subprocess, 'run', mock_run)
         
         result = package_module.do_chmod(target_conf, str(tmp_path))
-        assert result == package_module.SUCC
+        assert result is True
 
     @staticmethod
     def test_do_chmod_failure(monkeypatch, tmp_path):
@@ -1331,7 +1332,7 @@ class TestDoChmod:
         monkeypatch.setattr(subprocess, 'run', mock_run)
         
         result = package_module.do_chmod(target_conf, str(tmp_path))
-        assert result == package_module.FAIL
+        assert result is False
 
     @staticmethod
     def test_do_chmod_exception(monkeypatch, tmp_path):
@@ -1349,7 +1350,7 @@ class TestDoChmod:
         monkeypatch.setattr(subprocess, 'run', mock_run)
         
         result = package_module.do_chmod(target_conf, str(tmp_path))
-        assert result == package_module.FAIL
+        assert result is False
 
 
 class TestCreateSoftlink:
@@ -1552,7 +1553,7 @@ class TestGenerateHashListExtended:
         monkeypatch.setattr(subprocess, 'run', mock_run)
         
         result, hash_str = package_module.generate_hash_list(target_conf, '', str(tmp_path))
-        assert result == package_module.SUCC
+        assert result is True
         assert 'abc123' in hash_str
 
     def test_generate_hash_list_failure(self, monkeypatch, tmp_path):
@@ -1577,7 +1578,7 @@ class TestGenerateHashListExtended:
         monkeypatch.setattr(subprocess, 'run', mock_run)
         
         result, hash_str = package_module.generate_hash_list(target_conf, '', str(tmp_path))
-        assert result == package_module.FAIL
+        assert result is False
 
 
 class TestGenerateHashFileExtended:
@@ -1599,7 +1600,7 @@ class TestGenerateHashFileExtended:
         monkeypatch.setattr(subprocess, 'run', mock_run)
         
         result = package_module.generate_hash_file(str(tmp_path), hash_list)
-        assert result == package_module.SUCC
+        assert result is True
         
         # Verify content
         hash_path = tmp_path / 'bin_hash.cfg'
@@ -1608,10 +1609,20 @@ class TestGenerateHashFileExtended:
 
     @staticmethod
     def test_generate_hash_file_touch_fails(monkeypatch, tmp_path):
-        """Test generate_hash_file when touch command fails - skip due to source code bug."""
-        # Source code has a bug at line 244: CommLog.cilog_info("%s, output") - missing argument
-        # Skip this test as we can only modify test files
-        pytest.skip("Source code bug at package.py:244 prevents this test from running")
+        """Test generate_hash_file when touch command fails."""
+        # Mock subprocess.run to simulate touch failure
+        def mock_run(*args, **kwargs):
+            class MockResult:
+                returncode = 1
+                stdout = "touch failed"
+                stderr = ""
+            return MockResult()
+
+        monkeypatch.setattr(package_module.subprocess, 'run', mock_run)
+        monkeypatch.setattr(package_module.os.path, 'exists', lambda x: False)
+
+        result = package_module.generate_hash_file(str(tmp_path), "content")
+        assert result is False
 
 
 class TestGetCompressCmd:
@@ -1653,22 +1664,9 @@ class TestGetCompressCmd:
             independent_pkg=True,
         )
         monkeypatch.setattr(package_module, 'PackageName', MockPackageName)
-        # Mock sys.exit to capture exit code using an exception to stop execution
-        exit_calls = []
 
-        class ExitException(Exception):
-            pass
-
-        def mock_exit(code=0):
-            exit_calls.append(code)
-            raise ExitException(f"Exit with code {code}")
-
-        monkeypatch.setattr(sys, 'exit', mock_exit)
-
-        # This should call sys.exit and raise ExitException
-        with pytest.raises(ExitException):
+        with pytest.raises(package_module.CompressError):
             package_module.get_compress_cmd(str(tmp_path), str(tmp_path), pkg_args, mock_xml_config)
-        assert len(exit_calls) > 0
 
     @staticmethod
     def test_get_compress_cmd_compress_error(monkeypatch, tmp_path):
@@ -1714,22 +1712,8 @@ class TestGetCompressCmd:
         build_dir = tmp_path / 'build_file'
         build_dir.write_text('not a directory')
         
-        # Mock sys.exit to capture exit code using an exception to stop execution
-        exit_calls = []
-
-        class ExitException(Exception):
-            pass
-
-        def mock_exit(code=0):
-            exit_calls.append(code)
-            raise ExitException(f"Exit with code {code}")
-
-        monkeypatch.setattr(sys, 'exit', mock_exit)
-
-        # This should call sys.exit and raise ExitException
-        with pytest.raises(ExitException):
+        with pytest.raises(package_module.CompressError):
             package_module.get_compress_cmd(str(tmp_path), str(build_dir), pkg_args, mock_xml_config)
-        assert len(exit_calls) > 0
 
 
 class TestExecuteRepackProcessExtended:
@@ -1737,19 +1721,19 @@ class TestExecuteRepackProcessExtended:
 
     @staticmethod
     def test_execute_repack_process_with_custom_file(monkeypatch, tmp_path):
-        """Test execute_repack_process when generate_customized_file returns FAIL."""
+        """Test execute_repack_process when generate_customized_file returns False."""
         
         mock_xml_config = create_mock_xml_config(generate_infos=[{'ext_name': 'test'}])
         
         pkg_args = Namespace(check_size='False')
         
-        # Mock generate_customized_file to return FAIL
-        monkeypatch.setattr(package_module, 'generate_customized_file', lambda a, b, c: package_module.FAIL)
+        # Mock generate_customized_file to return False
+        monkeypatch.setattr(package_module, 'generate_customized_file', lambda a, b, c: False)
         
         result = package_module.execute_repack_process(
             mock_xml_config, str(tmp_path), pkg_args, MockPackageName(), MockPackageOption()
         )
-        assert result == package_module.FAIL
+        assert result is False
 
     @staticmethod
     def test_execute_repack_process_with_is_hash(monkeypatch, tmp_path):
@@ -1762,17 +1746,17 @@ class TestExecuteRepackProcessExtended:
         pkg_args = Namespace(check_size='False', pkg_output_dir=str(tmp_path))
         
         # Mocks
-        monkeypatch.setattr(package_module, 'generate_customized_file', lambda a, b, c: package_module.SUCC)
+        monkeypatch.setattr(package_module, 'generate_customized_file', lambda a, b, c: True)
         monkeypatch.setattr(package_module, 'get_target_name', lambda x: 'file.txt')
-        monkeypatch.setattr(package_module, 'generate_hash_file', lambda a, b: package_module.SUCC)
-        monkeypatch.setattr(package_module, 'do_copy', lambda *args: package_module.SUCC)
-        monkeypatch.setattr(package_module, 'generate_hash_list', lambda *args: (package_module.FAIL, ''))
+        monkeypatch.setattr(package_module, 'generate_hash_file', lambda a, b: True)
+        monkeypatch.setattr(package_module, 'do_copy', lambda *args: True)
+        monkeypatch.setattr(package_module, 'generate_hash_list', lambda *args: (False, ''))
         monkeypatch.setattr(package_module, 'softlink_before_package', lambda *args: None)
         
         result = package_module.execute_repack_process(
             mock_xml_config, str(tmp_path), pkg_args, MockPackageName(), MockPackageOption()
         )
-        assert result == package_module.FAIL  # Because generate_hash_list returns FAIL
+        assert result is False  # Because generate_hash_list returns False
 
     @staticmethod
     def test_execute_repack_process_check_size_fail(monkeypatch, tmp_path):
@@ -1783,13 +1767,13 @@ class TestExecuteRepackProcessExtended:
         pkg_args = Namespace(check_size='True', build_type='debug')
         
         # Mocks
-        monkeypatch.setattr(package_module, 'generate_customized_file', lambda a, b, c: package_module.SUCC)
+        monkeypatch.setattr(package_module, 'generate_customized_file', lambda a, b, c: True)
         monkeypatch.setattr(package_module, 'processing_csv_file', lambda *args: ([], False))  # tag=False
         
         result = package_module.execute_repack_process(
             mock_xml_config, str(tmp_path), pkg_args, MockPackageName(), MockPackageOption()
         )
-        assert result == package_module.FAIL
+        assert result is False
 
     @staticmethod
     def test_execute_repack_process_check_size_with_limit(monkeypatch, tmp_path):
@@ -1800,14 +1784,14 @@ class TestExecuteRepackProcessExtended:
         pkg_args = Namespace(check_size='True', build_type='debug')
         
         # Mocks
-        monkeypatch.setattr(package_module, 'generate_customized_file', lambda a, b, c: package_module.SUCC)
+        monkeypatch.setattr(package_module, 'generate_customized_file', lambda a, b, c: True)
         monkeypatch.setattr(package_module, 'processing_csv_file', lambda *args: (['limit'], True))
         monkeypatch.setattr(package_module, 'check_add_dir', lambda *args: False)  # Returns False
         
         result = package_module.execute_repack_process(
             mock_xml_config, str(tmp_path), pkg_args, MockPackageName(), MockPackageOption()
         )
-        assert result == package_module.FAIL
+        assert result is False
 
     @staticmethod
     def test_execute_repack_process_compress_error(monkeypatch, tmp_path):
@@ -1818,7 +1802,7 @@ class TestExecuteRepackProcessExtended:
         pkg_args = Namespace(check_size='False', pkg_output_dir=str(tmp_path))
         
         # Mocks
-        monkeypatch.setattr(package_module, 'generate_customized_file', lambda a, b, c: package_module.SUCC)
+        monkeypatch.setattr(package_module, 'generate_customized_file', lambda a, b, c: True)
         monkeypatch.setattr(package_module, 'softlink_before_package', lambda *args: None)
 
         def mock_get_compress(*args):
@@ -1829,7 +1813,7 @@ class TestExecuteRepackProcessExtended:
         result = package_module.execute_repack_process(
             mock_xml_config, str(tmp_path), pkg_args, MockPackageName(), MockPackageOption()
         )
-        assert result == package_module.FAIL
+        assert result is False
 
 
 class TestProcessingCsvFileExtended:
@@ -1957,3 +1941,500 @@ class TestGenFileInstallListExtended:
         
         result, _ = package_module.gen_file_install_list(None, MockXmlConfigGenFile(), ['run'])
         assert len(result) == 0
+
+
+# =============================================================================
+# #25/#27: main() 主流程及复杂逻辑测试补充
+# =============================================================================
+
+def _make_main_args(tmp_path, **overrides):
+    """构造 main() 所需的 Namespace 参数对象。"""
+    defaults = dict(
+        delivery_dir=str(tmp_path),
+        pkg_name='test',
+        chip_scenes='',
+        xml_file='',
+        version_dir='8.0.0',
+        source_root='',
+        package_check=False,
+        independent_pkg=False,
+        pkg_output_dir='',
+        os_arch='linux-x86_64',
+        pkg_version='',
+        build_type='debug',
+        ext_name='',
+        chip_name=None,
+        func_name=None,
+        disable_multi_version=False,
+        suffix='run',
+        source_dir=str(tmp_path),
+        makeself_dir='',
+        not_in_name='',
+        package_suffix='none',
+        tag='',
+        check_size='',
+        pkg_name_style='common',
+    )
+    defaults.update(overrides)
+    return Namespace(**defaults)
+
+
+def _mock_main_success_env(monkeypatch, mock_xml_config, conflict_ret,
+                           repack_ret=True):
+    """Mock main() 正常流程所需的 parse_xml_config / filelist / conflict / repack。"""
+    monkeypatch.setattr(package_module, 'parse_xml_config',
+                        lambda *a, **k: (True, mock_xml_config))
+    monkeypatch.setattr(package_module, 'generate_filelist_file_by_xml_config',
+                        lambda *a, **k: None)
+    monkeypatch.setattr(package_module, 'check_path_is_conflict',
+                        lambda x: conflict_ret)
+    monkeypatch.setattr(package_module, 'execute_repack_process',
+                        lambda *a, **k: repack_ret)
+
+
+def _make_repack_args(check_size='', build_type='debug'):
+    """构造 execute_repack_process 所需的 Namespace 参数。"""
+    return Namespace(check_size=check_size, build_type=build_type, pkg_output_dir='')
+
+
+def _make_repack_pkg_name(func_name='test', chip_name=None):
+    """构造 execute_repack_process 所需的 package_name mock 对象。"""
+    pkg_name = mock.MagicMock()
+    pkg_name.func_name = func_name
+    if chip_name is not None:
+        pkg_name.chip_name = chip_name
+    return pkg_name
+
+
+def _make_empty_mock_xml():
+    """构造内容为空的 XmlConfig mock 对象。"""
+    mock_xml = mock.MagicMock()
+    mock_xml.generate_infos = []
+    mock_xml.package_content_list = []
+    mock_xml.move_content_list = []
+    mock_xml.pkg_softlinks = []
+    return mock_xml
+
+
+def _make_filelist_mock_xml_config():
+    """构造 generate_filelist_file_by_xml_config 所需的 mock XmlConfig。"""
+    mock_xml_config = mock.MagicMock()
+    mock_xml_config.package_attr = {
+        'use_move': False, 'parallel': False,
+        'check_features': False, 'func_name': 'test',
+        'package_check': False, 'copy_all': False,
+    }
+    mock_xml_config.dir_install_list = []
+    mock_xml_config.move_content_list = []
+    mock_xml_config.package_content_list = []
+    mock_xml_config.generate_infos = []
+    mock_xml_config.expand_content_list = []
+    mock_xml_config.packer_config = mock.MagicMock()
+
+    def identity(x):
+        return x
+    mock_xml_config.packer_config.fill_is_common_path = identity
+    return mock_xml_config
+
+
+class TestMainEmptyDeliveryDir:
+    """main() 传入空 delivery_dir 时返回 False。"""
+
+    @staticmethod
+    def test_main_empty_delivery_dir():
+        args = _make_main_args(Path('/tmp'), delivery_dir='')
+        assert package_module.main('test', '', args) is False
+
+
+class TestMainRpmDebDeliveryDir:
+    """main() 在 rpm/deb 模式下直接使用 delivery_dir（不拼接 makeself_staging）。"""
+
+    @staticmethod
+    def test_main_rpm_delivery_dir_not_exists(tmp_path):
+        args = _make_main_args(tmp_path, suffix='rpm',
+                               delivery_dir=str(tmp_path / 'nonexistent'))
+        assert package_module.main('test', '', args) is False
+
+
+class TestMainParseXmlFailure:
+    """main() 在 parse_xml_config 返回 False 时返回 False。"""
+
+    @staticmethod
+    def test_main_parse_xml_fail(tmp_path, monkeypatch):
+        args = _make_main_args(tmp_path)
+        monkeypatch.setattr(package_module, 'parse_xml_config',
+                            lambda *a, **k: (False, None))
+        assert package_module.main('test', '', args) is False
+
+
+class TestMainContainAsteriskError:
+    """main() 在 ContainAsteriskError 异常时返回 False。"""
+
+    @staticmethod
+    def test_main_asterisk_error(tmp_path, monkeypatch):
+        args = _make_main_args(tmp_path)
+
+        def raise_asterisk(*a, **k):
+            raise package_module.ContainAsteriskError('bad*value')
+        monkeypatch.setattr(package_module, 'parse_xml_config', raise_asterisk)
+        assert package_module.main('test', '', args) is False
+
+
+class TestMainFilelistErrors:
+    """main() 在 filelist 生成异常时返回 False。"""
+
+    @staticmethod
+    def test_main_package_name_empty_error(tmp_path, monkeypatch):
+        args = _make_main_args(tmp_path)
+        mock_xml_config = mock.MagicMock()
+        mock_xml_config.package_attr = {'package_check': False}
+        mock_xml_config.version = '8.0.0'
+        monkeypatch.setattr(package_module, 'parse_xml_config',
+                            lambda *a, **k: (True, mock_xml_config))
+
+        def raise_pne(*a, **k):
+            raise package_module.PackageNameEmptyError()
+        monkeypatch.setattr(package_module, 'generate_filelist_file_by_xml_config', raise_pne)
+        assert package_module.main('test', '', args) is False
+
+    @staticmethod
+    def test_main_generate_filelist_error(tmp_path, monkeypatch):
+        args = _make_main_args(tmp_path)
+        mock_xml_config = mock.MagicMock()
+        mock_xml_config.package_attr = {'package_check': False}
+        mock_xml_config.version = '8.0.0'
+        monkeypatch.setattr(package_module, 'parse_xml_config',
+                            lambda *a, **k: (True, mock_xml_config))
+
+        def raise_gfe(*a, **k):
+            raise package_module.GenerateFilelistError('filelist.csv')
+        monkeypatch.setattr(package_module, 'generate_filelist_file_by_xml_config', raise_gfe)
+        assert package_module.main('test', '', args) is False
+
+    @staticmethod
+    def test_main_filelist_error(tmp_path, monkeypatch):
+        args = _make_main_args(tmp_path)
+        mock_xml_config = mock.MagicMock()
+        mock_xml_config.package_attr = {'package_check': False}
+        mock_xml_config.version = '8.0.0'
+        monkeypatch.setattr(package_module, 'parse_xml_config',
+                            lambda *a, **k: (True, mock_xml_config))
+
+        def raise_fe(*a, **k):
+            raise package_module.FilelistError('missing dir')
+        monkeypatch.setattr(package_module, 'generate_filelist_file_by_xml_config', raise_fe)
+        assert package_module.main('test', '', args) is False
+
+
+class TestMainPathConflict:
+    """main() 在 check_path_is_conflict 返回 False 时返回 False。"""
+
+    @staticmethod
+    def test_main_path_conflict(tmp_path, monkeypatch):
+        args = _make_main_args(tmp_path)
+        mock_xml_config = mock.MagicMock()
+        mock_xml_config.package_attr = {'package_check': False}
+        mock_xml_config.version = '8.0.0'
+        monkeypatch.setattr(package_module, 'parse_xml_config',
+                            lambda *a, **k: (True, mock_xml_config))
+        monkeypatch.setattr(package_module, 'generate_filelist_file_by_xml_config',
+                            lambda *a, **k: None)
+        monkeypatch.setattr(package_module, 'check_path_is_conflict',
+                            lambda x: False)
+        assert package_module.main('test', '', args) is False
+
+
+class TestMainSuccessFlow:
+    """main() 正常流程 mock 验证返回 True。"""
+
+    @staticmethod
+    def test_main_success(tmp_path, monkeypatch):
+        args = _make_main_args(tmp_path)
+        staging = tmp_path / '_CPack_Packages' / 'makeself_staging'
+        staging.mkdir(parents=True)
+        mock_xml_config = mock.MagicMock()
+        mock_xml_config.package_attr = {'package_check': False, 'func_name': 'test'}
+        mock_xml_config.version = '8.0.0'
+        _mock_main_success_env(monkeypatch, mock_xml_config, True)
+        assert package_module.main('test', '', args) is True
+
+
+class TestMainRpmDebSkipsConfigInc:
+    """main() 在 rpm/deb 模式下不调用 generate_config_inc。"""
+
+    @staticmethod
+    def test_main_rpm_no_config_inc(tmp_path, monkeypatch):
+        args = _make_main_args(tmp_path, suffix='rpm')
+        mock_xml_config = mock.MagicMock()
+        mock_xml_config.package_attr = {'package_check': False, 'func_name': 'test'}
+        mock_xml_config.version = '8.0.0'
+        _mock_main_success_env(monkeypatch, mock_xml_config, True)
+        called = []
+        monkeypatch.setattr(package_module, 'generate_config_inc',
+                            lambda *a, **k: called.append(True))
+        package_module.main('test', '', args)
+        assert called == []
+
+
+class TestGenerateModulesYaml:
+    """generate_modules_yaml 生成 postinst/prerm/modules.txt 文件。"""
+
+    @staticmethod
+    def test_generate_modules_yaml_with_items(tmp_path, monkeypatch):
+        from collections import namedtuple
+        MockItem = namedtuple('MockItem', [
+            'block', 'softlink', 'relative_install_path', 'permission'
+        ])
+        items = [
+            MockItem(block='TestModule',
+                     softlink=['lib64/liba.so'],
+                     relative_install_path='lib/liba.so',
+                     permission='550'),
+        ]
+        monkeypatch.chdir(tmp_path)
+        package_module.generate_modules_yaml(
+            items, 'cann-test', '8.0.0', str(tmp_path), 'modules.txt'
+        )
+        assert (tmp_path / 'postinst').exists()
+        assert (tmp_path / 'prerm').exists()
+        assert (tmp_path / 'modules.txt').exists()
+        import json
+        modules = json.loads((tmp_path / 'modules.txt').read_text())
+        assert 'TestModule' in modules
+
+    @staticmethod
+    def test_generate_modules_yaml_empty_items(tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        package_module.generate_modules_yaml(
+            [], 'cann-test', '8.0.0', str(tmp_path), 'modules.txt'
+        )
+        assert (tmp_path / 'postinst').exists()
+        assert (tmp_path / 'prerm').exists()
+
+    @staticmethod
+    def test_generate_modules_yaml_skip_na_block(tmp_path, monkeypatch):
+        from collections import namedtuple
+        MockItem = namedtuple('MockItem', [
+            'block', 'softlink', 'relative_install_path', 'permission'
+        ])
+        items = [
+            MockItem(block='NA',
+                     softlink=['lib64/liba.so'],
+                     relative_install_path='lib/liba.so',
+                     permission='550'),
+        ]
+        monkeypatch.chdir(tmp_path)
+        package_module.generate_modules_yaml(
+            items, 'cann-test', '8.0.0', str(tmp_path), 'modules.txt'
+        )
+        import json
+        modules = json.loads((tmp_path / 'modules.txt').read_text())
+        assert 'NA' not in modules
+
+    @staticmethod
+    def test_generate_modules_yaml_skip_empty_softlink(tmp_path, monkeypatch):
+        from collections import namedtuple
+        MockItem = namedtuple('MockItem', [
+            'block', 'softlink', 'relative_install_path', 'permission'
+        ])
+        items = [
+            MockItem(block='TestModule',
+                     softlink=[],
+                     relative_install_path='lib/liba.so',
+                     permission='550'),
+        ]
+        monkeypatch.chdir(tmp_path)
+        package_module.generate_modules_yaml(
+            items, 'cann-test', '8.0.0', str(tmp_path), 'modules.txt'
+        )
+        import json
+        modules = json.loads((tmp_path / 'modules.txt').read_text())
+        assert 'TestModule' not in modules
+
+
+class TestGetShareInfoName:
+    """get_share_info_name 返回 share_info_name 或 func_name。"""
+
+    @staticmethod
+    def test_with_share_info_name():
+        assert package_module.get_share_info_name(
+            {'share_info_name': 'custom', 'func_name': 'default'}
+        ) == 'custom'
+
+    @staticmethod
+    def test_without_share_info_name():
+        assert package_module.get_share_info_name(
+            {'func_name': 'default'}
+        ) == 'default'
+
+
+class TestGenerateFilelistFileByXmlConfig:
+    """generate_filelist_file_by_xml_config 完整流程测试。"""
+
+    @staticmethod
+    def test_generate_filelist_run_suffix(tmp_path, monkeypatch):
+        mock_xml_config = _make_filelist_mock_xml_config()
+        monkeypatch.setattr(package_module, 'gen_file_install_list',
+                            lambda *a, **k: ([], []))
+        package_module.generate_filelist_file_by_xml_config(
+            mock_xml_config, [], str(tmp_path), False, 'run',
+            'test', '8.0.0', str(tmp_path)
+        )
+        script_dir = tmp_path / 'share' / 'info' / 'test' / 'script'
+        assert (script_dir / 'filelist.csv').exists()
+
+    @staticmethod
+    def test_generate_filelist_rpm_generates_postinst(tmp_path, monkeypatch):
+        mock_xml_config = _make_filelist_mock_xml_config()
+        monkeypatch.setattr(package_module, 'gen_file_install_list',
+                            lambda *a, **k: ([], []))
+        monkeypatch.chdir(tmp_path)
+        package_module.generate_filelist_file_by_xml_config(
+            mock_xml_config, [], str(tmp_path), False, 'rpm',
+            'cann-test', '8.0.0', str(tmp_path)
+        )
+        assert (tmp_path / 'postinst').exists()
+        assert (tmp_path / 'prerm').exists()
+
+
+class TestExecuteRepackProcessExtended2:
+    """execute_repack_process 补充: hash 生成失败、do_copy 失败、check_size 路径。"""
+
+    @staticmethod
+    def test_execute_repack_hash_file_fail(tmp_path, monkeypatch):
+        mock_xml = mock.MagicMock()
+        mock_xml.generate_infos = []
+        mock_xml.package_content_list = [
+            {'value': 'bin_hash.cfg', 'dst_path': ''}
+        ]
+        mock_xml.move_content_list = []
+        mock_xml.pkg_softlinks = []
+
+        monkeypatch.setattr(package_module, 'generate_customized_file',
+                            lambda *a, **k: True)
+        monkeypatch.setattr(package_module, 'generate_hash_file',
+                            lambda *a, **k: False)
+
+        args = _make_repack_args()
+        pkg_name = _make_repack_pkg_name()
+        pkg_option = mock.MagicMock()
+        result = package_module.execute_repack_process(
+            mock_xml, str(tmp_path), args,
+            package_name=pkg_name, package_option=pkg_option
+        )
+        assert result is False
+
+    @staticmethod
+    def test_execute_repack_do_copy_fail_continues(tmp_path, monkeypatch):
+        mock_xml = mock.MagicMock()
+        mock_xml.generate_infos = []
+        mock_xml.package_content_list = [
+            {'value': 'libtest.so', 'dst_path': '', 'pkg_softlink': ['lib64/libtest.so']}
+        ]
+        mock_xml.move_content_list = []
+        mock_xml.pkg_softlinks = []
+
+        monkeypatch.setattr(package_module, 'generate_customized_file',
+                            lambda *a, **k: True)
+        monkeypatch.setattr(package_module, 'do_copy',
+                            lambda *a, **k: False)
+        monkeypatch.setattr(package_module, 'softlink_before_package',
+                            lambda *a, **k: None)
+        monkeypatch.setattr(package_module, 'get_compress_cmd',
+                            lambda *a, **k: 'pkg.run')
+
+        args = _make_repack_args()
+        pkg_name = _make_repack_pkg_name()
+        pkg_option = mock.MagicMock()
+        result = package_module.execute_repack_process(
+            mock_xml, str(tmp_path), args,
+            package_name=pkg_name, package_option=pkg_option
+        )
+        assert result is True
+
+    @staticmethod
+    def test_execute_repack_hash_list_fail(tmp_path, monkeypatch):
+        mock_xml = mock.MagicMock()
+        mock_xml.generate_infos = []
+        mock_xml.package_content_list = [
+            {'value': 'libtest.so', 'dst_path': '', 'is_hash': True}
+        ]
+        mock_xml.move_content_list = []
+        mock_xml.pkg_softlinks = []
+
+        monkeypatch.setattr(package_module, 'generate_customized_file',
+                            lambda *a, **k: True)
+        monkeypatch.setattr(package_module, 'do_copy',
+                            lambda *a, **k: True)
+        monkeypatch.setattr(package_module, 'generate_hash_list',
+                            lambda *a, **k: (False, None))
+
+        args = _make_repack_args()
+        pkg_name = _make_repack_pkg_name()
+        pkg_option = mock.MagicMock()
+        result = package_module.execute_repack_process(
+            mock_xml, str(tmp_path), args,
+            package_name=pkg_name, package_option=pkg_option
+        )
+        assert result is False
+
+    @staticmethod
+    def test_execute_repack_check_size_pass(tmp_path, monkeypatch):
+        mock_xml = _make_empty_mock_xml()
+        monkeypatch.setattr(package_module, 'generate_customized_file',
+                            lambda *a, **k: True)
+        monkeypatch.setattr(package_module, 'softlink_before_package',
+                            lambda *a, **k: None)
+        monkeypatch.setattr(package_module, 'processing_csv_file',
+                            lambda *a, **k: ([], True))
+        monkeypatch.setattr(package_module, 'get_compress_cmd',
+                            lambda *a, **k: 'pkg.run')
+
+        args = _make_repack_args(check_size='True')
+        pkg_name = _make_repack_pkg_name(chip_name='ascend910')
+        pkg_option = mock.MagicMock()
+        result = package_module.execute_repack_process(
+            mock_xml, str(tmp_path), args,
+            package_name=pkg_name, package_option=pkg_option
+        )
+        assert result is True
+
+    @staticmethod
+    def test_execute_repack_check_size_fail(tmp_path, monkeypatch):
+        mock_xml = _make_empty_mock_xml()
+        monkeypatch.setattr(package_module, 'generate_customized_file',
+                            lambda *a, **k: True)
+        monkeypatch.setattr(package_module, 'softlink_before_package',
+                            lambda *a, **k: None)
+        monkeypatch.setattr(package_module, 'processing_csv_file',
+                            lambda *a, **k: ([], False))
+
+        args = _make_repack_args(check_size='True')
+        pkg_name = _make_repack_pkg_name(chip_name='ascend910')
+        pkg_option = mock.MagicMock()
+        result = package_module.execute_repack_process(
+            mock_xml, str(tmp_path), args,
+            package_name=pkg_name, package_option=pkg_option
+        )
+        assert result is False
+
+    @staticmethod
+    def test_execute_repack_compress_error(tmp_path, monkeypatch):
+        mock_xml = _make_empty_mock_xml()
+        monkeypatch.setattr(package_module, 'generate_customized_file',
+                            lambda *a, **k: True)
+        monkeypatch.setattr(package_module, 'softlink_before_package',
+                            lambda *a, **k: None)
+
+        def raise_compress(*a, **k):
+            raise package_module.CompressError('pkg')
+        monkeypatch.setattr(package_module, 'get_compress_cmd', raise_compress)
+
+        args = _make_repack_args()
+        pkg_name = _make_repack_pkg_name(chip_name='ascend910')
+        pkg_option = mock.MagicMock()
+        result = package_module.execute_repack_process(
+            mock_xml, str(tmp_path), args,
+            package_name=pkg_name, package_option=pkg_option
+        )
+        assert result is False

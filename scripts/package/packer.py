@@ -270,6 +270,6 @@ def exec_pack_cmd(delivery_dir: str,
     result = run_complex_cmd(cmd)
     output = result.stdout
     if result.returncode != 0:
-        CommLog.cilog_error(__file__, "compress package(%s) failed! %s.", package_name, output)
+        CommLog.cilog_error("compress package(%s) failed! %s.", package_name, output)
         raise CompressError(package_name)
     return package_name

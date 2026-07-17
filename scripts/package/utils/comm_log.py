@@ -14,6 +14,11 @@ import time
 import inspect
 import logging
 
+"""
+保留 logging.basicConfig 调用以兼容依赖 logging 模块的第三方库（如 protobuf、grpc 等），
+它们会在 import 时检查 logging 配置。CommLog 自身不使用 logging，而是通过 print 直接输出，
+因为 CMake 的 execute_process 通过 stdout 捕获输出，使用 logging 可能导致消息被重定向到 stderr。
+"""
 logging.basicConfig(format='[%(asctime)s] [%(levelname)s] [%(pathname)s] [line:%(lineno)d] %(message)s',
                     level=logging.INFO)
 
@@ -30,12 +35,26 @@ class CommLog:
 
     @staticmethod
     def cilog_logmsg(log_level, filename, line_no, log_msg, *log_paras):
+        """
+        调用方式有两种：
+        1. cilog_error("msg %s %s", arg1, arg2)  — 使用 % 格式化, log_paras 非空
+        2. cilog_error(f"msg {var}")              — f-string 已完成格式化, log_paras 为空
+
+        不要混用两种方式（如 cilog_error(f"msg %s", arg)），否则 f-string 中的 % 会被误解析。
+        格式化失败时降级输出原始 log_msg，避免吞掉调用方 except 块中的原始异常。
+        """
         log_timestamp = CommLog.cilog_get_timestamp()
         CommLog.cilog_print_element(log_timestamp)
         CommLog.cilog_print_element(log_level)
         CommLog.cilog_print_element(filename)
         CommLog.cilog_print_element(str(line_no))
-        print(log_msg % log_paras[0])
+        try:
+            if log_paras:
+                print(log_msg % log_paras[0])
+            else:
+                print(log_msg)
+        except (TypeError, ValueError):
+            print(log_msg)
         return
 
     @staticmethod

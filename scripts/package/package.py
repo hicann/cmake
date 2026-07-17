@@ -41,8 +41,8 @@ from pkg_parser import (
     ParseOption, XmlConfig, parse_xml_config, get_cann_version_info, get_target_name
 )
 from utils.pkg_utils import (
-    CONFIG_SCRIPT_PATH, CompressError, ContainAsteriskError, DELIVERY_PATH, FAIL,
-    FilelistError, GenerateFilelistError, PackageNameEmptyError, SUCC,
+    CONFIG_SCRIPT_PATH, CompressError, ContainAsteriskError, DELIVERY_PATH,
+    FilelistError, GenerateFilelistError, PackageNameEmptyError,
     UnknownOperateTypeError, path_join
 )
 from gen_postinst_prerm import (generate_postinst, generate_prerm, generate_set_permission)
@@ -88,12 +88,12 @@ def get_compress_cmd(delivery_dir: str,
                 f.write(pack_cmd)
         except Exception as exception:
             CommLog.cilog_error(f"save makeself.txt failed!{str(exception)}")
-            sys.exit(FAIL) 
+            raise CompressError(package_name.getvalue()) from exception
     elif suffix == "rpm" or suffix == "deb":
         CommLog.cilog_info("Processing package type: %s", suffix)         
     else:
         CommLog.cilog_error("the repack type '%s' is not support!", suffix)
-        sys.exit(FAIL)
+        raise CompressError(package_name.getvalue())
     
     return package_name.getvalue()
 
@@ -132,7 +132,7 @@ def do_copy(target_conf=None,
             package_name=None):
     '''
     功能描述：根据拷贝类型来执行文件或目录拷贝
-    返回值：SUCC/FAIL
+    返回值：True(成功)/False(失败)
     '''
     if target_conf is None:
         target_conf = {}
@@ -149,12 +149,17 @@ def do_copy(target_conf=None,
             for link in pkg_softlink
         ]
         if not all(rets):
-            return FAIL
-    return SUCC
+            return False
+    return True
 
 
 def do_chmod(target_conf=None, release_dir=''):
-    """打包时设置权限 。"""
+    """
+    打包时设置权限。
+
+    注意：do_chmod 当前未被任何代码路径调用，实际文件权限由 makeself.cmake 中的
+    find -exec chmod 统一处理。保留此函数以兼容已有测试及潜在的外部调用方。
+    """
     if target_conf is None:
         target_conf = {}
     target_name = get_target_name(target_conf)
@@ -170,22 +175,22 @@ def do_chmod(target_conf=None, release_dir=''):
             status = result.returncode
             output = result.stdout + result.stderr
 
-            if status != 0:  # 这里的 SUCC 通常对应 0
+            if status != 0:  # subprocess 返回码，0 表示成功
                 CommLog.cilog_error("chmod failed! Command: %s", " ".join(cmd_list))
                 CommLog.cilog_info("%s", output)
-                return FAIL
+                return False
         except Exception as e:
             CommLog.cilog_error("Execute chmod exception: %s", str(e))
-            return FAIL
+            return False
 
-    return SUCC
+    return True
 
 
 def create_softlink(source: str, target: str, optional: bool) -> bool:
     '''
     功能描述：创建软连接
     参数：source, target
-    返回值：成功或失败
+    返回值：True(成功)/False(失败)
     '''
     source = os.path.abspath(source.strip())
     target = os.path.abspath(target.strip())
@@ -231,13 +236,13 @@ def generate_hash_list(target_conf, hash_cfg_str, release_dir):
     cmd_list = shlex.split(hash_cmd)
     process = subprocess.run(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     stat, output = process.returncode, process.stdout
-    if stat != SUCC:
+    if stat != 0:
         CommLog.cilog_error("get_image_hash command: %s", hash_cmd)
         CommLog.cilog_info("get_image_hash failed!(%s)", output)
-        return FAIL, None
+        return False, None
     hash_value = output.split()[0]
     hash_cfg_str += f"{target_name}={hash_value}\n"
-    return SUCC, hash_cfg_str
+    return True, hash_cfg_str
 
 
 def generate_hash_file(delivery_dir, hash_list):
@@ -245,6 +250,7 @@ def generate_hash_file(delivery_dir, hash_list):
     功能描述：生成hash文件
     参数：delivery_dir打包的临时目录
           hash_list生成的cfg列表
+    返回值：True(成功)/False(失败)
     """
     hash_path = os.path.join(delivery_dir, "bin_hash.cfg")
     if not os.path.exists(hash_path):
@@ -252,13 +258,13 @@ def generate_hash_file(delivery_dir, hash_list):
         cmd_list = shlex.split(cmd)
         process = subprocess.run(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         stat, output = process.returncode, process.stdout
-        if stat != SUCC:
+        if stat != 0:
             CommLog.cilog_error("%s failed!", cmd)
-            CommLog.cilog_info("%s, output")
-            return FAIL, None
+            CommLog.cilog_info("%s", output)
+            return False
     with open(os.path.join(hash_path), "w") as fw:
         fw.write(hash_list)
-    return SUCC
+    return True
 
 
 def generate_info_content(target_conf, ext_name) -> List[str]:
@@ -317,11 +323,11 @@ def generate_customized_file(target_conf, ext_name, build_dir):
             file.write(file_content)
     except Exception as ex:
         CommLog.cilog_error(f"generate customized file {filepath} failed: {ex}!")
-        return FAIL
+        return False
 
     os.chmod(filepath, 0o440)
 
-    return SUCC
+    return True
 
 
 def get_module(target_config) -> str:
@@ -425,10 +431,10 @@ def parse_install_info(delivery_dir: str,
         target_name = get_target_name(target_config)
         if target_config.get("optional") == 'true' and operate_type in ('copy', 'move'):
             path = os.path.join(delivery_dir, target_config.get('dst_path'))
-            vaule = os.path.join(delivery_dir, target_config.get('dst_path'), target_name)
+            value = os.path.join(delivery_dir, target_config.get('dst_path'), target_name)
             if not os.path.exists(path):
                 continue
-            if not os.path.exists(vaule):
+            if not os.path.exists(value):
                 continue
         if operate_type in ('copy', 'move'):
             relative_path_in_pkg = os.path.join(target_config.get('dst_path'), target_name)
@@ -483,35 +489,35 @@ def execute_repack_process(xmlconfig: XmlConfig,
                            package_option: PackageOption = None):
     """
     功能描述: 执行打包流程(拷贝--->签名--->打包)
-    返回值: SUCC/FAIL
+    返回值: True(成功)/False(失败)
     """
-    status = SUCC
+    status = True
     release_dir = delivery_dir
     build_dir = delivery_dir.replace("_CPack_Packages/makeself_staging", "")
     # 生成自定义文件
     for item in xmlconfig.generate_infos:
-        if generate_customized_file(item, package_option.ext_name, delivery_dir):
-            return FAIL
+        if not generate_customized_file(item, package_option.ext_name, delivery_dir):
+            return False
 
     hash_cfg_str = ""
     for item in chain(xmlconfig.package_content_list, xmlconfig.move_content_list):
         if get_target_name(item) == "bin_hash.cfg":
             ret = generate_hash_file(delivery_dir, hash_cfg_str)
-            if ret != SUCC:
+            if not ret:
                 CommLog.cilog_error("generate hash file failed!")
-                return FAIL
+                return False
         # 拷贝文件
-        if do_copy(item,
+        if not do_copy(item,
                    delivery_dir,
                    release_dir,
                    package_name):
-            status = FAIL
+            status = False
             continue
         if "is_hash" in item:
             ret, hash_cfg_str = generate_hash_list(item, hash_cfg_str, release_dir)
-            if ret != SUCC:
+            if not ret:
                 CommLog.cilog_error("generate hash command %s failed!", get_target_name(item))
-                return FAIL
+                return False
 
     softlink_before_package(xmlconfig.pkg_softlinks, release_dir)
 
@@ -521,28 +527,28 @@ def execute_repack_process(xmlconfig: XmlConfig,
             release_dir, package_name.func_name, package_name.chip_name, pkg_args.build_type
         )
         if not tag:
-            return FAIL
+            return False
         if limit_list:
             abspath = os.path.abspath(release_dir)
             replace_path = abspath + "/"
             result = check_add_dir(replace_path, abspath, limit_list)
             if not result:
-                return FAIL
+                return False
     try:
         package_name = get_compress_cmd(pkg_args.pkg_output_dir, build_dir, pkg_args, xmlconfig)
     except CompressError:
-        return FAIL
+        return False
 
     CommLog.cilog_info("package %s generate filelist.csv and makeself cmd successfully!",
                        package_name)
-    return SUCC
+    return True
 
 
 def check_path_is_conflict(xml_config):
     """
     功能描述: 检查打包时安装路径与软连接路径是否冲突
     参数: xml_config
-    返回值: SUCC/FAIL
+    返回值: True(成功)/False(失败)
     """
     install_path_list = set()
     pkg_softlink_list = set()
@@ -559,8 +565,8 @@ def check_path_is_conflict(xml_config):
     if install_path_list & pkg_softlink_list:
         CommLog.cilog_info('intersection:{}'.format(install_path_list & pkg_softlink_list))
         CommLog.cilog_info('path conflicting: pkg_inner_softlink dir equals install_path!!')
-        return FAIL
-    return SUCC
+        return False
+    return True
 
 
 def checksum_value(limit_value, release_dir):
@@ -568,7 +574,7 @@ def checksum_value(limit_value, release_dir):
     功能描叙: 校验传入的文件或目录大小是否合格
     参数:
     limit_value: limit.csv中的一行数据如[compiler/bin, 3976, 110%]
-    返回值: True/False
+    返回值: True(成功)/False(失败)
     """
     path = os.path.join(release_dir, limit_value[1])
     if len(limit_value) >= 7:
@@ -604,7 +610,7 @@ def checksum_value(limit_value, release_dir):
 def processing_csv_file(release_dir, package_name, chip_name, build_type):
     """
     功能描叙: 处理limit.csv文件数据
-    返回值: [],True/[],False
+    返回值: [],True(成功)/[],False(失败)
     """
     ret = True
     limit_list = []
@@ -639,7 +645,7 @@ def check_add_dir(package_path, dirs, limit_list, ret=True):
     """
     功能描述: 校验新增目录
     参数: path, limit_list
-    返回值: False/True
+    返回值: True(成功)/False(失败)
     """
     for limit_path in limit_list:
         if dirs == os.path.join(os.path.split(dirs)[0], limit_path):
@@ -831,11 +837,11 @@ def main(pkg_name='', xml_file='', main_args=None):
     """
     功能描述: 执行打包流程(解析配置--->生成文件列表--->执行拷贝/打包动作)
     参数: pkg_name, os_arch, type
-    返回值: SUCC/FAIL
+    返回值: True(成功)/False(失败)
     """
     if not main_args.delivery_dir:
         CommLog.cilog_error("Delivery dir is empty.")
-        return FAIL
+        return False
 
     delivery_dir = ""
     if main_args.suffix == "rpm" or main_args.suffix == "deb":
@@ -844,7 +850,7 @@ def main(pkg_name='', xml_file='', main_args=None):
         delivery_dir = os.path.join(main_args.delivery_dir, "_CPack_Packages/makeself_staging")
     if not os.path.exists(delivery_dir):
         CommLog.cilog_error(f"Delivery dir does not exist: {delivery_dir}")
-        return FAIL
+        return False
 
     config_relative_path = get_pkg_xml_relative_path(main_args)
     parse_option = make_parse_option(main_args)
@@ -856,9 +862,9 @@ def main(pkg_name='', xml_file='', main_args=None):
         )
     except ContainAsteriskError as ex:
         CommLog.cilog_error(f"Value contain '*' in {config_relative_path}. value is '{ex.value}'.")
-        return FAIL
+        return False
     if not ret:
-        return FAIL
+        return False
 
     # 生成filelist.csv安装列表文件
     try:
@@ -868,13 +874,13 @@ def main(pkg_name='', xml_file='', main_args=None):
         )
     except PackageNameEmptyError:
         CommLog.cilog_error(f'package name is empty in {xml_file}, please check it')
-        return FAIL
+        return False
     except GenerateFilelistError as ex:
         CommLog.cilog_error(f'generate filelist {ex.filename} failed!', )
-        return FAIL
+        return False
     except FilelistError as ex:
         CommLog.cilog_error('check filelist error! %s', str(ex))
-        return FAIL
+        return False
 
     if main_args.suffix not in ("rpm", "deb"):
         generate_config_inc(xml_config.package_attr, main_args.delivery_dir)
@@ -887,8 +893,8 @@ def main(pkg_name='', xml_file='', main_args=None):
     package_name = PackageName(xml_config.package_attr, main_args, xml_config.version)
 
     # 检查install_path与pkg_inner_softlink路径是否冲突，若冲突则报错
-    if check_path_is_conflict(xml_config) == FAIL:
-        return FAIL
+    if not check_path_is_conflict(xml_config):
+        return False
 
     # 生成打包命令
     return execute_repack_process(xml_config, delivery_dir, main_args,
@@ -971,5 +977,5 @@ if __name__ == "__main__":
     except Exception as e:
         CommLog.cilog_error("exception is occurred (%s)!", e)
         CommLog.cilog_info("%s", traceback.format_exc())
-        status = FAIL
-    sys.exit(status)
+        status = False
+    sys.exit(0 if status else 1)
