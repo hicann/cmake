@@ -250,7 +250,7 @@ class TestGenPostinstPrerm:
         result = gen_postinst_prerm.generate_set_permission(items, "9.0.0")
         result_str = "\n".join(result)
 
-        assert 'if [ "$EUID" -eq 0 ]; then' in result_str
+        assert 'if [ "${EUID:-0}" -eq 0 ]; then' in result_str
         assert '550) chmod 555 "$INSTALL_PATH/file_550" ;;' in result_str
         assert '440) chmod 444 "$INSTALL_PATH/file_440" ;;' in result_str
         assert '750) chmod 755 "$INSTALL_PATH/file_750" ;;' in result_str

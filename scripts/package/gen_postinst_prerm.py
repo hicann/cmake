@@ -242,7 +242,7 @@ def generate_set_permission(items, version, script_dir=None) -> List[str]:
         target = _resolve_target(path)
         lines.append(f'if [ -e {target} ]; then')
         # root 环境需要提权：550→555, 440→444, 750→755
-        lines.append(f'    if [ "$EUID" -eq 0 ]; then')
+        lines.append(f'    if [ "${{EUID:-0}}" -eq 0 ]; then')
         lines.append(f'        case "{mod}" in')
         lines.append(f'            550) chmod 555 {target} ;;')
         lines.append(f'            440) chmod 444 {target} ;;')
@@ -258,7 +258,7 @@ def generate_set_permission(items, version, script_dir=None) -> List[str]:
     if script_dir:
         target = _resolve_target(script_dir)
         lines.append(f'if [ -d {target} ]; then')
-        lines.append(f'    if [ "$EUID" -eq 0 ]; then')
+        lines.append(f'    if [ "${{EUID:-0}}" -eq 0 ]; then')
         lines.append(f'        find {target} -type f -exec chmod 555 {{}} \\; 2>/dev/null || true')
         lines.append(f'    else')
         lines.append(f'        find {target} -type f -exec chmod 550 {{}} \\; 2>/dev/null || true')
