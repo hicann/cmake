@@ -739,6 +739,19 @@ class TestBuildSign:
         assert result is False
 
     @staticmethod
+    def test_infile_is_directory_returns_false(tmp_path):
+        """路径存在但为目录时返回 False，不抛 IsADirectoryError。"""
+        sign_dir = tmp_path / "sign"
+        sign_dir.mkdir()
+        (sign_dir / "a.bin").mkdir()
+        conf = make_conf(input="a.bin", type="cms", tag="ta")
+        item_set = {"a.bin": conf}
+        result = add_header_sign.build_sign(
+            item_set, str(sign_dir), "/fake/sign_tool",
+            str(tmp_path / "tmp"))
+        assert result is False
+
+    @staticmethod
     @mock.patch('add_header_sign.safe_run_cmd')
     def test_sign_cmd_failure_returns_false(mock_run, tmp_path):
         sign_dir = tmp_path / "sign"
@@ -1724,6 +1737,41 @@ class TestMain:
         run_main_with_mock_parser(sign_script="/custom/sign.py")
         call_args = mock_header.call_args
         assert "/custom/sign.py" in str(call_args)
+
+    @staticmethod
+    @mock.patch('add_header_sign.add_bios_header', return_value=True)
+    @mock.patch('add_header_sign.setenv')
+    @mock.patch('add_header_sign.check_params', return_value=True)
+    @mock.patch('add_header_sign.get_item_set')
+    def test_real_parser_sign_flag_true(mock_get, mock_check, mock_setenv, mock_header):
+        """端到端：用真实 define_parser 解析 argv，验证 main 与 parser 集成。"""
+        mock_get.return_value = (True, {})
+        result = add_header_sign.main(["add_header_sign.py", "/tmp/sign", "true"])
+        assert result is True
+        mock_header.assert_called_once()
+
+    @staticmethod
+    @mock.patch('add_header_sign.add_bios_header', return_value=True)
+    @mock.patch('add_header_sign.setenv')
+    @mock.patch('add_header_sign.check_params', return_value=True)
+    @mock.patch('add_header_sign.get_item_set')
+    def test_real_parser_sign_flag_false(mock_get, mock_check, mock_setenv, mock_header):
+        """sign_flag=false 时用真实 parser 也应直接返回 True，不调用 add_bios_header。"""
+        result = add_header_sign.main(["add_header_sign.py", "/tmp/sign", "false"])
+        assert result is True
+        mock_header.assert_not_called()
+
+    @staticmethod
+    def test_real_parser_help_returns_true():
+        """--help 用真实 parser 时 SystemExit(0) 被捕获，返回 True。"""
+        result = add_header_sign.main(["add_header_sign.py", "--help"])
+        assert result is True
+
+    @staticmethod
+    def test_real_parser_invalid_flag_returns_false():
+        """非法参数用真实 parser 时 SystemExit(2) 被捕获，返回 False。"""
+        result = add_header_sign.main(["add_header_sign.py", "--unknown-flag"])
+        assert result is False
 
 
 # ===================== 并发隔离（方案 C） =====================

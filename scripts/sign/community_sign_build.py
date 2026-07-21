@@ -9,14 +9,14 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 
-# **************************************************************
+#**************************************************************
 # 签名脚本：调用 signatrust_client 对指定文件制作 CMS (p7s) detached 签名
 # 流程：准备 CRL（本地优先，否则下载）→ 逐文件签名 → 校验 p7s 生成
 #
 # 调用方式：
 #   python3 community_sign_build.py <file1> [file2 ...]
 #   argv[1:] = 待签名文件列表
-# **************************************************************
+#**************************************************************
 
 import os
 import sys
@@ -281,12 +281,6 @@ def main(argv=None) -> bool:
     """
     if argv is None:
         argv = sys.argv
-    # 查询 flag 不带位置参数，放宽 argv 长度检查
-    has_query_flag = any(a in ('--print-sign-ext', '--print-certtype') for a in argv[1:])
-    # 无文件参数且无查询 flag 直接返回失败，避免 argparse.parse_args 抛 SystemExit
-    if len(argv) <= 1 and not has_query_flag:
-        logger.error("no files to sign")
-        return False
     try:
         args = define_parser().parse_args(argv[1:])
     except SystemExit as e:

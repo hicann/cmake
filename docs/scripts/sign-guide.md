@@ -57,6 +57,18 @@ add_cann_sign_file(
 )
 ```
 
+可通过 `VERSION` 参数为单个签名目标指定版本号，未指定时回退到全局 `VERSION_INFO`：
+
+```cmake
+add_cann_sign_file(
+    INPUT ${CMAKE_CURRENT_BINARY_DIR}/my_image.bin
+    CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/bios_check_cfg.xml
+    RESULT_VAR SIGNED_IMAGE
+    DEPENDS my_image_target
+    VERSION 1.2.3
+)
+```
+
 构建时通过 `build.sh` 启用签名：
 
 ```bash

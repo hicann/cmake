@@ -156,12 +156,13 @@ class TestPrintSignType:
         assert default_args.print_certtype is False
 
 
+CRL_PATH = "/tmp/SWSCRL.crl"
+
+
 # ===================== get_sign_cmd =====================
 
 class TestGetSignCmd:
     """签名命令构建。"""
-
-    CRL_PATH = "/tmp/SWSCRL.crl"
 
     @staticmethod
     def test_different_crl_paths_produce_different_cmds():
@@ -169,26 +170,31 @@ class TestGetSignCmd:
         cmd_b = community_sign_build.get_sign_cmd("/tmp/foo.bin", "/tmp/b.crl")
         assert cmd_a != cmd_b
 
-    def test_returns_list(self):
-        cmd = community_sign_build.get_sign_cmd("/tmp/foo.bin", self.CRL_PATH)
+    @staticmethod
+    def test_returns_list():
+        cmd = community_sign_build.get_sign_cmd("/tmp/foo.bin", CRL_PATH)
         assert isinstance(cmd, list)
 
-    def test_first_element_is_client(self):
-        cmd = community_sign_build.get_sign_cmd("/tmp/foo.bin", self.CRL_PATH)
+    @staticmethod
+    def test_first_element_is_client():
+        cmd = community_sign_build.get_sign_cmd("/tmp/foo.bin", CRL_PATH)
         assert cmd[0] == community_sign_build.SIGN_CLIENT_PATH
 
-    def test_contains_config(self):
-        cmd = community_sign_build.get_sign_cmd("/tmp/foo.bin", self.CRL_PATH)
+    @staticmethod
+    def test_contains_config():
+        cmd = community_sign_build.get_sign_cmd("/tmp/foo.bin", CRL_PATH)
         assert "--config" in cmd
         idx = cmd.index("--config")
         assert cmd[idx + 1] == community_sign_build.SIGN_CLIENT_CONFIG
 
-    def test_contains_input_file(self):
-        cmd = community_sign_build.get_sign_cmd("/tmp/foo.bin", self.CRL_PATH)
+    @staticmethod
+    def test_contains_input_file():
+        cmd = community_sign_build.get_sign_cmd("/tmp/foo.bin", CRL_PATH)
         assert "/tmp/foo.bin" in cmd
 
-    def test_contains_required_flags(self):
-        cmd = community_sign_build.get_sign_cmd("/tmp/foo.bin", self.CRL_PATH)
+    @staticmethod
+    def test_contains_required_flags():
+        cmd = community_sign_build.get_sign_cmd("/tmp/foo.bin", CRL_PATH)
         expected = [
             "add", "--file-type", "p7s", "--key-type", "x509",
             "--key-name", "SignCert", "--detached",
@@ -197,15 +203,17 @@ class TestGetSignCmd:
         for token in expected:
             assert token in cmd, "missing token: %s" % token
 
-    def test_contains_crl_path(self):
-        cmd = community_sign_build.get_sign_cmd("/tmp/foo.bin", self.CRL_PATH)
+    @staticmethod
+    def test_contains_crl_path():
+        cmd = community_sign_build.get_sign_cmd("/tmp/foo.bin", CRL_PATH)
         idx = cmd.index("--crl")
         assert idx + 1 < len(cmd)
-        assert cmd[idx + 1] == self.CRL_PATH
+        assert cmd[idx + 1] == CRL_PATH
 
-    def test_different_files_produce_different_cmds(self):
-        cmd_a = community_sign_build.get_sign_cmd("/tmp/a.bin", self.CRL_PATH)
-        cmd_b = community_sign_build.get_sign_cmd("/tmp/b.bin", self.CRL_PATH)
+    @staticmethod
+    def test_different_files_produce_different_cmds():
+        cmd_a = community_sign_build.get_sign_cmd("/tmp/a.bin", CRL_PATH)
+        cmd_b = community_sign_build.get_sign_cmd("/tmp/b.bin", CRL_PATH)
         assert cmd_a != cmd_b
 
 
@@ -417,69 +425,71 @@ class TestPrepareCrl:
 class TestSignSingleFile:
     """单文件签名。"""
 
-    CRL_PATH = "/tmp/SWSCRL.crl"
-
+    @staticmethod
     @mock.patch('community_sign_build.subprocess.run')
-    def test_success(self, mock_run, tmp_path):
+    def test_success(mock_run, tmp_path):
         """签名成功 → True。"""
         f = tmp_path / "a.bin"
         f.touch()
         mock_run.return_value = CompletedProcess(args=[], returncode=0, stdout="")
-        assert community_sign_build.sign_single_file(str(f), self.CRL_PATH) is True
+        assert community_sign_build.sign_single_file(str(f), CRL_PATH) is True
 
+    @staticmethod
     @mock.patch('community_sign_build.subprocess.run')
-    def test_returncode_nonzero(self, mock_run, tmp_path):
+    def test_returncode_nonzero(mock_run, tmp_path):
         """signatrust 返回非零 → False。"""
         f = tmp_path / "a.bin"
         f.touch()
         mock_run.return_value = CompletedProcess(args=[], returncode=1, stdout="error")
-        assert community_sign_build.sign_single_file(str(f), self.CRL_PATH) is False
+        assert community_sign_build.sign_single_file(str(f), CRL_PATH) is False
 
+    @staticmethod
     @mock.patch('community_sign_build.subprocess.run')
-    def test_timeout(self, mock_run, tmp_path):
+    def test_timeout(mock_run, tmp_path):
         """签名超时 → False，不抛异常。"""
         f = tmp_path / "a.bin"
         f.touch()
         mock_run.side_effect = TimeoutExpired('signatrust', 600)
-        assert community_sign_build.sign_single_file(str(f), self.CRL_PATH) is False
+        assert community_sign_build.sign_single_file(str(f), CRL_PATH) is False
 
+    @staticmethod
     @mock.patch('community_sign_build.subprocess.run')
-    def test_shell_false(self, mock_run, tmp_path):
+    def test_shell_false(mock_run, tmp_path):
         """签名调用使用 shell=False。"""
         f = tmp_path / "a.bin"
         f.touch()
         mock_run.return_value = CompletedProcess(args=[], returncode=0, stdout="")
-        community_sign_build.sign_single_file(str(f), self.CRL_PATH)
+        community_sign_build.sign_single_file(str(f), CRL_PATH)
         _, kwargs = mock_run.call_args
         assert kwargs.get('shell') is False
 
+    @staticmethod
     @mock.patch('community_sign_build.subprocess.run')
-    def test_timeout_passed(self, mock_run, tmp_path):
+    def test_timeout_passed(mock_run, tmp_path):
         """签名调用传入 timeout 参数。"""
         f = tmp_path / "a.bin"
         f.touch()
         mock_run.return_value = CompletedProcess(args=[], returncode=0, stdout="")
-        community_sign_build.sign_single_file(str(f), self.CRL_PATH)
+        community_sign_build.sign_single_file(str(f), CRL_PATH)
         _, kwargs = mock_run.call_args
         assert kwargs.get('timeout') == community_sign_build.SUBPROCESS_TIMEOUT
 
+    @staticmethod
     @mock.patch('community_sign_build.subprocess.run')
-    def test_crl_path_in_cmd(self, mock_run, tmp_path):
+    def test_crl_path_in_cmd(mock_run, tmp_path):
         """签名命令包含传入的 crl_path。"""
         f = tmp_path / "a.bin"
         f.touch()
         mock_run.return_value = CompletedProcess(args=[], returncode=0, stdout="")
-        community_sign_build.sign_single_file(str(f), self.CRL_PATH)
+        community_sign_build.sign_single_file(str(f), CRL_PATH)
         args, _ = mock_run.call_args
-        assert self.CRL_PATH in args[0]
+        assert CRL_PATH in args[0]
 
 
 # ===================== run_sign =====================
 
 class TestRunSign:
     """签名主流程。"""
-
-    CRL_PATH = "/tmp/SWSCRL.crl"
 
     @staticmethod
     @mock.patch('community_sign_build.subprocess.run')
@@ -599,16 +609,17 @@ class TestRunSign:
         _, kwargs = mock_run.call_args
         assert kwargs.get('timeout') == community_sign_build.SUBPROCESS_TIMEOUT
 
+    @staticmethod
     @mock.patch('community_sign_build.subprocess.run')
     @mock.patch('community_sign_build.prepare_crl', return_value=CRL_PATH)
-    def test_crl_path_passed_to_sign_cmd(self, mock_prepare, mock_run, tmp_path):
+    def test_crl_path_passed_to_sign_cmd(mock_prepare, mock_run, tmp_path):
         """prepare_crl 返回的 crl_path 被传入签名命令。"""
         f1 = tmp_path / "a.bin"
         f1.touch()
         mock_run.return_value = CompletedProcess(args=[], returncode=0, stdout="")
         community_sign_build.run_sign([str(f1)])
         args, _ = mock_run.call_args
-        assert self.CRL_PATH in args[0]
+        assert CRL_PATH in args[0]
 
 
 # ===================== main =====================
@@ -844,24 +855,24 @@ class TestPrepareCrlOutputDir:
 class TestRunSignCrlDir:
     """run_sign 透传 crl_output_dir 给 prepare_crl。"""
 
-    CRL_PATH = "/tmp/SWSCRL.crl"
-
+    @staticmethod
     @mock.patch('community_sign_build.prepare_crl')
     @mock.patch('community_sign_build.subprocess.run')
-    def test_run_sign_passes_crl_dir_to_prepare_crl(self, mock_run, mock_prepare, tmp_path):
+    def test_run_sign_passes_crl_dir_to_prepare_crl(mock_run, mock_prepare, tmp_path):
         """run_sign 将 crl_output_dir 传给 prepare_crl。"""
-        mock_prepare.return_value = self.CRL_PATH
+        mock_prepare.return_value = CRL_PATH
         f = tmp_path / "a.bin"
         f.touch()
         mock_run.return_value = CompletedProcess(args=[], returncode=0, stdout="")
         community_sign_build.run_sign([str(f)], "/tmp/sign_dir")
         mock_prepare.assert_called_once_with("/tmp/sign_dir")
 
+    @staticmethod
     @mock.patch('community_sign_build.prepare_crl')
     @mock.patch('community_sign_build.subprocess.run')
-    def test_run_sign_default_crl_dir_empty(self, mock_run, mock_prepare, tmp_path):
+    def test_run_sign_default_crl_dir_empty(mock_run, mock_prepare, tmp_path):
         """run_sign 未传 crl_output_dir 时传空字符串。"""
-        mock_prepare.return_value = self.CRL_PATH
+        mock_prepare.return_value = CRL_PATH
         f = tmp_path / "a.bin"
         f.touch()
         mock_run.return_value = CompletedProcess(args=[], returncode=0, stdout="")

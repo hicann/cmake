@@ -757,7 +757,7 @@ function(add_cann_sign_file)
     cmake_parse_arguments(
         ARG
         ""
-        "OUTPUT_TARGET;INPUT;CONFIG;RESULT_VAR"
+        "OUTPUT_TARGET;INPUT;CONFIG;RESULT_VAR;VERSION"
         "SCRIPT_ARGS;DEPENDS"
         ${ARGN}
     )
@@ -795,6 +795,11 @@ function(add_cann_sign_file)
     set(signatures_dir "${CMAKE_CURRENT_BINARY_DIR}/signatures_${safe_input_name}")
     set(output_sig "${signatures_dir}/${input_name}")
 
+    # 版本号：优先使用用户传入的 VERSION，否则回退到全局 VERSION_INFO
+    if(NOT ARG_VERSION)
+        set(ARG_VERSION "${VERSION_INFO}")
+    endif()
+
     if(EXISTS "${SIGN_SCRIPT}")
         get_filename_component(EXT ${SIGN_SCRIPT} EXT) # 获取文件扩展名
 
@@ -803,8 +808,8 @@ function(add_cann_sign_file)
         elseif(${EXT} STREQUAL ".py")
             set(add_header ${CANN_CMAKE_DIR}/scripts/sign/add_header_sign.py)
             set(sign_builder ${SIGN_SCRIPT})
-            message(STATUS "Detected +++VERSION_INFO:${VERSION_INFO}, CANN_CMAKE_DIR:${CANN_CMAKE_DIR}")
-            set(sign_cmd python3 ${add_header} ${signatures_dir} ${sign_flag} --bios_check_cfg=${ARG_CONFIG} --sign_script=${sign_builder} --version=${VERSION_INFO})
+            message(STATUS "Detected +++sign version:${ARG_VERSION}, CANN_CMAKE_DIR:${CANN_CMAKE_DIR}")
+            set(sign_cmd python3 ${add_header} ${signatures_dir} ${sign_flag} --bios_check_cfg=${ARG_CONFIG} --sign_script=${sign_builder} --version=${ARG_VERSION})
         endif()
     else()
         set(sign_cmd )

@@ -267,7 +267,7 @@ def get_item_set(config_file, sign_file_dir, version) -> Tuple[bool, Optional[Di
         if os.path.exists(input_file):
             nodes.append(node)
         else:
-            logger.warning("Image file:%s not exists!\n\t", input_file)
+            logger.warning("Image file:%s not exists!", input_file)
             continue
 
     for node in nodes:
@@ -342,22 +342,19 @@ def build_sign(item_size_set, sign_file_dir, sign_tool_path, sign_tmp_path) -> b
           sign_tmp_path：临时工作目录，镜像和 ini 文件拷贝到此目录后签名
     返回：False:失败，True：成功
     '''
-    # 按签名类型分组，收集所有需要 cms 签名的文件
-    sign_dict = {}
-    sign_dict["cms"] = []
+    # 收集所有需要 cms 签名的文件，校验源文件为普通文件（非目录/不存在）
+    cms_files = []
     for (infile, conf_item) in item_size_set.items():
         input_path = os.path.join(sign_file_dir, infile)
-        if not os.path.exists(input_path):
-            logger.error("infile is not exist:%s", input_path)
+        if not os.path.isfile(input_path):
+            logger.error("infile is not exist or not a file:%s", input_path)
             return False
-
-        for sign in conf_item.type.split('/'):
-            if sign in sign_dict:
-                sign_dict[sign].append(infile)  # 需要签名的文件都写入这个字典中，前面已判断文件是否存在
+        if "cms" in conf_item.type.split('/'):
+            cms_files.append(infile)
 
     # 第一阶段：将待签名文件拷贝到临时目录，并收集对应的 ini 文件路径
     ini_files = []
-    for file in sign_dict["cms"]:
+    for file in cms_files:
         file_with_path = os.path.join(sign_file_dir, file)
         # 临时目录下同层架子目录，包含文件名的完整路径
         file_sign_des = os.path.realpath(os.path.join(sign_tmp_path, file))
@@ -366,15 +363,11 @@ def build_sign(item_size_set, sign_file_dir, sign_tool_path, sign_tmp_path) -> b
 
         if not os.path.isdir(sign_path):
             os.makedirs(sign_path, exist_ok=True)
-        if os.path.isfile(file_with_path):
-            logger.info("copy %s --> %s", file_with_path, file_sign_des)
-            # 待签名文件拷贝到临时路径下
-            shutil.copy(file_with_path, file_sign_des)
-            if not os.path.isfile(file_sign_des):
-                logger.error("copy %s --> %s fail", file_with_path, file_sign_des)
-                return False
-        else:
-            logger.error("can not find src:%s", file_with_path)
+        logger.info("copy %s --> %s", file_with_path, file_sign_des)
+        # 待签名文件拷贝到临时路径下
+        shutil.copy(file_with_path, file_sign_des)
+        if not os.path.isfile(file_sign_des):
+            logger.error("copy %s --> %s fail", file_with_path, file_sign_des)
             return False
         # 临时目录下ini文件完整路径，实际前面 build_inifile 时已生成到对应目录下
         ini_file = "{}.ini".format(os.path.join(sign_path, os.path.basename(file)))
@@ -431,7 +424,7 @@ def add_bios_esbc_header(root_dir, item_size_set, sign_file_dir) -> bool:
                 logger.error("add %s esbc header failed!\n\t%s", input_file, output)
                 return False
         else:
-            logger.info("%s don't need add esbc head!\n", input_file)
+            logger.info("%s don't need add esbc head!", input_file)
     return True
 
 
@@ -498,7 +491,7 @@ def build_image_pack_cmd(param: ImagePackParam) -> List[str]:
     return cmd
 
 
-def resolve_der_file(sign_file_dir, has_cms) -> Optional[str]:
+def resolve_der_file(sign_file_dir: str, has_cms: bool) -> Optional[str]:
     """解析 CRL 路径并按需转换为 DER 格式，返回 der_file 路径或失败时 None。
 
     CRL 路径优先使用 CRL_FILE_PATH 环境变量，否则回退到 sign_file_dir/SWSCRL.crl。
@@ -619,8 +612,8 @@ def check_params(params) -> bool:
         logger.error("sign tools script not exists")
         return False
     # 检查待签名文件目录是否存在
-    if not os.path.isdir(params.get('sign_file_dir', '')):
-        logger.error("sign file dir not exists: %s", params.get('sign_file_dir', ''))
+    if not os.path.isdir(params['sign_file_dir']):
+        logger.error("sign file dir not exists: %s", params['sign_file_dir'])
         return False
     return True
 
@@ -628,8 +621,8 @@ def check_params(params) -> bool:
 def define_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument('sign_file_dir', help='device release dir')
-    parser.add_argument('sign_flag', help='sign flag (true/false)', default='false',
-                        nargs='?', choices=['true', 'false'])
+    parser.add_argument('sign_flag', help='skip both header and sign (true/false)',
+                        default='false', nargs='?', choices=['true', 'false'])
     parser.add_argument('--bios_check_cfg', help='default bios_check_cfg.xml', default='bios_check_cfg.xml')
     # 签名版本信息，编译传入
     parser.add_argument('--version', help='version')
@@ -650,8 +643,14 @@ def main(argv=None) -> bool:
     """
     主函数，检查输入参数及环境检查,并调用功能函数
     """
-    parser = define_parser()
-    args = parser.parse_args(argv)
+    if argv is None:
+        argv = sys.argv
+    try:
+        parser = define_parser()
+        args = parser.parse_args(argv[1:])
+    except SystemExit as e:
+        # argparse 对 --help 返回 code=0（成功），对非法参数返回 code=2（失败）
+        return e.code == 0 or e.code is None
     sign_file_dir = args.sign_file_dir
     add_sign = args.sign_flag
     bios_check_cfg = args.bios_check_cfg if args.bios_check_cfg else 'bios_check_cfg.xml'
@@ -664,7 +663,7 @@ def main(argv=None) -> bool:
 
     # 签名配置文件路径，相对于工程根目录
     config_file = os.path.join(root_dir, bios_check_cfg)
-    logger.info("config_file=" + config_file)
+    logger.info("config_file=%s", config_file)
 
     bios_tool_path = os.path.join(
         root_dir, "scripts", "signtool", "image_pack")

@@ -175,5 +175,6 @@ clone_cann_target(ORIGIN ccl_kernel OUTPUT aicpu_custom IGNORE_PROP LINK_LIBRARI
 | `OUTPUT_TARGET` | 自定义目标名 |
 | `SCRIPT_ARGS` | 签名脚本额外参数 |
 | `DEPENDS` | 额外依赖 |
+| `VERSION` | 版本号，未指定时回退到全局 `VERSION_INFO` |
 
 签名脚本通过 `CUSTOM_SIGN_SCRIPT` 或 `ENABLE_SIGN` 控制。

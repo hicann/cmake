@@ -427,7 +427,7 @@ build.sh --enable-sign
                 → build_image_pack_cmd 构建完整命令
 ```
 
-`VERSION_INFO` 从编译期传入，经 CMake 的 `--version` 参数传递到编排器，最终写入镜像头的 `ver_value` 字段。
+版本号经 CMake 的 `--version` 参数传递到编排器，最终写入镜像头的 `ver_value` 字段。取值优先级：`add_cann_sign_file` 的 `VERSION` 参数 > 全局 `VERSION_INFO` 变量。
 
 ## 7. 并行签名设计
 
