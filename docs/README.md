@@ -37,6 +37,10 @@
 
 → [scripts/build-analysis.md](scripts/build-analysis.md)：IWYU 头文件依赖分析
 
+→ [scripts/sign-guide.md](scripts/sign-guide.md)：代码签名使用指南
+
+→ [scripts/sign-internals.md](scripts/sign-internals.md)：代码签名实现说明
+
 ## 开发本仓库
 
 ```bash

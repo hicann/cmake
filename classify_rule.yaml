@@ -16,6 +16,8 @@ cmake:
       - scripts/package/py/utils/*
       - scripts/package/py/*
       - scripts/package/package.py
+      - scripts/sign/add_header_sign.py
+      - scripts/sign/community_sign_build.py
     unrelease:
       - scripts/package/makeself.cmake
       - scripts/install/sh/*

@@ -11,3 +11,5 @@ __pycache__/
 # Build artifacts (superbuild intermediate products)
 build/
 build_out/
+.claude/
+.opencode/
