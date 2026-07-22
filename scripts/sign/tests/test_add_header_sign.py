@@ -23,7 +23,8 @@
 - build_inifile：ini 生成（签名/不签名/cms/无cms/失败/共享目录/ET构造XML）
 - build_sign：签名制作（成功/文件不存在/签名失败/命令不累积/无ls冗余/无print残留）
 - add_bios_esbc_header：ESBC头（有/无nvcnt/工具缺失/命令失败/命令失败）
-- convert_der_file：CRL转换（成功/文件缺失/openssl失败）
+- convert_der_file：CRL转换（PEM成功/文件缺失/openssl失败/DER直拷/空文件/非法首字节/拷贝失败/同路径）
+- is_pem_format：PEM格式探测（PEM头/无PEM头/空文件/不存在/前导空白）
 - build_image_pack_cmd：命令构建（签名/不签名/position/additional/自定义ext和certtype）
 - add_bios_header：编排流程（完整/各步失败/der失败处理/finally清理/查询传递）
 - check_params：参数校验（全部存在/各项缺失/sign_file_dir校验）
@@ -876,6 +877,9 @@ class TestAddBiosEsbcHeader:
 
 # ===================== convert_der_file =====================
 
+PEM_HEADER = b"-----BEGIN X509 CRL-----\n"
+
+
 class TestConvertDerFile:
     """CRL → DER 转换。"""
 
@@ -883,7 +887,7 @@ class TestConvertDerFile:
     @mock.patch('add_header_sign.safe_run_cmd', return_value=(True, ""))
     def test_success(mock_run, tmp_path):
         crl = tmp_path / "test.crl"
-        crl.touch()
+        crl.write_bytes(PEM_HEADER)
         der = str(tmp_path / "test.der")
         result = add_header_sign.convert_der_file(str(crl), der)
         assert result is True
@@ -899,7 +903,7 @@ class TestConvertDerFile:
     @mock.patch('add_header_sign.safe_run_cmd', return_value=(False, "openssl error"))
     def test_openssl_failure(mock_run, tmp_path):
         crl = tmp_path / "test.crl"
-        crl.touch()
+        crl.write_bytes(PEM_HEADER)
         der = str(tmp_path / "test.der")
         result = add_header_sign.convert_der_file(str(crl), der)
         assert result is False
@@ -917,11 +921,107 @@ class TestConvertDerFile:
     def test_cmd_is_list(mock_run, tmp_path):
         """D1: 传给 safe_run_cmd 的是 list。"""
         crl = tmp_path / "test.crl"
-        crl.touch()
+        crl.write_bytes(PEM_HEADER)
         add_header_sign.convert_der_file(str(crl), str(tmp_path / "test.der"))
         args, _ = mock_run.call_args
         assert isinstance(args[0], list)
         assert args[0][0] == "openssl"
+
+    @staticmethod
+    @mock.patch('add_header_sign.safe_run_cmd')
+    def test_der_input_copied_directly(mock_run, tmp_path):
+        """输入已是 DER 格式时直接拷贝，不调用 openssl。"""
+        mock_run.return_value = (True, "")
+        crl = tmp_path / "test.crl"
+        crl_bytes = b'\x30\x82\x01\x00' + b'\x00' * 16
+        crl.write_bytes(crl_bytes)
+        der = str(tmp_path / "test.der")
+        result = add_header_sign.convert_der_file(str(crl), der)
+        assert result is True
+        mock_run.assert_not_called()
+        assert os.path.isfile(der)
+        with open(der, 'rb') as f:
+            assert f.read() == crl_bytes
+
+    @staticmethod
+    @mock.patch('add_header_sign.safe_run_cmd', return_value=(True, ""))
+    def test_empty_file_returns_false(mock_run, tmp_path):
+        """空文件既非 PEM 也非有效 DER，返回 False。"""
+        crl = tmp_path / "test.crl"
+        crl.touch()
+        der = str(tmp_path / "test.der")
+        result = add_header_sign.convert_der_file(str(crl), der)
+        assert result is False
+        mock_run.assert_not_called()
+
+    @staticmethod
+    @mock.patch('add_header_sign.safe_run_cmd', return_value=(True, ""))
+    def test_invalid_first_byte_returns_false(mock_run, tmp_path):
+        """首字节非 0x30 的非 PEM 文件视为非法 DER，返回 False。"""
+        crl = tmp_path / "test.crl"
+        crl.write_bytes(b'\x00\x01\x02\x03')
+        der = str(tmp_path / "test.der")
+        result = add_header_sign.convert_der_file(str(crl), der)
+        assert result is False
+        mock_run.assert_not_called()
+
+    @staticmethod
+    @mock.patch('add_header_sign.safe_run_cmd', return_value=(True, ""))
+    @mock.patch('add_header_sign.shutil.copy', side_effect=OSError("disk full"))
+    def test_der_copy_failure_returns_false(mock_copy, mock_run, tmp_path):
+        """DER 分支拷贝失败（OSError）时返回 False。"""
+        crl = tmp_path / "test.crl"
+        crl.write_bytes(b'\x30\x82\x01\x00' + b'\x00' * 16)
+        der = str(tmp_path / "nonexistent_dir" / "test.der")
+        result = add_header_sign.convert_der_file(str(crl), der)
+        assert result is False
+        mock_run.assert_not_called()
+        mock_copy.assert_called_once()
+
+    @staticmethod
+    @mock.patch('add_header_sign.safe_run_cmd', return_value=(True, ""))
+    def test_same_path_returns_true(mock_run, tmp_path):
+        """源/目标同路径时跳过转换与拷贝，直接返回 True。"""
+        crl = tmp_path / "test.crl"
+        crl.write_bytes(b'\x30\x82\x01\x00' + b'\x00' * 16)
+        result = add_header_sign.convert_der_file(str(crl), str(crl))
+        assert result is True
+        mock_run.assert_not_called()
+
+
+# ===================== is_pem_format =====================
+
+class TestIsPemFormat:
+    """PEM 格式探测。"""
+
+    @staticmethod
+    def test_pem_header(tmp_path):
+        crl = tmp_path / "test.crl"
+        crl.write_bytes(PEM_HEADER)
+        assert add_header_sign.is_pem_format(str(crl)) is True
+
+    @staticmethod
+    def test_no_pem_header(tmp_path):
+        crl = tmp_path / "test.crl"
+        crl.write_bytes(b'\x30\x82\x01\x00' + b'\x00' * 16)
+        assert add_header_sign.is_pem_format(str(crl)) is False
+
+    @staticmethod
+    def test_empty_file(tmp_path):
+        crl = tmp_path / "test.crl"
+        crl.touch()
+        assert add_header_sign.is_pem_format(str(crl)) is False
+
+    @staticmethod
+    def test_file_not_exist():
+        assert add_header_sign.is_pem_format("/nonexistent.crl") is False
+
+    @staticmethod
+    def test_leading_whitespace(tmp_path):
+        """PEM 头前有空白（换行/空格）时仍能正确识别。"""
+        crl = tmp_path / "test.crl"
+        crl.write_bytes(b"\n   " + PEM_HEADER)
+        assert add_header_sign.is_pem_format(str(crl)) is True
 
 
 # ===================== query_sign_attr / query_sign_ext / query_certtype =====================

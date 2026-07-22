@@ -428,21 +428,59 @@ def add_bios_esbc_header(root_dir, item_size_set, sign_file_dir) -> bool:
     return True
 
 
+def is_pem_format(file_path: str) -> bool:
+    """判断文件是否为 PEM 格式。
+
+    读取文件头部字节，去除前导空白后判断是否以 PEM 起始标记
+    ``-----BEGIN`` 开头。文件不存在或读取失败时返回 False。
+    """
+    try:
+        with open(file_path, 'rb') as f:
+            head = f.read(64)
+    except OSError:
+        return False
+    return head.lstrip().startswith(b"-----BEGIN")
+
+
 def convert_der_file(crl_file: str, der_file: str) -> bool:
     """
-    将 PEM 格式的 CRL 文件转换为 DER 格式，保存到 der_file 指定路径。
+    将 CRL 文件转换为 DER 格式，保存到 der_file 指定路径。
+    输入为 PEM 格式时调用 openssl 转换；输入已是 DER 格式时直接拷贝，
+    避免 openssl 默认按 PEM 解析导致的转换失败。
     返回值：
         True - 成功
-        False - 失败（包括文件不存在、OpenSSL 未安装、转换失败等）
+        False - 失败（包括文件不存在、格式非法、OpenSSL 未安装、转换/拷贝失败等）
     """
     if not os.path.isfile(crl_file):
         logger.error("input CRL file not found: %s", crl_file)
         return False
-    cmd = ["openssl", "crl", "-in", crl_file, "-outform", "DER", "-out", der_file]
-    success, output = safe_run_cmd(cmd)
-    if not success:
-        logger.error("openssl conversion failed: %s", output)
+    # 源/目标同路径：输入已是目标格式，无需转换或拷贝
+    if os.path.abspath(crl_file) == os.path.abspath(der_file):
+        logger.info("crl_file and der_file are the same, skip convert/copy: %s", der_file)
+        return True
+    if is_pem_format(crl_file):
+        cmd = ["openssl", "crl", "-in", crl_file, "-outform", "DER", "-out", der_file]
+        success, output = safe_run_cmd(cmd)
+        if not success:
+            logger.error("openssl conversion failed: %s", output)
+            return False
+        return True
+    # 非 PEM：校验是否为有效 DER（首字节为 ASN.1 SEQUENCE 标签 0x30 且非空）
+    try:
+        with open(crl_file, 'rb') as f:
+            first_byte = f.read(1)
+    except OSError as e:
+        logger.error("read file for DER check failed: %s\n\t%s", crl_file, e)
         return False
+    if first_byte != b'\x30':
+        logger.error("CRL file is neither valid PEM nor valid DER: %s", crl_file)
+        return False
+    try:
+        shutil.copy(crl_file, der_file)
+    except OSError as e:
+        logger.error("copy DER file failed: %s -> %s\n\t%s", crl_file, der_file, e)
+        return False
+    logger.info("input CRL is already DER, copy directly: %s -> %s", crl_file, der_file)
     return True
 
 
