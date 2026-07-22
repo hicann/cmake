@@ -38,7 +38,7 @@ def get_version_info_path(ascend_install_path: str, name: str) -> str:
 
 def read_pkg_version(recv: Receiver, ascend_install_path: str, name: str) -> Optional[str]:
     """读取包版本。"""
-    if name == 'graph-autofusion':
+    if name in ['acl-extend', 'graph-autofusion']:
         filepath = get_version_info_path(ascend_install_path, name.replace('-', '_'))
         if not os.path.isfile(filepath):
             filepath = get_version_info_path(ascend_install_path, name)
