@@ -32,6 +32,7 @@
 
 import os
 import sys
+import time
 import shutil
 import logging
 import argparse
@@ -324,7 +325,6 @@ def build_inifile(item_size_set, sign_file_dir, bios_tool_path,
 
     # 仅当存在 cms 类型镜像时才调用 ini_gen.py，避免无意义执行
     if add_sign == "true" and cms_flag:
-        logger.info("------------------------------------")
         logger.info("execute:%s", " ".join(cmd))
         success, output = safe_run_cmd(cmd)
         if not success:
@@ -363,7 +363,6 @@ def build_sign(item_size_set, sign_file_dir, sign_tool_path, sign_tmp_path) -> b
 
         if not os.path.isdir(sign_path):
             os.makedirs(sign_path, exist_ok=True)
-        logger.info("copy %s --> %s", file_with_path, file_sign_des)
         # 待签名文件拷贝到临时路径下
         shutil.copy(file_with_path, file_sign_des)
         if not os.path.isfile(file_sign_des):
@@ -377,7 +376,6 @@ def build_sign(item_size_set, sign_file_dir, sign_tool_path, sign_tmp_path) -> b
     if ini_files:
         # 通过 --crl-dir 传入每目标独立的 CRL 输出目录，避免并行签名时共享 SCRIPT_DIR/SWSCRL.crl
         cmd = [HI_PYTHON, sign_tool_path, "--crl-dir", sign_file_dir] + ini_files
-        logger.info("------------------------------------")
         logger.info("execute:%s", " ".join(cmd))
         # 签名后会在 ini 文件同目录下生成 p7s 文件，比如 a.ini => a.ini.p7s
         success, output = safe_run_cmd(cmd)
@@ -417,14 +415,11 @@ def add_bios_esbc_header(root_dir, item_size_set, sign_file_dir) -> bool:
                 "-nvcnt", conf_item.nvcnt,
                 "-tag", conf_item.tag,
             ]
-            logger.info("------------------------------------")
             logger.info("execute:%s", " ".join(cmd))
             success, output = safe_run_cmd(cmd)
             if not success:
                 logger.error("add %s esbc header failed!\n\t%s", input_file, output)
                 return False
-        else:
-            logger.info("%s don't need add esbc head!", input_file)
     return True
 
 
@@ -456,7 +451,6 @@ def convert_der_file(crl_file: str, der_file: str) -> bool:
         return False
     # 源/目标同路径：输入已是目标格式，无需转换或拷贝
     if os.path.abspath(crl_file) == os.path.abspath(der_file):
-        logger.info("crl_file and der_file are the same, skip convert/copy: %s", der_file)
         return True
     if is_pem_format(crl_file):
         cmd = ["openssl", "crl", "-in", crl_file, "-outform", "DER", "-out", der_file]
@@ -480,7 +474,6 @@ def convert_der_file(crl_file: str, der_file: str) -> bool:
     except OSError as e:
         logger.error("copy DER file failed: %s -> %s\n\t%s", crl_file, der_file, e)
         return False
-    logger.info("input CRL is already DER, copy directly: %s -> %s", crl_file, der_file)
     return True
 
 
@@ -570,6 +563,12 @@ def add_bios_header(param: BiosHeaderParam) -> bool:
     root_dir = param.root_dir
     add_sign = param.add_sign
 
+    total = len(item_size_set)
+    nvcnt_count = sum(1 for c in item_size_set.values() if c.nvcnt)
+    cms_count = sum(1 for c in item_size_set.values() if "cms" in c.type.split('/'))
+    has_cms = cms_count > 0
+    start_time = time.time()
+
     # 镜像绑定分2种流程：
     # 1、add_sign不为true时：不需要签名，仅绑定BIOS字节头（version/nvcnt/tag）
     # 2、add_sign为true且type含cms时：绑定镜像文件、ini摘要、cms签名及证书、CRL
@@ -585,10 +584,12 @@ def add_bios_header(param: BiosHeaderParam) -> bool:
     image_pack_script = os.path.join(bios_tool_path, "image_pack.py")
 
     # 步骤1：对配置了 nvcnt 的镜像添加 esbc 二级头
+    logger.info("step 1/4: add esbc header, %d image(s)", nvcnt_count)
     if not add_bios_esbc_header(root_dir, item_size_set, sign_file_dir):
         return False
 
     # 步骤2：生成 ini 摘要文件（build_inifile 内部按 add_sign 判断是否执行）
+    logger.info("step 2/4: generate ini digest")
     if not build_inifile(
             item_size_set, sign_file_dir, bios_tool_path, sign_tmp_path, add_sign):
         return False
@@ -599,8 +600,8 @@ def add_bios_header(param: BiosHeaderParam) -> bool:
     # 仅在存在 cms 类型镜像时才查询并签名，避免无 cms 场景下的多余子进程调用。
     sign_ext = DEFAULT_SIGN_EXT
     sign_certtype = DEFAULT_CERTTYPE
-    has_cms = any("cms" in c.type.split('/') for c in item_size_set.values())
     if add_sign == "true" and has_cms:
+        logger.info("step 3/4: cms sign, %d image(s)", cms_count)
         sign_ext = query_sign_ext(sign_tool_path)
         sign_certtype = query_certtype(sign_tool_path)
         if not build_sign(item_size_set, sign_file_dir, sign_tool_path, sign_tmp_path):
@@ -612,6 +613,7 @@ def add_bios_header(param: BiosHeaderParam) -> bool:
         return False
 
     # 步骤4：用 image_pack.py 对每个镜像绑定最终文件头
+    logger.info("step 4/4: bind header, %d image(s)", total)
     for (input_name, conf_item) in item_size_set.items():
         input_file = os.path.join(sign_file_dir, input_name)
         # 签名文件及ini文件存放目录
@@ -624,14 +626,15 @@ def add_bios_header(param: BiosHeaderParam) -> bool:
                                     sign_ext=sign_ext, sign_certtype=sign_certtype)
         cmd = build_image_pack_cmd(pack_param)
 
-        logger.info("------------------------------------")
         logger.info("execute:%s", " ".join(cmd))
         success, output = safe_run_cmd(cmd)
         if not success:
             logger.error("add %s header failed!\n\t%s", input_file, output)
             return False
 
-    logger.info("add header to all bios image success!")
+    elapsed = time.time() - start_time
+    logger.info("add header and sign success: total=%d, signed=%d, elapsed=%.1fs",
+                total, cms_count, elapsed)
     return True
 
 
@@ -737,7 +740,7 @@ def main(argv=None) -> bool:
 
 if __name__ == "__main__":
     logging.basicConfig(
-        format='[%(asctime)s] [%(levelname)s] [%(pathname)s] [line:%(lineno)d] %(message)s',
+        format='[CannSign] [%(asctime)s] [%(levelname)s] [%(pathname)s] [line:%(lineno)d] %(message)s',
         level=logging.INFO
     )
     sys.exit(0 if main() else 1)

@@ -57,7 +57,7 @@ def setup_logging():
     """初始化日志配置，仅在脚本直接运行时调用。"""
     logging.basicConfig(
         level=os.environ.get("SIGN_LOG_LEVEL", "INFO").upper(),
-        format='%(asctime)s line:%(lineno)d %(levelname)s:%(name)s:%(message)s',
+        format='[CannSign] %(asctime)s line:%(lineno)d %(levelname)s:%(name)s:%(message)s',
         datefmt='%H:%M:%S',
     )
 
@@ -99,7 +99,7 @@ def prepare_crl(crl_output_dir: str = "") -> Optional[str]:
     os.makedirs(output_dir, exist_ok=True)
     crl_path = os.path.join(output_dir, CRL_FILENAME)
     cmd = ['curl', '-sSL', CRL_DOWNLOAD_URL, '-o', crl_path]
-    logger.info("download crl: %s", ' '.join(cmd))
+    logger.info("execute:%s", ' '.join(cmd))
 
     # check=False：curl 失败时通过 returncode 判断，统一在循环中重试
     for attempt in range(1, CRL_DOWNLOAD_RETRIES + 1):
@@ -165,7 +165,7 @@ def get_sign_cmd(input_file: str, crl_path: str) -> List[str]:
 def sign_single_file(input_file: str, crl_path: str) -> bool:
     """对单个文件执行签名，成功返回 True，失败或超时返回 False。"""
     cmd = get_sign_cmd(input_file, crl_path)
-    logger.info("run sign cmd: %s", ' '.join(cmd))
+    logger.info("execute:%s", ' '.join(cmd))
 
     # check=False：signatrust 失败时通过 returncode 判断，不抛异常
     # cwd=SCRIPT_DIR：signatrust_client 的 --config 参数若为相对路径，从此目录解析；
@@ -232,7 +232,6 @@ def run_sign(input_files: List[str], crl_output_dir: str = "") -> Tuple[bool, Li
         return False, signed_files
 
     # 逐文件签名，任一文件失败则立即终止
-    logger.info("work dir: %s", SCRIPT_DIR)
     for input_file in input_files:
         # 跳过不存在的文件，不影响其他文件签名
         if not os.path.isfile(input_file):
