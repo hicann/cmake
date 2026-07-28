@@ -96,7 +96,7 @@ checkopts() {
         shift 2
         ;;
       -v | --verbose)
-        VERBOSE="VERBOSE=1"
+        VERBOSE="--verbose"
         shift
         ;;
       --pkgs)

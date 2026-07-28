@@ -35,10 +35,12 @@ endmacro()
 
 # 计算二进制组件
 function(calc_cann_binary_components)
+    set(LOWER_CANN_BINARY_PACKAGES)
     set(CANN_BINARY_COMPONENTS)
     set(CANN_BINARY_COMPONENTS_ALL FALSE)
     foreach(PKG IN LISTS CANN_BINARY_PACKAGES)
         string(TOLOWER "${PKG}" PKG_LOWER)
+        list(APPEND LOWER_CANN_BINARY_PACKAGES "${PKG_LOWER}")
         if(PKG_LOWER STREQUAL "all")
             set(CANN_BINARY_COMPONENTS_ALL TRUE)
         else()
@@ -47,6 +49,7 @@ function(calc_cann_binary_components)
     endforeach()
     set(CANN_BINARY_COMPONENTS "${CANN_BINARY_COMPONENTS}" PARENT_SCOPE)
     set(CANN_BINARY_COMPONENTS_ALL "${CANN_BINARY_COMPONENTS_ALL}" PARENT_SCOPE)
+    set(CANN_BINARY_PACKAGES "${LOWER_CANN_BINARY_PACKAGES}" CACHE STRING "Binary packages" FORCE)
 endfunction()
 
 # 加载配置

@@ -27,6 +27,11 @@ set(ENABLE_PACKAGE TRUE)
 set(METADEF_INC_PATH "${CANN_TOP_DIR}/metadef/inc/external")
 set(BUILD_METADEF TRUE)
 
+if(NOT "asc-devkit" IN_LIST CANN_BINARY_PACKAGES AND NOT "all" IN_LIST CANN_BINARY_PACKAGES)
+    # 从源码导入asc包
+    set(CUSTOM_ASC_CMAKE_PATH "${CANN_TOP_DIR}/${CANN_PACKAGE_DIR_asc-devkit}/cmake/asc")
+endif()
+
 # ---------- 依赖解析与 device 编译判定 ----------
 # 递归解析 --pkgs 指定包的构建依赖链，结果写入 CANN_DEPEND_PACKAGES；
 # calc_device_packages 进一步从中筛出含 cmake/device 子目录的包。
