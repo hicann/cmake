@@ -52,6 +52,10 @@ endmacro()
 # 生成 DEB 和 RPM 依赖字符串
 # 辅助函数：规范化版本比较符，确保操作符与版本号之间有空格
 function(normalize_version_cond input_str output_var)
+    # 如果没有前缀，默认加 >=
+    if(input_str MATCHES "^[0-9]")
+        set(input_str ">= ${input_str}")
+    endif()
     # 将 ">=8.5" 变成 ">= 8.5"
     string(REGEX REPLACE "([><=]+)([0-9])" "\\1 \\2" normalized "${input_str}")
     set(${output_var} "${normalized}" PARENT_SCOPE)
@@ -74,6 +78,11 @@ function(convert_dependencies_to_package_formats DEP_LIST OUT_DEB OUT_RPM)
             message(WARNING "Invalid dependency entry: ${dep_entry}")
             continue()
         endif()
+
+        # 规范包名
+        if(pkg_name STREQUAL "runtime")
+            set(pkg_name "npu-runtime")
+        endif()    
 
         # 规范化版本条件，确保操作符后有空格
         normalize_version_cond("${raw_cond}" cond_normalized)
@@ -265,6 +274,24 @@ macro(__cann_append_global_property name value)
     )
 endmacro()
 
+# 根据 SOC 字符串推导芯片名称（去除 "ascend" 前缀）
+function(remove_ascend OUTPUT_VAR SOC_VALUE)
+    if(NOT SOC_VALUE)
+        return()
+    endif()
+
+    string(TOLOWER "${SOC_VALUE}" _soc_lower)
+    
+    if(_soc_lower STREQUAL "ascend910_93")
+        set(${OUTPUT_VAR} "A3" PARENT_SCOPE)
+    elseif(_soc_lower MATCHES "^ascend")
+        string(REGEX REPLACE "^ascend" "" _chip_name "${_soc_lower}")
+        set(${OUTPUT_VAR} "${_chip_name}" PARENT_SCOPE)
+    else()
+        set(${OUTPUT_VAR} "${_soc_lower}" PARENT_SCOPE)
+    endif()
+endfunction()
+
 # 设置打包配置，支持多次调用打多个包
 # component: 组件名
 # NO_COMPONENT_INSTALL: 不带--component参数安装
@@ -348,11 +375,20 @@ function(set_cann_cpack_config component)
     set(CPACK_RPM_PACKAGE_REQUIRES "${RPM_REQUIRES}")
     message(STATUS "DEB depends: ${CPACK_DEBIAN_PACKAGE_DEPENDS}")
     message(STATUS "RPM requires: ${CPACK_RPM_PACKAGE_REQUIRES}")
-    set(CPACK_PACKAGE_NAME "cann")
+    if(NOT CANN_CHIP_NAME AND CPACK_SOC)
+        remove_ascend(CANN_CHIP_NAME "${CPACK_SOC}")
+    endif()
+    string(TOUPPER "${component}" UPPER_COMP)
+    set(CPACK_DEBIAN_${UPPER_COMP}_PACKAGE_NAME "${component}")
+    set(CPACK_RPM_${UPPER_COMP}_PACKAGE_NAME "${component}")
     string(TOLOWER "${CMAKE_SYSTEM_NAME}" CPACK_SYSTEM_NAME)
     set(CPACK_ARCHITECTURE "${CMAKE_SYSTEM_PROCESSOR}")
     set(CPACK_PACKAGE_VERSION "${CANN_VERSION_${component}_VERSION}")
-    set(PACKAGE_FILE_NAME_TEMPLATE "${CPACK_PACKAGE_NAME}-${component}_${CPACK_PACKAGE_VERSION}_${CPACK_SYSTEM_NAME}-${CPACK_ARCHITECTURE}")
+    if(CANN_CHIP_NAME)
+        set(PACKAGE_FILE_NAME_TEMPLATE "cann-${CANN_CHIP_NAME}-${component}_${CPACK_PACKAGE_VERSION}_${CPACK_SYSTEM_NAME}-${CPACK_ARCHITECTURE}")
+    else()
+        set(PACKAGE_FILE_NAME_TEMPLATE "cann-${component}_${CPACK_PACKAGE_VERSION}_${CPACK_SYSTEM_NAME}-${CPACK_ARCHITECTURE}")
+    endif()
     set(CPACK_PACKAGE_FILE_NAME "${PACKAGE_FILE_NAME_TEMPLATE}")
     set(CPACK_DEBIAN_FILE_NAME "${PACKAGE_FILE_NAME_TEMPLATE}.deb")
     set(CPACK_RPM_FILE_NAME "${PACKAGE_FILE_NAME_TEMPLATE}.rpm")
@@ -381,6 +417,8 @@ function(set_cann_cpack_config component)
     endif()
     set(CPACK_RPM_COMPONENT_INSTALL ON)
     set(CPACK_DEB_COMPONENT_INSTALL ON)
+    set(CPACK_RPM_PACKAGE_AUTOREQ OFF)
+    set(CPACK_RPM_PACKAGE_AUTOPROV OFF)
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA 
         "${CMAKE_BINARY_DIR}/postinst"
         "${CMAKE_BINARY_DIR}/prerm")
