@@ -997,3 +997,61 @@ function(gen_cann_version_header pkg_name)
     endif()
     add_dependencies(cann_version_headers gen_${pkg_name}_version_header)
 endfunction()
+
+# 获取 libasan.so 的真实文件路径
+#
+# 通过 `${CMAKE_C_COMPILER} -print-file-name=libasan.so` 获取 libasan.so 的路径。
+# 某些编译器返回的不是真实的 ELF 共享库，而是 GNU ld 链接脚本（文本文件），格式如：
+#   /* GNU ld script */
+#   OUTPUT_FORMAT(elf64-x86-64)
+#   INPUT ( /usr/lib64/libasan.so.4)
+# 此时本函数会读取该文件并解析 INPUT 指令，返回其中指向的真实 .so 文件路径。
+# 若返回的路径本身就是 ELF 文件，则直接返回该路径。
+#
+# 参数:
+#   output_var  - 输出变量名，用于接收解析后的真实路径
+# 可选参数:
+#   COMPILER    - 指定编译器路径，默认使用 ${CMAKE_C_COMPILER}
+#
+# 示例:
+#   cann_get_asan_real_path(ASAN_LIB_PATH)
+#   cann_get_asan_real_path(ASAN_LIB_PATH COMPILER /usr/bin/gcc)
+function(cann_get_asan_real_path output_var)
+    cmake_parse_arguments(ARG "" "COMPILER" "" ${ARGN})
+
+    if(ARG_COMPILER)
+        set(_compiler "${ARG_COMPILER}")
+    else()
+        set(_compiler "${CMAKE_C_COMPILER}")
+    endif()
+
+    # 通过编译器获取 libasan.so 的路径
+    execute_process(
+        COMMAND ${_compiler} -print-file-name=libasan.so
+        OUTPUT_VARIABLE _asan_path
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    if(NOT _asan_path OR NOT EXISTS "${_asan_path}")
+        message(WARNING "cann_get_asan_real_path: libasan.so not found via '${_compiler} -print-file-name=libasan.so'")
+        set(${output_var} "" PARENT_SCOPE)
+        return()
+    endif()
+
+    # 读取文件内容，检查是否为 GNU ld 链接脚本
+    file(READ "${_asan_path}" _asan_content LIMIT 512)
+
+    # 匹配 INPUT ( /path/to/libasan.so.x ) 格式，提取真实共享库路径
+    if(_asan_content MATCHES "INPUT[ \t]*\\([ \t]*([^ \t)]+)")
+        set(_real_path "${CMAKE_MATCH_1}")
+        # 若 INPUT 指向的路径为相对路径，则基于 ld 脚本所在目录解析
+        if(NOT IS_ABSOLUTE "${_real_path}")
+            get_filename_component(_dir "${_asan_path}" DIRECTORY)
+            set(_real_path "${_dir}/${_real_path}")
+        endif()
+        set(${output_var} "${_real_path}" PARENT_SCOPE)
+    else()
+        # 非 ld 脚本，直接返回原路径
+        set(${output_var} "${_asan_path}" PARENT_SCOPE)
+    endif()
+endfunction()
