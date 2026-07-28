@@ -31,7 +31,7 @@ include(ExternalProject)
 ExternalProject_Add(external_eigen
     URL ${REQ_URL}
     URL_HASH SHA256=93f7f0462988b934e632a9fba58af55192ffceae38e8f46233f4f62cb1e79370
-    DOWNLOAD_DIR download/eigen
+    DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/pkg
     PREFIX third_party
     INSTALL_COMMAND ""
     BUILD_COMMAND ""
