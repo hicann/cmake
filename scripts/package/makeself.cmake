@@ -19,7 +19,7 @@ if(NOT MAKESELF_EXE)
     message(FATAL_ERROR "makeself not found!")
 endif()
 
-function(pack_run_package component share_info_name source_dir enable_device)
+function(pack_run_package component share_info_name source_dir enable_device cann_pre_pkg)
     # 创建临时安装目录
     set(STAGING_DIR "${CPACK_CMAKE_BINARY_DIR}/_CPack_Packages/makeself_staging")
     if(NOT CPACK_CANN_NO_CLEAN)
@@ -56,6 +56,10 @@ function(pack_run_package component share_info_name source_dir enable_device)
 
         # 刪除子工程压缩包，避免打到run包中
         file(REMOVE "${STAGING_DIR}/device-${component}.tar.gz")
+    endif()
+
+    if(cann_pre_pkg)
+        include(${cann_pre_pkg})
     endif()
 
     # 生成安装配置文件
@@ -172,5 +176,6 @@ foreach(index RANGE ${len_components})
     list(GET CPACK_PACKAGE_PARAM_NAME ${index} share_info_name)
     list(GET CPACK_CMAKE_SOURCE_DIR ${index} source_dir)
     list(GET CPACK_ENABLE_DEVICE ${index} enable_device)
-    pack_run_package("${component}" "${share_info_name}" "${source_dir}" "${enable_device}")
+    list(GET CPACK_CANN_PRE_PKG ${index} cann_pre_pkg)
+    pack_run_package("${component}" "${share_info_name}" "${source_dir}" "${enable_device}" "${cann_pre_pkg}")
 endforeach()

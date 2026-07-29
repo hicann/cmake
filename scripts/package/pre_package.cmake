@@ -13,6 +13,11 @@ if(CPACK_ENABLE_DEVICE)
     )
     file(REMOVE "${DEB_DELIVERY}/device-${CPACK_CANN_INSTALL_COMPONENT}.tar.gz")
 endif()
+
+if(CPACK_CANN_PRE_PKG)
+    include(${CPACK_CANN_PRE_PKG})
+endif()
+
 execute_process(
     COMMAND python3 ${CANN_CMAKE_DIR}/package/package.py --pkg_name ${CPACK_PACKAGE_PARAM_NAME} --chip_name ${CPACK_SOC} --os_arch linux-${CMAKE_SYSTEM_PROCESSOR} --version_dir ${CPACK_PACKAGE_VERSION} --delivery_dir ${DEB_DELIVERY} --source_dir ${CPACK_CMAKE_SOURCE_DIR} --suffix ${CPACK_GENERATOR}
     WORKING_DIRECTORY ${CPACK_CMAKE_BINARY_DIR}

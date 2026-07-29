@@ -330,7 +330,7 @@ function(set_cann_cpack_config component)
 
     cmake_parse_arguments(CANN
         "NO_COMPONENT_INSTALL;NO_CLEAN;TGZ"
-        "ENABLE_DEVICE;PACKAGE_TYPE;COMPUTE_UNIT;SHARE_INFO_NAME;OUTPUT;ARCHIVE_FILE_NAME"
+        "PRE_PKG;ENABLE_DEVICE;PACKAGE_TYPE;COMPUTE_UNIT;SHARE_INFO_NAME;OUTPUT;ARCHIVE_FILE_NAME"
         ""
         ${ARGN}
     )
@@ -379,6 +379,12 @@ function(set_cann_cpack_config component)
         __cann_append_global_property(CPACK_PACKAGE_PARAM_NAME "${CANN_SHARE_INFO_NAME}")
     else()
         __cann_append_global_property(CPACK_PACKAGE_PARAM_NAME "${component}")
+    endif()
+
+    if(CANN_PRE_PKG)
+        __cann_append_global_property(CPACK_CANN_PRE_PKG "${CANN_PRE_PKG}")
+    else()
+        __cann_append_global_property(CPACK_CANN_PRE_PKG "")
     endif()
 
     # RUN_DEPENDENCIES_LIST 由 set_cann_run_dependencies 积累，格式为 "pkg >=version" 组合字符串。
