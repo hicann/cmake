@@ -182,8 +182,10 @@ macro(init_cann_project)
         endif()
 
         __cann_print_summary()
-        set(CANN_PROJECT_INITED TRUE)
 
+        add_cann_target_options()
+
+        set(CANN_PROJECT_INITED TRUE)
         unset(CANN_PREPEND_MODULE_PATH)
         unset(CANN_PRODUCT_SIDE)
     endif()

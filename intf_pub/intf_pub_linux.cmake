@@ -22,11 +22,35 @@ target_compile_options(intf_pub_base INTERFACE
     -Wfloat-equal
     -fno-common
     -fstack-protector-strong
-    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address,all -fno-stack-protector -fno-omit-frame-pointer -g>
-    $<$<BOOL:${ENABLE_TSAN}>:-fsanitize=thread -fsanitize-recover=thread,all -g>
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fsanitize-recover=address -fno-stack-protector -fno-omit-frame-pointer -g>
+    $<$<BOOL:${ENABLE_TSAN}>:-fsanitize=thread -fno-omit-frame-pointer -g>
     $<$<BOOL:${ENABLE_UBSAN}>:-fsanitize=undefined -fno-sanitize=alignment -g>
-    $<$<BOOL:${ENABLE_GCOV}>:-fprofile-arcs -ftest-coverage>
+    $<$<BOOL:${ENABLE_GCOV}>:--coverage>
 )
+
+# 增强告警选项，仅当 ENABLE_STRICT_WARNINGS 开启时生效。
+# 单仓编译：组件 set(ENABLE_STRICT_WARNINGS ON) 后调用 add_cann_target_options（首次 include intf_pub）即生效。
+# 多仓联编：通过命令行 -DENABLE_STRICT_WARNINGS=ON 整体控制（首次 include 时展开固化）。
+if(ENABLE_STRICT_WARNINGS)
+    target_compile_options(intf_pub_base INTERFACE
+        -Wformat=2
+        -Wformat-overflow=2
+        -Wformat-truncation=2
+        -Wduplicated-cond
+        -Wlogical-op
+        -Winit-self
+        -Wtrampolines
+        -Wshift-overflow=2
+        -Wpointer-arith
+        -Wcast-qual
+        -Wcast-align
+        -Wvla
+        -Wdouble-promotion
+        -Wshadow=local
+        -Wdate-time
+        $<$<COMPILE_LANGUAGE:CXX>:-Wnon-virtual-dtor>
+    )
+endif()
 
 unset(CXX11_ABI_VALUE)
 if(DEFINED USE_CXX11_ABI)
@@ -59,15 +83,14 @@ target_link_options(intf_pub_base INTERFACE
     $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:-pie>
     $<$<CONFIG:Release>:-Wl,--build-id=none>
     $<$<CONFIG:Release>:-s>
-    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address>
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address>
     $<$<BOOL:${ENABLE_TSAN}>:-fsanitize=thread>
     $<$<BOOL:${ENABLE_UBSAN}>:-fsanitize=undefined>
-    $<$<BOOL:${ENABLE_GCOV}>:-fprofile-arcs -ftest-coverage>
+    $<$<BOOL:${ENABLE_GCOV}>:--coverage>
 )
 
 target_link_libraries(intf_pub_base INTERFACE
     -pthread
-    $<$<BOOL:${ENABLE_GCOV}>:-lgcov>
 )
 
 add_library(intf_pub INTERFACE)

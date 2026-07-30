@@ -136,6 +136,7 @@ cmake -B build -DCMAKE_BUILD_TYPE=Debug ...
 | `ENABLE_CCACHE` | 启用 ccache | `TRUE` |
 | `ENABLE_ASAN` | 启用 AddressSanitizer | `FALSE` |
 | `ENABLE_GCOV` | 启用代码覆盖率 | `FALSE` |
+| `ENABLE_STRICT_WARNINGS` | 启用增强告警（须在首次 include `intf_pub` 前设置） | `FALSE` |
 | `USE_CXX11_ABI` | 覆盖 CXX11 ABI 设置（host 默认 `0`） | 自动 |
 | `CMAKE_BUILD_TYPE` | 构建类型 | `Release` |
 

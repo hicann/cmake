@@ -142,6 +142,7 @@ get_pkg_dependencies("runtime")
 
 - **安全加固**：`-fstack-protector-strong`、`-fPIC`、`-Wall -Wextra`
 - **Sanitizer**：ASan/TSan/UBSan，通过 `ENABLE_ASAN`/`ENABLE_TSAN`/`ENABLE_UBSAN` 控制
+- **严格告警**：`-Wformat=2`/`-Wduplicated-branches`/`-Wlogical-op` 等，通过 `ENABLE_STRICT_WARNINGS` 控制（默认关闭）。须在首次 include `intf_pub` 之前设置方可生效
 - **ABI**：host 默认 `_GLIBCXX_USE_CXX11_ABI=0`（旧 ABI），device 不设置，`USE_CXX11_ABI` 可覆盖
 - **`__FILE__` 宏改写**：非 Ninja 模式下，编译规则被覆写为只输出文件名（不输出完整路径），同时添加 `-Wno-builtin-macro-redefined`。device 工具链文件中同样覆写
 
