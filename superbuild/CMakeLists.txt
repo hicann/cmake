@@ -26,6 +26,8 @@ set(ENABLE_PACKAGE TRUE)
 # GE编译依赖这个路径，路径区别于子包编译
 set(METADEF_INC_PATH "${CANN_TOP_DIR}/metadef/inc/external")
 set(BUILD_METADEF TRUE)
+# pypto打开pypto_impl在线编译特性
+set(ENABLE_FEATURE_PYBIND11_IMPL_COMPILE_ONLINE TRUE)
 
 if(NOT "asc-devkit" IN_LIST CANN_BINARY_PACKAGES AND NOT "all" IN_LIST CANN_BINARY_PACKAGES)
     # 从源码导入asc包

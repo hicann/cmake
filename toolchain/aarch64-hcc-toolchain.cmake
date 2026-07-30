@@ -22,8 +22,13 @@ set(CMAKE_LD "${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-ld" CACHE PATH "LD")
 set(CMAKE_NM "${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-nm" CACHE PATH "NM")
 set(CMAKE_OBJCOPY "${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-objcopy" CACHE PATH "OBJCOPY")
 
-set(CMAKE_C_COMPILE_OBJECT "<CMAKE_C_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>")
-set(CMAKE_CXX_COMPILE_OBJECT "<CMAKE_CXX_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>")
+if(CMAKE_GENERATOR MATCHES "Makefiles")
+    set(_CANN_REDEFINING_FILE "-D__FILE__='\"$(notdir $(abspath <SOURCE>))\"'")
+else()
+    set(_CANN_REDEFINING_FILE)
+endif()
+set(CMAKE_C_COMPILE_OBJECT "<CMAKE_C_COMPILER> <DEFINES> ${_CANN_REDEFINING_FILE} -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>")
+set(CMAKE_CXX_COMPILE_OBJECT "<CMAKE_CXX_COMPILER> <DEFINES> ${_CANN_REDEFINING_FILE} -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>")
 
 #remove default options from cmake
 set(CMAKE_C_FLAGS_DEBUG "" CACHE STRING "c debug flag" FORCE)
@@ -47,3 +52,5 @@ set(CMAKE_CXX_ARCHIVE_FINISH "<CMAKE_RANLIB> -D <TARGET>")
 set(CMAKE_SKIP_RPATH TRUE)
 
 set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
+
+unset(_CANN_REDEFINING_FILE)
