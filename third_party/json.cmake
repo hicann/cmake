@@ -20,7 +20,12 @@ if(NOT OPEN_PKG_PATH)
 endif()
 
 set(JSON_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
-set(JSON_SOURCE_PATH ${CANN_3RD_LIB_PATH}/json)
+
+if(PRODUCT_SIDE STREQUAL "device")
+    set(JSON_SOURCE_PATH ${CANN_3RD_LIB_PATH}/lib_cache/device/json)
+else()
+    set(JSON_SOURCE_PATH ${CANN_3RD_LIB_PATH}/lib_cache/json)
+endif()
 
 find_path(JSON_SOURCE
     NAMES nlohmann/json.hpp
@@ -37,23 +42,40 @@ find_package_handle_standard_args(json
 )
 
 if(NOT json_FOUND OR FORCE_REBUILD_CANN_3RD)
-    if(EXISTS "${CANN_3RD_LIB_PATH}/json-3.11.3.tar.gz")
+    if(EXISTS "${CANN_3RD_LIB_PATH}/json-3.12.0.tar.gz")
         # Users's offline scene.
         message(STATUS "[ThirdParty][json] use local json cache.")
-        set(REQ_URL ${CANN_3RD_LIB_PATH}/json-3.11.3.tar.gz)
-    elseif(EXISTS "${CANN_3RD_LIB_PATH}/json/json-3.11.3.tar.gz")
+        set(REQ_URL ${CANN_3RD_LIB_PATH}/json-3.12.0.tar.gz)
+    elseif(EXISTS "${CANN_3RD_LIB_PATH}/json/json-3.12.0.tar.gz")
         message(STATUS "[ThirdParty][json] pipeline use json cache.")
-        set(REQ_URL ${CANN_3RD_LIB_PATH}/json/json-3.11.3.tar.gz)
+        set(REQ_URL ${CANN_3RD_LIB_PATH}/json/json-3.12.0.tar.gz)
+    elseif(EXISTS "${CANN_3RD_LIB_PATH}/json/include/nlohmann/json.hpp")
+        message(STATUS "[ThirdParty][json] use local json source directory.")
+        set(REQ_URL "${CANN_3RD_LIB_PATH}/json")
     else()
         message(STATUS "[ThirdParty][json] not use cache, download json source.")
-        set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/json/json-3.11.3.tar.gz")
+        set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/json/json-3.12.0.tar.gz")
     endif()
 
-    include(ExternalProject) 
-    ExternalProject_Add(third_party_json 
-        URL ${REQ_URL}
-        URL_HASH SHA256=0d8ef5af7f9794e3263480193c491549b2ba6cc74bb018906202ada498a79406
-        DOWNLOAD_DIR ${JSON_DOWNLOAD_PATH}
+    include(ExternalProject)
+    if(IS_DIRECTORY "${REQ_URL}")
+        set(JSON_DOWNLOAD_ARGS
+            DOWNLOAD_COMMAND flock ${JSON_SOURCE_PATH}/.json_build.lock ${CMAKE_COMMAND} -E copy_directory ${REQ_URL} <SOURCE_DIR>
+        )
+        set(JSON_URL_ARGS "")
+    else()
+        set(JSON_DOWNLOAD_ARGS "")
+        set(JSON_URL_ARGS
+            URL ${REQ_URL}
+            URL_HASH SHA256=4b92eb0c06d10683f7447ce9406cb97cd4b453be18d7279320f7b2f025c10187
+            DOWNLOAD_DIR ${JSON_DOWNLOAD_PATH}
+        )
+    endif()
+
+    ExternalProject_Add(third_party_json
+        ${JSON_URL_ARGS}
+        ${JSON_DOWNLOAD_ARGS}
+        PATCH_COMMAND patch -N --batch --quiet -r - -p1 < ${CMAKE_CURRENT_LIST_DIR}/json_3.12.0_change_version.patch
         SOURCE_DIR ${JSON_SOURCE_PATH}
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
