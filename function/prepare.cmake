@@ -82,7 +82,8 @@ function(convert_dependencies_to_package_formats DEP_LIST OUT_DEB OUT_RPM)
         # 规范包名
         if(pkg_name STREQUAL "runtime")
             set(pkg_name "npu-runtime")
-        endif()    
+        endif()
+        string(REPLACE "_" "-" pkg_name "${pkg_name}")
 
         # 规范化版本条件，确保操作符后有空格
         normalize_version_cond("${raw_cond}" cond_normalized)
@@ -387,13 +388,23 @@ function(set_cann_cpack_config component)
         __cann_append_global_property(CPACK_CANN_PRE_PKG "")
     endif()
 
-    # RUN_DEPENDENCIES_LIST 由 set_cann_run_dependencies 积累，格式为 "pkg >=version" 组合字符串。
-    # 此处不能 set(RUN_DEPENDENCIES_LIST "") 清空，否则会创建局部变量遮蔽调用方作用域的值。
-    list(REMOVE_DUPLICATES RUN_DEPENDENCIES_LIST)
+    # 获取当前组件的依赖配对列表 (pkg;version;pkg;version;...)
+    # 同一源码仓库（如 air）可定义多个 set_cann_package，必须按组件隔离依赖，避免并集污染。
+    set(_RUN_DEPS_PAIRS "${CANN_VERSION_${component}_RUN_DEPS}")
+    # 转换为 "pkg version" 格式列表
+    set(COMPONENT_RUN_DEPS "")
+    while(_RUN_DEPS_PAIRS)
+        list(POP_FRONT _RUN_DEPS_PAIRS _DEP_PKG) # 取包名
+        list(POP_FRONT _RUN_DEPS_PAIRS _DEP_VER) # 取版本
+        list(APPEND COMPONENT_RUN_DEPS "${_DEP_PKG} ${_DEP_VER}")
+    endwhile()
+    # 去重
+    list(REMOVE_DUPLICATES COMPONENT_RUN_DEPS)
     set(DEB_DEPENDS "")
     set(RPM_REQUIRES "")
-    message(STATUS "RUN_DEPENDENCIES_LIST: ${RUN_DEPENDENCIES_LIST}")
-    convert_dependencies_to_package_formats(RUN_DEPENDENCIES_LIST DEB_DEPENDS RPM_REQUIRES)
+    message(STATUS "COMPONENT_RUN_DEPS(${component}): ${COMPONENT_RUN_DEPS}")
+    # 转换为 DEB/RPM 格式
+    convert_dependencies_to_package_formats(COMPONENT_RUN_DEPS DEB_DEPENDS RPM_REQUIRES)
 
     # 将生成的依赖字符串传递给 Cpack
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "${DEB_DEPENDS}")
