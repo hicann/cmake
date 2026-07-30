@@ -183,8 +183,6 @@ macro(init_cann_project)
 
         __cann_print_summary()
 
-        add_cann_target_options()
-
         set(CANN_PROJECT_INITED TRUE)
         unset(CANN_PREPEND_MODULE_PATH)
         unset(CANN_PRODUCT_SIDE)
