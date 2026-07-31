@@ -226,7 +226,6 @@ function(add_cann_device_project component)
             -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
             -D ENABLE_SIGN=${ENABLE_SIGN}
             -D CUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT}
-            -D VERSION_INFO=${VERSION_INFO}
             -D ENABLE_OPEN_SRC=TRUE
             -D BUILD_OPEN_PROJECT=TRUE
         INSTALL_COMMAND ${CMAKE_CPACK_COMMAND}
@@ -851,7 +850,7 @@ function(add_cann_sign_file)
         set(sign_flag "false")
     endif()
 
-    foreach(var INPUT CONFIG RESULT_VAR)
+    foreach(var INPUT CONFIG RESULT_VAR VERSION)
         if(NOT ARG_${var})
             message(FATAL_ERROR "[sign_file] Missing required: ${var}")
         endif()
@@ -870,11 +869,6 @@ function(add_cann_sign_file)
     string(MAKE_C_IDENTIFIER "${input_name}" safe_input_name)
     set(signatures_dir "${CMAKE_CURRENT_BINARY_DIR}/signatures_${safe_input_name}")
     set(output_sig "${signatures_dir}/${input_name}")
-
-    # 版本号：优先使用用户传入的 VERSION，否则回退到全局 VERSION_INFO
-    if(NOT ARG_VERSION)
-        set(ARG_VERSION "${VERSION_INFO}")
-    endif()
 
     if(EXISTS "${SIGN_SCRIPT}")
         get_filename_component(EXT ${SIGN_SCRIPT} EXT) # 获取文件扩展名

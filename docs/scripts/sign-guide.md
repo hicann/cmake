@@ -57,7 +57,7 @@ add_cann_sign_file(
 )
 ```
 
-可通过 `VERSION` 参数为单个签名目标指定版本号，未指定时回退到全局 `VERSION_INFO`：
+通过 `VERSION` 参数为签名目标指定版本号（必选）：
 
 ```cmake
 add_cann_sign_file(
