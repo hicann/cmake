@@ -13,3 +13,7 @@ build/
 build_out/
 .claude/
 .opencode/
+
+# OAT scan reports
+oat_reports/
+log/

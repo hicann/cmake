@@ -30,6 +30,18 @@ python3 -m pytest scripts/package/tests/test_package.py::TestClass -v   # single
 - No `pytest.ini`/`pyproject.toml`. Each test dir has its own `conftest.py` that prepends its parent to `sys.path` so modules import without install.
 - `classify_rule.yaml` sets `llt.ut_check: true` — keep tests green when changing `scripts/package/**`.
 
+## Pre-commit
+
+```bash
+pre-commit install          # one-time setup, activates git hook
+pre-commit run --all-files  # manual full-repo check
+```
+
+- Config in `.pre-commit-config.yaml`. Before committing, run `pre-commit run --files <changed files>` to verify hooks pass.
+- Hooks: trailing-whitespace, end-of-file-fixer, check-yaml, check-added-large-files, check-merge-conflict, detect-private-key, check-json (pre-commit-hooks); ruff-check + ruff-format (Python); pylint R1710/R0801/W0621 (rules ruff cannot cover, config in `.pylintrc`); codespell; OAT compliance (`scripts/oat_check.sh`).
+- Some hooks auto-fix (trailing-whitespace, end-of-file-fixer, ruff-check `--fix`, ruff-format); re-stage after they run.
+- Existing code may have pre-existing violations — only files you touch are checked at commit time.
+
 ## Architecture notes that are not obvious from filenames
 
 - **Two integration modes, gated by `TOPLEVEL_PROJECT`** (`function/prepare.cmake:13-19`): ON only when `prepare.cmake` is included *before* `project()` (single-repo standalone build, per the README integration pattern). In the superbuild, `project(cann_superbuild)` runs first, so `TOPLEVEL_PROJECT` is OFF; `build.sh` always passes `ENABLE_UNIFIED_BUILD=TRUE`, which re-enables functions guarded by `TOPLEVEL_PROJECT OR ENABLE_UNIFIED_BUILD` (`set_cann_cpack_config`, `add_cann_third_party`, `find_cann_package`). Functions guarded by `TOPLEVEL_PROJECT` only (`add_cann_device_project`, `check_cann_pkg_build_deps`) stay disabled in superbuild mode — the superbuild handles device builds via its own `ExternalProject_Add` in `superbuild/CMakeLists.txt`. Always check each function's guard condition when editing `function/prepare.cmake`.

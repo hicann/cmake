@@ -1,0 +1,30 @@
+# -----------------------------------------------------------------------------------------------------------
+# Copyright (c) 2026 Huawei Technologies Co., Ltd.
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+# -----------------------------------------------------------------------------------------------------------
+
+[MASTER]
+
+# 添加各 Python 子包路径，便于 pylint 解析项目内部模块导入
+init-hook='import sys; sys.path.insert(0, "scripts/package"); sys.path.insert(0, "scripts/build_analysis"); sys.path.insert(0, "scripts/sign")'
+
+[MESSAGES CONTROL]
+
+# 只启用 ruff 无法覆盖的 3 条规则：
+#   R1710: inconsistent-return-statements (G.CTL.01 返回值一致性)
+#   R0801: duplicate-code               (重复代码检测，ruff 架构不支持跨文件分析)
+#   W0621: redefined-outer-name          (G.VAR.03 作用域覆盖)
+disable=all
+enable=R1710,R0801,W0621
+
+[REPORTS]
+
+# 简洁输出格式，不显示评分报告
+msg-template="{path}:{line}: {symbol} ({msg_id})"
+output-format=text
+score=no
