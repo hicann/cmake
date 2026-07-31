@@ -128,7 +128,7 @@ def get_compress_format() -> str:
     tar_format = "gnu"
     path = shutil.which("bsdtar")
     if path:
-        tar_format = "ustar"
+        tar_format = "pax"
     return tar_format
 
 

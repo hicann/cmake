@@ -851,7 +851,7 @@ def test_get_compress_format_with_bsdtar(monkeypatch):
     """测试检测到bsdtar时返回ustar格式"""
     monkeypatch.setattr(packer.shutil, "which", lambda name: "/usr/bin/bsdtar" if name == "bsdtar" else None)
     fmt = packer.get_compress_format()
-    assert fmt == "ustar"
+    assert fmt == "pax"
 
 
 def test_compose_makeself_command_with_cleanup(monkeypatch):
