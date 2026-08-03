@@ -252,15 +252,11 @@ else()
         BUILD_COMMAND $(MAKE)
         INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${PROTOBUF_HOST_PROTOC_DIR}
             COMMAND cp <BINARY_DIR>/protoc ${PROTOBUF_HOST_PROTOC_DIR}/protoc
-            COMMAND cp -r <SOURCE_DIR>/src ${PROTOBUF_HOST_PROTOC_DIR}
         EXCLUDE_FROM_ALL TRUE
     )
     set_target_properties(host_protoc PROPERTIES IMPORTED_LOCATION ${PROTOBUF_HOST_PROTOC_DIR}/protoc)
     add_dependencies(host_protoc protobuf_host_build)
 endif()
-# use for math
-set(HOST_PROTOC_SRC ${PROTOBUF_HOST_PROTOC_DIR}/src)
-set(HOST_PROTOC_PATH ${PROTOBUF_HOST_PROTOC_DIR})
 # used for ge
 add_custom_target(protoc DEPENDS host_protoc)
 
@@ -268,7 +264,7 @@ add_custom_target(protoc DEPENDS host_protoc)
 # Target: ascend_protobuf_static
 # ---------------------------------------------------------
 add_library(ascend_protobuf_static STATIC IMPORTED GLOBAL)
-add_library(ascend_protobuf_static_headers INTERFACE IMPORTED)
+add_library(ascend_protobuf_static_headers INTERFACE IMPORTED GLOBAL)
 if(ASCEND_PROTOBUF_STATIC_INCLUDE AND ASCEND_PROTOBUF_STATIC_LIB)
     message("[ThirdParty][protobuf] protobuf_static use cache.")
     set_target_properties(ascend_protobuf_static PROPERTIES
