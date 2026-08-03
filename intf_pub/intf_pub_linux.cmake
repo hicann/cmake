@@ -21,8 +21,9 @@ target_compile_options(intf_pub_base INTERFACE
     -Wextra
     -Wfloat-equal
     -fno-common
-    -fstack-protector-strong
-    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fsanitize-recover=address -fno-stack-protector -fno-omit-frame-pointer -g>
+    $<$<CXX_COMPILER_ID:GNU>:$<IF:$<VERSION_GREATER:${CMAKE_C_COMPILER_VERSION},4.8.5>,-fstack-protector-strong,-fstack-protector-all>>
+    $<$<CXX_COMPILER_ID:Clang>:$<IF:$<VERSION_GREATER:${CMAKE_C_COMPILER_VERSION},10.0.0>,-fstack-protector-strong,-fstack-protector-all>>
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address -fno-stack-protector -fno-omit-frame-pointer -g>
     $<$<BOOL:${ENABLE_TSAN}>:-fsanitize=thread -fno-omit-frame-pointer -g>
     $<$<BOOL:${ENABLE_UBSAN}>:-fsanitize=undefined -fno-sanitize=alignment -g>
     $<$<BOOL:${ENABLE_GCOV}>:--coverage>
