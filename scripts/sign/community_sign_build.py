@@ -9,14 +9,14 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 
-#**************************************************************
+# **************************************************************
 # 签名脚本：调用 signatrust_client 对指定文件制作 CMS (p7s) detached 签名
 # 流程：准备 CRL（本地优先，否则下载）→ 逐文件签名 → 校验 p7s 生成
 #
 # 调用方式：
 #   python3 community_sign_build.py <file1> [file2 ...]
 #   argv[1:] = 待签名文件列表
-#**************************************************************
+# **************************************************************
 
 import os
 import sys
@@ -57,8 +57,8 @@ def setup_logging():
     """初始化日志配置，仅在脚本直接运行时调用。"""
     logging.basicConfig(
         level=os.environ.get("SIGN_LOG_LEVEL", "INFO").upper(),
-        format='[CannSign] %(asctime)s line:%(lineno)d %(levelname)s:%(name)s:%(message)s',
-        datefmt='%H:%M:%S',
+        format="[CannSign] %(asctime)s line:%(lineno)d %(levelname)s:%(name)s:%(message)s",
+        datefmt="%H:%M:%S",
     )
 
 
@@ -98,8 +98,8 @@ def prepare_crl(crl_output_dir: str = "") -> Optional[str]:
     # 确保输出目录存在，避免 curl 因目录不存在而重试 3 次后才报错
     os.makedirs(output_dir, exist_ok=True)
     crl_path = os.path.join(output_dir, CRL_FILENAME)
-    cmd = ['curl', '-sSL', CRL_DOWNLOAD_URL, '-o', crl_path]
-    logger.info("execute:%s", ' '.join(cmd))
+    cmd = ["curl", "-sSL", CRL_DOWNLOAD_URL, "-o", crl_path]
+    logger.info("execute:%s", " ".join(cmd))
 
     # check=False：curl 失败时通过 returncode 判断，统一在循环中重试
     for attempt in range(1, CRL_DOWNLOAD_RETRIES + 1):
@@ -121,22 +121,32 @@ def _download_crl_once(cmd: List[str], crl_path: str, attempt: int) -> bool:
     """执行一次 CRL 下载并校验，成功返回 True。"""
     try:
         result = subprocess.run(
-            cmd, shell=False, check=False,
+            cmd,
+            shell=False,
+            check=False,
             timeout=SUBPROCESS_TIMEOUT,
         )
     except subprocess.TimeoutExpired:
-        logger.warning("download crl timeout, attempt %d/%d",
-                        attempt, CRL_DOWNLOAD_RETRIES)
+        logger.warning(
+            "download crl timeout, attempt %d/%d", attempt, CRL_DOWNLOAD_RETRIES
+        )
         return False
 
     if result.returncode != 0:
-        logger.warning("download crl failed (returncode=%d), attempt %d/%d",
-                        result.returncode, attempt, CRL_DOWNLOAD_RETRIES)
+        logger.warning(
+            "download crl failed (returncode=%d), attempt %d/%d",
+            result.returncode,
+            attempt,
+            CRL_DOWNLOAD_RETRIES,
+        )
         return False
 
     if not _validate_downloaded_crl(crl_path):
-        logger.warning("downloaded crl is empty or missing, attempt %d/%d",
-                        attempt, CRL_DOWNLOAD_RETRIES)
+        logger.warning(
+            "downloaded crl is empty or missing, attempt %d/%d",
+            attempt,
+            CRL_DOWNLOAD_RETRIES,
+        )
         return False
 
     return True
@@ -150,31 +160,43 @@ def get_sign_cmd(input_file: str, crl_path: str) -> List[str]:
     """
     return [
         SIGN_CLIENT_PATH,
-        "--config", SIGN_CLIENT_CONFIG,
+        "--config",
+        SIGN_CLIENT_CONFIG,
         "add",
-        "--file-type", "p7s",
-        "--key-type", "x509",
-        "--key-name", "SignCert",
+        "--file-type",
+        "p7s",
+        "--key-type",
+        "x509",
+        "--key-name",
+        "SignCert",
         "--detached",
         input_file,
-        "--timestamp-key", "TimeCert",
-        "--crl", crl_path,
+        "--timestamp-key",
+        "TimeCert",
+        "--crl",
+        crl_path,
     ]
 
 
 def sign_single_file(input_file: str, crl_path: str) -> bool:
     """对单个文件执行签名，成功返回 True，失败或超时返回 False。"""
     cmd = get_sign_cmd(input_file, crl_path)
-    logger.info("execute:%s", ' '.join(cmd))
+    logger.info("execute:%s", " ".join(cmd))
 
     # check=False：signatrust 失败时通过 returncode 判断，不抛异常
     # cwd=SCRIPT_DIR：signatrust_client 的 --config 参数若为相对路径，从此目录解析；
     #                  p7s 始终生成在 input_file 同目录，不受 cwd 影响
     try:
         result = subprocess.run(
-            cmd, cwd=SCRIPT_DIR, shell=False, check=False,
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            text=True, encoding='utf-8', errors='replace',
+            cmd,
+            cwd=SCRIPT_DIR,
+            shell=False,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=SUBPROCESS_TIMEOUT,
         )
     except subprocess.TimeoutExpired:
@@ -216,7 +238,9 @@ def check_result(files: List[str]) -> bool:
     return True
 
 
-def run_sign(input_files: List[str], crl_output_dir: str = "") -> Tuple[bool, List[str]]:
+def run_sign(
+    input_files: List[str], crl_output_dir: str = ""
+) -> Tuple[bool, List[str]]:
     """对文件列表执行签名。
 
     crl_output_dir 传入每目标独立的 CRL 输出目录，避免并行签名时共享下载路径。
@@ -257,17 +281,21 @@ def run_sign(input_files: List[str], crl_output_dir: str = "") -> Tuple[bool, Li
 def define_parser():
     """定义命令行参数解析器。"""
     parser = argparse.ArgumentParser(
-        description="调用 signatrust_client 对指定文件制作 CMS (p7s) detached 签名")
+        description="调用 signatrust_client 对指定文件制作 CMS (p7s) detached 签名"
+    )
     # CRL 输出目录，由 add_header_sign.py 传入每目标独立的 sign_file_dir，实现并行签名隔离
-    parser.add_argument('--crl-dir', default='',
-                        help='CRL 输出目录，未指定时下载到脚本目录')
+    parser.add_argument(
+        "--crl-dir", default="", help="CRL 输出目录，未指定时下载到脚本目录"
+    )
     # 查询 flag：打印后立即退出，不执行签名；编排器据此获取产物扩展名与证书类型
-    parser.add_argument('--print-sign-ext', action='store_true',
-                        help='打印签名产物扩展名并退出')
-    parser.add_argument('--print-certtype', action='store_true',
-                        help='打印证书类型并退出')
+    parser.add_argument(
+        "--print-sign-ext", action="store_true", help="打印签名产物扩展名并退出"
+    )
+    parser.add_argument(
+        "--print-certtype", action="store_true", help="打印证书类型并退出"
+    )
     # files 改为 nargs='*'，允许查询模式不带文件参数；签名模式在 main() 显式校验非空
-    parser.add_argument('files', nargs='*', help='待签名文件列表')
+    parser.add_argument("files", nargs="*", help="待签名文件列表")
     return parser
 
 
@@ -315,6 +343,6 @@ def main(argv=None) -> bool:
     return True
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     setup_logging()
     sys.exit(0 if main(sys.argv) else 1)

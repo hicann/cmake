@@ -40,11 +40,12 @@ repos:
         types: [python]
 
   # pylint 补充检查（ruff 无法覆盖的规则: inconsistent-return, duplicate-code, redefined-outer-name）
+# pylint 未安装时（如 CI 门禁）自动跳过，详见 scripts/pylint_check.sh
   - repo: local
     hooks:
       - id: pylint
         name: pylint (R1710, R0801, W0621)
-        entry: pylint
+        entry: bash scripts/pylint_check.sh
         language: system
         types: [python]
         args: ["--rcfile=.pylintrc"]

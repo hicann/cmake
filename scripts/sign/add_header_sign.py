@@ -9,7 +9,7 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 
-#**************************************************************
+# **************************************************************
 # 文件名    ：add_header_sign.py
 # 版本号    ：初稿
 # 生成日期  ：2025年11月25日
@@ -28,7 +28,7 @@
 # 修改内容 ：创建文件
 #          重构：统一日志为标准库 logging，AddHeaderConfig 改为 dataclass，
 #               提取 build_image_pack_cmd 降低圈复杂度
-#**************************************************************
+# **************************************************************
 
 import os
 import sys
@@ -104,9 +104,9 @@ class AddHeaderConfig:
 
 
 def read_xml(in_path) -> Optional[ET.ElementTree]:
-    '''
+    """
     功能：读取XML，解析失败返回None
-    '''
+    """
     try:
         tree = ET.ElementTree()
         tree.parse(in_path)
@@ -123,8 +123,10 @@ def check_config_item(node) -> bool:
         return False
 
     if "type" in node.attrib:
-        if "cms" in node.attrib["type"].split('/') and "tag" not in node.attrib:
-            logger.error("when bios_check_cfg.xml has cms type, it must has 'tag' attribute")
+        if "cms" in node.attrib["type"].split("/") and "tag" not in node.attrib:
+            logger.error(
+                "when bios_check_cfg.xml has cms type, it must has 'tag' attribute"
+            )
             return False
 
     return True
@@ -133,6 +135,7 @@ def check_config_item(node) -> bool:
 @dataclass
 class ImagePackParam:
     """build_image_pack_cmd 的参数封装。"""
+
     conf_item: AddHeaderConfig
     input_file: str
     sign_path: str
@@ -146,6 +149,7 @@ class ImagePackParam:
 @dataclass
 class BiosHeaderParam:
     """add_bios_header 的参数封装。"""
+
     item_size_set: Dict[str, AddHeaderConfig]
     sign_file_dir: str
     bios_tool_path: str
@@ -167,12 +171,14 @@ def safe_run_cmd(cmd_list: List[str], work_dir=None, timeout=None) -> Tuple[bool
             stdout=PIPE,
             stderr=STDOUT,
             text=True,
-            encoding='utf-8',
-            timeout=timeout
+            encoding="utf-8",
+            timeout=timeout,
         )
         return result.returncode == 0, result.stdout
     except OSError as e:
-        logger.error("command not found or not executable: %s\n\t%s", " ".join(cmd_list), e)
+        logger.error(
+            "command not found or not executable: %s\n\t%s", " ".join(cmd_list), e
+        )
         return False, str(e)
     except TIMEOUT_EXPIRED as e:
         logger.error("command timeout after %ss: %s", timeout, " ".join(cmd_list))
@@ -213,8 +219,11 @@ def query_sign_ext(sign_tool_path: str) -> str:
     """
     ext = query_sign_attr(sign_tool_path, "--print-sign-ext")
     if ext is None or not ext.startswith("."):
-        logger.warning("query sign ext failed or invalid: %r, fallback to default: %s",
-                       ext, DEFAULT_SIGN_EXT)
+        logger.warning(
+            "query sign ext failed or invalid: %r, fallback to default: %s",
+            ext,
+            DEFAULT_SIGN_EXT,
+        )
         return DEFAULT_SIGN_EXT
     logger.info("sign ext: %s", ext)
     return ext
@@ -229,13 +238,16 @@ def query_certtype(sign_tool_path: str) -> str:
     """
     certtype = query_sign_attr(sign_tool_path, "--print-certtype")
     if certtype is None:
-        logger.warning("query certtype failed, fallback to default: %s", DEFAULT_CERTTYPE)
+        logger.warning(
+            "query certtype failed, fallback to default: %s", DEFAULT_CERTTYPE
+        )
         return DEFAULT_CERTTYPE
     try:
         certtype_decimal = str(int(certtype, 0))
     except ValueError:
-        logger.warning("invalid certtype %r, fallback to default: %s",
-                       certtype, DEFAULT_CERTTYPE)
+        logger.warning(
+            "invalid certtype %r, fallback to default: %s", certtype, DEFAULT_CERTTYPE
+        )
         return DEFAULT_CERTTYPE
     logger.info("certtype: %s -> %s", certtype, certtype_decimal)
     return certtype_decimal
@@ -255,8 +267,8 @@ def get_item_set(config_file, sign_file_dir, version) -> Tuple[bool, Optional[Di
     origin_nodes = tree.findall("item")
 
     for node in origin_nodes:
-        if 'version' not in node.attrib:
-            node.attrib['version'] = version
+        if "version" not in node.attrib:
+            node.attrib["version"] = version
         if not check_config_item(node):
             return False, None
 
@@ -278,9 +290,10 @@ def get_item_set(config_file, sign_file_dir, version) -> Tuple[bool, Optional[Di
     return True, item_size_set
 
 
-def build_inifile(item_size_set, sign_file_dir, bios_tool_path,
-                  sign_tmp_path, add_sign) -> bool:
-    '''
+def build_inifile(
+    item_size_set, sign_file_dir, bios_tool_path, sign_tmp_path, add_sign
+) -> bool:
+    """
     功能：根据从bios_check_cfg.xml读取的配置，生成ini工具(ini_gen.py)的配置文件image_info.xml，
     然后调用ini_gen.py读取该配置文件生成每个镜像对应的ini摘要文件（内含SHA256哈希值）
     输入：item_size_set：待制作ini镜像的配置清单
@@ -289,7 +302,7 @@ def build_inifile(item_size_set, sign_file_dir, bios_tool_path,
           sign_tmp_path：临时工作目录，image_info.xml 和 ini 文件均生成于此
           add_sign：是否签名，仅 "true" 时才执行 ini 生成
     返回：False:失败，True：成功
-    '''
+    """
     cms_flag = False
     cmd = []
     # 仅在签名模式下才需要生成 ini 摘要文件
@@ -298,17 +311,19 @@ def build_inifile(item_size_set, sign_file_dir, bios_tool_path,
             os.makedirs(sign_tmp_path, exist_ok=True)
         # 用 ET 构造 image_info.xml，列出所有需要 cms 签名的镜像
         root = ET.Element("image_info")
-        for (infile, conf_item) in item_size_set.items():
+        for infile, conf_item in item_size_set.items():
             inputfile = os.path.join(sign_file_dir, infile)
             # ini 输出目录与镜像在 sign_tmp_path 下的目录结构保持一致
-            output_path = os.path.dirname(
-                os.path.join(sign_tmp_path, infile))
+            output_path = os.path.dirname(os.path.join(sign_tmp_path, infile))
             output_path = os.path.realpath(output_path)
             if not os.path.isdir(output_path):
                 os.makedirs(output_path, exist_ok=True)
             # 只对 type 含 cms 且有 tag 的镜像生成 ini 条目
-            if "cms" in conf_item.type.split('/') and conf_item.tag != "" \
-                    and os.path.isfile(inputfile):
+            if (
+                "cms" in conf_item.type.split("/")
+                and conf_item.tag != ""
+                and os.path.isfile(inputfile)
+            ):
                 cms_flag = True
                 image_elem = ET.SubElement(root, "image")
                 image_elem.set("path", inputfile)
@@ -317,11 +332,18 @@ def build_inifile(item_size_set, sign_file_dir, bios_tool_path,
                 image_elem.set("ini_name", os.path.basename(infile))
         # 仅当存在 cms 类型镜像时才写 image_info.xml 并构建命令，避免生成空文件
         if cms_flag:
-            ET.ElementTree(root).write(os.path.join(sign_tmp_path, "image_info.xml"),
-                                       encoding='utf-8', xml_declaration=True)
+            ET.ElementTree(root).write(
+                os.path.join(sign_tmp_path, "image_info.xml"),
+                encoding="utf-8",
+                xml_declaration=True,
+            )
             gen_tool = os.path.join(bios_tool_path, "ini_gen.py")
-            cmd = [HI_PYTHON, gen_tool, "-in_xml",
-                   os.path.join(sign_tmp_path, "image_info.xml")]
+            cmd = [
+                HI_PYTHON,
+                gen_tool,
+                "-in_xml",
+                os.path.join(sign_tmp_path, "image_info.xml"),
+            ]
 
     # 仅当存在 cms 类型镜像时才调用 ini_gen.py，避免无意义执行
     if add_sign == "true" and cms_flag:
@@ -334,22 +356,22 @@ def build_inifile(item_size_set, sign_file_dir, bios_tool_path,
 
 
 def build_sign(item_size_set, sign_file_dir, sign_tool_path, sign_tmp_path) -> bool:
-    '''
+    """
     功能：对需要 cms 签名的镜像制作 CMS(p7s) 签名
     输入：item_size_set：待签名的镜像配置清单
           sign_file_dir：镜像根路径
           sign_tool_path：签名工具脚本路径（community_sign_build.py）
           sign_tmp_path：临时工作目录，镜像和 ini 文件拷贝到此目录后签名
     返回：False:失败，True：成功
-    '''
+    """
     # 收集所有需要 cms 签名的文件，校验源文件为普通文件（非目录/不存在）
     cms_files = []
-    for (infile, conf_item) in item_size_set.items():
+    for infile, conf_item in item_size_set.items():
         input_path = os.path.join(sign_file_dir, infile)
         if not os.path.isfile(input_path):
             logger.error("infile is not exist or not a file:%s", input_path)
             return False
-        if "cms" in conf_item.type.split('/'):
+        if "cms" in conf_item.type.split("/"):
             cms_files.append(infile)
 
     # 第一阶段：将待签名文件拷贝到临时目录，并收集对应的 ini 文件路径
@@ -387,34 +409,46 @@ def build_sign(item_size_set, sign_file_dir, sign_tool_path, sign_tmp_path) -> b
     return True
 
 
+def _base_header_args(input_file, conf_item) -> List[str]:
+    """构建镜像加头/绑定的基础参数列表（raw_img/out_img/version/nvcnt/tag）。"""
+    return [
+        "-raw_img",
+        input_file,
+        "-out_img",
+        input_file,
+        "-version",
+        conf_item.version,
+        "-nvcnt",
+        conf_item.nvcnt,
+        "-tag",
+        conf_item.tag,
+    ]
+
+
 def add_bios_esbc_header(root_dir, item_size_set, sign_file_dir) -> bool:
-    '''
+    """
     功能：对配置了 nvcnt 的镜像绑定 esbc 二级头（256字节），包含版本、tag、nvcnt 信息
     输入：root_dir：工程根路径，用于定位 esbc_header.py 工具
           item_size_set：待加头的镜像配置清单
           sign_file_dir：镜像根路径
     返回：False:失败，True：成功
-    '''
+    """
     bios_esbc_header_tool_path = os.path.join(
-        root_dir, "scripts", "signtool", "esbc_header")
+        root_dir, "scripts", "signtool", "esbc_header"
+    )
     # 检查加头工具目录是否存在
     if not os.path.exists(bios_esbc_header_tool_path):
         logger.error("bios esbc tool dir not exists")
         return False
 
-    for (input_filename, conf_item) in item_size_set.items():
+    for input_filename, conf_item in item_size_set.items():
         input_file = os.path.join(sign_file_dir, input_filename)
 
         if conf_item.nvcnt:
             cmd = [
                 HI_PYTHON,
                 os.path.join(bios_esbc_header_tool_path, "esbc_header.py"),
-                "-raw_img", input_file,
-                "-out_img", input_file,
-                "-version", conf_item.version,
-                "-nvcnt", conf_item.nvcnt,
-                "-tag", conf_item.tag,
-            ]
+            ] + _base_header_args(input_file, conf_item)
             logger.info("execute:%s", " ".join(cmd))
             success, output = safe_run_cmd(cmd)
             if not success:
@@ -430,7 +464,7 @@ def is_pem_format(file_path: str) -> bool:
     ``-----BEGIN`` 开头。文件不存在或读取失败时返回 False。
     """
     try:
-        with open(file_path, 'rb') as f:
+        with open(file_path, "rb") as f:
             head = f.read(64)
     except OSError:
         return False
@@ -461,12 +495,12 @@ def convert_der_file(crl_file: str, der_file: str) -> bool:
         return True
     # 非 PEM：校验是否为有效 DER（首字节为 ASN.1 SEQUENCE 标签 0x30 且非空）
     try:
-        with open(crl_file, 'rb') as f:
+        with open(crl_file, "rb") as f:
             first_byte = f.read(1)
     except OSError as e:
         logger.error("read file for DER check failed: %s\n\t%s", crl_file, e)
         return False
-    if first_byte != b'\x30':
+    if first_byte != b"\x30":
         logger.error("CRL file is neither valid PEM nor valid DER: %s", crl_file)
         return False
     try:
@@ -493,30 +527,36 @@ def build_image_pack_cmd(param: ImagePackParam) -> List[str]:
     sign_certtype = param.sign_certtype
     cmd = [HI_PYTHON, image_pack_script]
 
-    if add_sign != "true" or conf_item.type == '':
+    if add_sign != "true" or conf_item.type == "":
         # 流程1：不签名，仅绑定基础头信息
-        cmd += ["-raw_img", input_file, "-out_img", input_file,
-                "-version", conf_item.version, "-nvcnt", conf_item.nvcnt,
-                "-tag", conf_item.tag]
+        cmd += _base_header_args(input_file, conf_item)
         if conf_item.position != "":
             cmd += ["-position", conf_item.position]
     elif add_sign == "true" and conf_item.type != "":
         # 流程2：签名模式，绑定 cms 签名信息
         # 基础参数只追加一次，避免 type 含多种签名方式时重复
-        add_cmd_parts = shlex.split(conf_item.additional) if conf_item.additional else []
-        cmd += ["-raw_img", input_file, "-out_img", input_file,
-                "-version", conf_item.version, "-nvcnt", conf_item.nvcnt,
-                "-tag", conf_item.tag] + add_cmd_parts
+        add_cmd_parts = (
+            shlex.split(conf_item.additional) if conf_item.additional else []
+        )
+        cmd += _base_header_args(input_file, conf_item) + add_cmd_parts
 
         # 循环内只追加各签名类型特有的参数
-        for sign in conf_item.type.split('/'):
+        for sign in conf_item.type.split("/"):
             if sign == "cms":
                 # 临时目录下的ini文件路径
                 ini_file = os.path.join(sign_path, os.path.basename(input_file))
                 # 签名扩展名与证书类型由签名脚本查询得到（--print-sign-ext/--print-certtype）
-                cmd += ["-cms", "{}.ini{}".format(ini_file, sign_ext),
-                        "-ini", "{}.ini".format(ini_file),
-                        "-crl", der_file, "-certtype", sign_certtype, "--addcms"]
+                cmd += [
+                    "-cms",
+                    "{}.ini{}".format(ini_file, sign_ext),
+                    "-ini",
+                    "{}.ini".format(ini_file),
+                    "-crl",
+                    der_file,
+                    "-certtype",
+                    sign_certtype,
+                    "--addcms",
+                ]
         if conf_item.position != "":
             cmd += ["-position", conf_item.position]
     return cmd
@@ -565,7 +605,7 @@ def add_bios_header(param: BiosHeaderParam) -> bool:
 
     total = len(item_size_set)
     nvcnt_count = sum(1 for c in item_size_set.values() if c.nvcnt)
-    cms_count = sum(1 for c in item_size_set.values() if "cms" in c.type.split('/'))
+    cms_count = sum(1 for c in item_size_set.values() if "cms" in c.type.split("/"))
     has_cms = cms_count > 0
     start_time = time.time()
 
@@ -591,7 +631,8 @@ def add_bios_header(param: BiosHeaderParam) -> bool:
     # 步骤2：生成 ini 摘要文件（build_inifile 内部按 add_sign 判断是否执行）
     logger.info("step 2/4: generate ini digest")
     if not build_inifile(
-            item_size_set, sign_file_dir, bios_tool_path, sign_tmp_path, add_sign):
+        item_size_set, sign_file_dir, bios_tool_path, sign_tmp_path, add_sign
+    ):
         return False
 
     # 步骤3：CMS 签名（仅签名模式执行）
@@ -614,16 +655,22 @@ def add_bios_header(param: BiosHeaderParam) -> bool:
 
     # 步骤4：用 image_pack.py 对每个镜像绑定最终文件头
     logger.info("step 4/4: bind header, %d image(s)", total)
-    for (input_name, conf_item) in item_size_set.items():
+    for input_name, conf_item in item_size_set.items():
         input_file = os.path.join(sign_file_dir, input_name)
         # 签名文件及ini文件存放目录
         sign_file = os.path.realpath(os.path.join(sign_tmp_path, input_name))
         sign_path = os.path.dirname(sign_file)
 
-        pack_param = ImagePackParam(conf_item=conf_item, input_file=input_file,
-                                    sign_path=sign_path, der_file=der_file,
-                                    add_sign=add_sign, image_pack_script=image_pack_script,
-                                    sign_ext=sign_ext, sign_certtype=sign_certtype)
+        pack_param = ImagePackParam(
+            conf_item=conf_item,
+            input_file=input_file,
+            sign_path=sign_path,
+            der_file=der_file,
+            add_sign=add_sign,
+            image_pack_script=image_pack_script,
+            sign_ext=sign_ext,
+            sign_certtype=sign_certtype,
+        )
         cmd = build_image_pack_cmd(pack_param)
 
         logger.info("execute:%s", " ".join(cmd))
@@ -633,51 +680,66 @@ def add_bios_header(param: BiosHeaderParam) -> bool:
             return False
 
     elapsed = time.time() - start_time
-    logger.info("add header and sign success: total=%d, signed=%d, elapsed=%.1fs",
-                total, cms_count, elapsed)
+    logger.info(
+        "add header and sign success: total=%d, signed=%d, elapsed=%.1fs",
+        total,
+        cms_count,
+        elapsed,
+    )
     return True
 
 
 def check_params(params) -> bool:
     """检查参数。"""
     # 检查BIOS配置文件是否存在
-    if not os.path.exists(params['config_file']):
-        logger.error("bios image header config file not exists:%s", params['config_file'])
+    if not os.path.exists(params["config_file"]):
+        logger.error(
+            "bios image header config file not exists:%s", params["config_file"]
+        )
         return False
     # 检查BIOS工具是否存在
-    if not os.path.exists(params['bios_tool_path']):
+    if not os.path.exists(params["bios_tool_path"]):
         logger.error("biostool dir not exists")
         return False
     # 检查签名脚本是否存在
-    if not os.path.exists(params['sgn_tool_path']):
+    if not os.path.exists(params["sgn_tool_path"]):
         logger.error("sign tools script not exists")
         return False
     # 检查待签名文件目录是否存在
-    if not os.path.isdir(params['sign_file_dir']):
-        logger.error("sign file dir not exists: %s", params['sign_file_dir'])
+    if not os.path.isdir(params["sign_file_dir"]):
+        logger.error("sign file dir not exists: %s", params["sign_file_dir"])
         return False
     return True
 
 
 def define_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument('sign_file_dir', help='device release dir')
-    parser.add_argument('sign_flag', help='skip both header and sign (true/false)',
-                        default='false', nargs='?', choices=['true', 'false'])
-    parser.add_argument('--bios_check_cfg', help='default bios_check_cfg.xml', default='bios_check_cfg.xml')
+    parser.add_argument("sign_file_dir", help="device release dir")
+    parser.add_argument(
+        "sign_flag",
+        help="skip both header and sign (true/false)",
+        default="false",
+        nargs="?",
+        choices=["true", "false"],
+    )
+    parser.add_argument(
+        "--bios_check_cfg",
+        help="default bios_check_cfg.xml",
+        default="bios_check_cfg.xml",
+    )
     # 签名版本信息，编译传入
-    parser.add_argument('--version', help='version')
+    parser.add_argument("--version", help="version")
     # 签名插件脚本
-    parser.add_argument('--sign_script', help='sign script path', default='')
+    parser.add_argument("--sign_script", help="sign script path", default="")
     return parser
 
 
 def setenv():
     """设置环境变量。"""
     global HI_PYTHON
-    if 'HI_PYTHON' not in os.environ:
-        os.environ['HI_PYTHON'] = sys.executable
-    HI_PYTHON = os.environ['HI_PYTHON']
+    if "HI_PYTHON" not in os.environ:
+        os.environ["HI_PYTHON"] = sys.executable
+    HI_PYTHON = os.environ["HI_PYTHON"]
 
 
 def main(argv=None) -> bool:
@@ -694,7 +756,9 @@ def main(argv=None) -> bool:
         return e.code == 0 or e.code is None
     sign_file_dir = args.sign_file_dir
     add_sign = args.sign_flag
-    bios_check_cfg = args.bios_check_cfg if args.bios_check_cfg else 'bios_check_cfg.xml'
+    bios_check_cfg = (
+        args.bios_check_cfg if args.bios_check_cfg else "bios_check_cfg.xml"
+    )
     version = args.version
     # 如果add_sign是false，则直接返回，加头&签名均不执行
     if add_sign == "false":
@@ -706,22 +770,22 @@ def main(argv=None) -> bool:
     config_file = os.path.join(root_dir, bios_check_cfg)
     logger.info("config_file=%s", config_file)
 
-    bios_tool_path = os.path.join(
-        root_dir, "scripts", "signtool", "image_pack")
+    bios_tool_path = os.path.join(root_dir, "scripts", "signtool", "image_pack")
 
-    sgn_tool_path = os.path.join(
-        root_dir, "scripts", "sign", "community_sign_build.py")
+    sgn_tool_path = os.path.join(root_dir, "scripts", "sign", "community_sign_build.py")
     # 判断args.sign_script是否存在值，签名插件脚本路径
-    if hasattr(args, 'sign_script') and args.sign_script:
+    if hasattr(args, "sign_script") and args.sign_script:
         sgn_tool_path = args.sign_script
 
-    if not check_params({
-        'config_file': config_file,
-        'bios_tool_path': bios_tool_path,
-        'sign_file_dir': sign_file_dir,
-        'sgn_tool_path': sgn_tool_path,
-        'add_sign': add_sign,
-    }):
+    if not check_params(
+        {
+            "config_file": config_file,
+            "bios_tool_path": bios_tool_path,
+            "sign_file_dir": sign_file_dir,
+            "sgn_tool_path": sgn_tool_path,
+            "add_sign": add_sign,
+        }
+    ):
         return False
 
     setenv()
@@ -732,15 +796,21 @@ def main(argv=None) -> bool:
         return False
 
     # 调用签名插件对需要签名的镜像进行签名，并绑定镜像文件
-    return add_bios_header(BiosHeaderParam(
-        item_size_set=item_size_set, sign_file_dir=sign_file_dir,
-        bios_tool_path=bios_tool_path, sign_tool_path=sgn_tool_path,
-        root_dir=root_dir, add_sign=add_sign))
+    return add_bios_header(
+        BiosHeaderParam(
+            item_size_set=item_size_set,
+            sign_file_dir=sign_file_dir,
+            bios_tool_path=bios_tool_path,
+            sign_tool_path=sgn_tool_path,
+            root_dir=root_dir,
+            add_sign=add_sign,
+        )
+    )
 
 
 if __name__ == "__main__":
     logging.basicConfig(
-        format='[CannSign] [%(asctime)s] [%(levelname)s] [%(pathname)s] [line:%(lineno)d] %(message)s',
-        level=logging.INFO
+        format="[CannSign] [%(asctime)s] [%(levelname)s] [%(pathname)s] [line:%(lineno)d] %(message)s",
+        level=logging.INFO,
     )
     sys.exit(0 if main() else 1)
