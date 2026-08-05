@@ -65,9 +65,20 @@ elseif(NOT PRODUCT_SIDE STREQUAL "device")
 endif()
 
 if(DEFINED CXX11_ABI_VALUE)
-    target_compile_definitions(intf_pub_base INTERFACE
-        $<$<COMPILE_LANGUAGE:CXX>:_GLIBCXX_USE_CXX11_ABI=${CXX11_ABI_VALUE}>
+    # 支持target通设置CANN_GLIBCXX_USE_CXX11_ABI属性，配置_GLIBCXX_USE_CXX11_ABI编译宏的值
+    string(CONCAT _GEN_EXPR
+        "$<$<COMPILE_LANGUAGE:CXX>:"
+        "$<IF:"
+        "$<OR:"
+        "$<STREQUAL:$<TARGET_PROPERTY:CANN_GLIBCXX_USE_CXX11_ABI>,0>,"
+        "$<BOOL:$<TARGET_PROPERTY:CANN_GLIBCXX_USE_CXX11_ABI>>>,"
+        "_GLIBCXX_USE_CXX11_ABI=$<TARGET_PROPERTY:CANN_GLIBCXX_USE_CXX11_ABI>,"
+        "_GLIBCXX_USE_CXX11_ABI=${CXX11_ABI_VALUE}>>"
     )
+    target_compile_definitions(intf_pub_base INTERFACE
+        "${_GEN_EXPR}"
+    )
+    unset(_GEN_EXPR)
 endif()
 
 target_compile_definitions(intf_pub_base INTERFACE
@@ -95,7 +106,7 @@ target_link_libraries(intf_pub_base INTERFACE
 )
 
 add_library(intf_pub INTERFACE)
-target_link_libraries(intf_pub INTERFACE 
+target_link_libraries(intf_pub INTERFACE
     intf_pub_base
 )
 
@@ -104,7 +115,7 @@ target_compile_options(intf_pub INTERFACE
 )
 
 add_library(intf_pub_cxx14 INTERFACE)
-target_link_libraries(intf_pub_cxx14 INTERFACE 
+target_link_libraries(intf_pub_cxx14 INTERFACE
     intf_pub_base
 )
 
