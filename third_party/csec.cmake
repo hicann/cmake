@@ -45,8 +45,6 @@ else()
         set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/libboundscheck/libboundscheck-v1.1.16.tar.gz")
         message("[ThirdParty][csec] ${REQ_URL} not found, need download.")
     endif()
-    set(SO_NEW_NAME libc_sec.so)
-    set(STATIC_NEW_NAME libc_sec.a)
     set(CSEC_DOWNLOAD_DIR ${CMAKE_BINARY_DIR}/libc_sec)
     set(CSEC_SOURCE_DIR ${CMAKE_BINARY_DIR}/libc_sec/source)
     set(CSEC_EXTRA_CFLAGS "-fstack-protector-strong")
@@ -70,7 +68,7 @@ else()
                 CC=${CMAKE_C_COMPILER}
                 AR=${CMAKE_AR}
                 LINK=${CMAKE_C_COMPILER}
-                CFLAGS="${CSEC_EXTRA_CFLAGS}" 
+                CFLAGS="${CSEC_EXTRA_CFLAGS}"
                 LDFLAGS="${CSEC_EXTRA_LDFLAGS}"
             INSTALL_COMMAND ""
             # 禁用更新和下载
@@ -87,50 +85,58 @@ else()
             DOWNLOAD_DIR ${CSEC_DOWNLOAD_DIR}
             SOURCE_DIR ${CSEC_SOURCE_DIR}
             PATCH_COMMAND ${CMAKE_COMMAND}
-                -D CSEC_SOURCE_DIR=<SOURCE_DIR> 
+                -D CSEC_SOURCE_DIR=<SOURCE_DIR>
                 -P ${CMAKE_CURRENT_LIST_DIR}/csec_patch.cmake
             CONFIGURE_COMMAND ""
             BUILD_IN_SOURCE 1
             BUILD_JOB_SERVER_AWARE ${CSEC_BUILD_JOB_SERVER_AWARE}
-            BUILD_COMMAND ${CMAKE_MAKE_PROGRAM} 
+            BUILD_COMMAND ${CMAKE_MAKE_PROGRAM}
                 -C <SOURCE_DIR> lib
                 CC=${CMAKE_C_COMPILER}
                 AR=${CMAKE_AR}
                 LINK=${CMAKE_C_COMPILER}
-                CFLAGS="${CSEC_EXTRA_CFLAGS}" 
+                CFLAGS="${CSEC_EXTRA_CFLAGS}"
                 LDFLAGS="${CSEC_EXTRA_LDFLAGS}"
             INSTALL_COMMAND ""
         )
     endif()
     add_library(shared_c_sec_lib SHARED IMPORTED)
     set_property(TARGET shared_c_sec_lib PROPERTY
-        IMPORTED_LOCATION ${CSEC_SOURCE_DIR}/lib/${SO_NEW_NAME}
+        IMPORTED_LOCATION ${CSEC_SOURCE_DIR}/lib/libc_sec.so
     )
-
     add_library(shared_c_sec INTERFACE)
     target_link_libraries(shared_c_sec INTERFACE shared_c_sec_lib)
+
+    add_library(static_c_sec STATIC IMPORTED GLOBAL)
+    set_property(TARGET static_c_sec PROPERTY
+        IMPORTED_LOCATION ${CSEC_SOURCE_DIR}/lib/libc_sec.a
+    )
+
     add_dependencies(shared_c_sec csec_src)
+    add_dependencies(static_c_sec csec_src)
     add_dependencies(c_sec_headers csec_src)
-    add_custom_target(csec_build DEPENDS csec_src)
+
     add_library(c_sec ALIAS shared_c_sec)
+    add_library(c_sec_static ALIAS static_c_sec)
     if(PRODUCT_SIDE STREQUAL "device")
         install(FILES
-            ${CSEC_SOURCE_DIR}/lib/${SO_NEW_NAME}
+            $<TARGET_FILE:shared_c_sec_lib>
             DESTINATION ${DEVICE_LIBRARY_PATH} COMPONENT npu-runtime
         )
     else()
         install(FILES
-            ${CSEC_SOURCE_DIR}/lib/${SO_NEW_NAME} ${CSEC_SOURCE_DIR}/lib/${STATIC_NEW_NAME}
+            $<TARGET_FILE:shared_c_sec_lib> $<TARGET_FILE:static_c_sec>
             DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64 COMPONENT npu-runtime
         )
-    endif()    
+    endif()
     set(LIBC_SEC_HEADER ${CSEC_SOURCE_DIR}/include)
+    if(NOT EXISTS "${LIBC_SEC_HEADER}")
+        file(MAKE_DIRECTORY ${LIBC_SEC_HEADER})
+    endif()
 endif()
 
 target_include_directories(c_sec_headers INTERFACE
     $<BUILD_INTERFACE:${LIBC_SEC_HEADER}>
 )
 target_link_libraries(shared_c_sec INTERFACE c_sec_headers)
-if(TARGET static_c_sec)
-    target_link_libraries(static_c_sec INTERFACE c_sec_headers)
-endif()
+target_link_libraries(static_c_sec INTERFACE c_sec_headers)
