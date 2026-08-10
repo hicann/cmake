@@ -293,6 +293,20 @@ macro(__cann_append_global_property name value)
     )
 endmacro()
 
+# 将键值对列表展开为字典
+# 使用<变量名>_<键名>的变量模拟字典
+function(__cann_expand_list_to_dict varname)
+    list(LENGTH ${varname} len)
+    math(EXPR len "${len} - 1")
+    # 列表格式为偶数位为键，奇数位为值，0为首位
+    foreach(index RANGE 0 ${len} 2)
+        math(EXPR value_index "${index} + 1")
+        list(GET ${varname} ${index} key)
+        list(GET ${varname} ${value_index} value)
+        set(${varname}_${key} "${value}" PARENT_SCOPE)
+    endforeach()
+endfunction()
+
 # 根据 SOC 字符串推导芯片名称（去除 "ascend" 前缀）
 function(remove_ascend OUTPUT_VAR SOC_VALUE)
     if(NOT SOC_VALUE)
@@ -300,7 +314,7 @@ function(remove_ascend OUTPUT_VAR SOC_VALUE)
     endif()
 
     string(TOLOWER "${SOC_VALUE}" _soc_lower)
-    
+
     if(_soc_lower STREQUAL "ascend910_93")
         set(${OUTPUT_VAR} "A3" PARENT_SCOPE)
     elseif(_soc_lower MATCHES "^ascend")
@@ -382,10 +396,11 @@ function(set_cann_cpack_config component)
     endif()
 
     if(CANN_PRE_PKG)
-        __cann_append_global_property(CPACK_CANN_PRE_PKG "${CANN_PRE_PKG}")
+        __cann_append_global_property(CPACK_CANN_PRE_PKG "${component};${CANN_PRE_PKG}")
     else()
-        __cann_append_global_property(CPACK_CANN_PRE_PKG "")
+        __cann_append_global_property(CPACK_CANN_PRE_PKG "${component};")
     endif()
+    __cann_expand_list_to_dict(CPACK_CANN_PRE_PKG)
 
     # 获取当前组件的依赖配对列表 (pkg;version;pkg;version;...)
     # 同一源码仓库（如 air）可定义多个 set_cann_package，必须按组件隔离依赖，避免并集污染。
@@ -454,13 +469,13 @@ function(set_cann_cpack_config component)
     set(CPACK_DEB_COMPONENT_INSTALL ON)
     set(CPACK_RPM_PACKAGE_AUTOREQ OFF)
     set(CPACK_RPM_PACKAGE_AUTOPROV OFF)
-    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA 
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
         "${CMAKE_BINARY_DIR}/postinst"
         "${CMAKE_BINARY_DIR}/prerm")
-    set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE 
+    set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE
         "${CMAKE_BINARY_DIR}/postinst"
     )
-    set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE 
+    set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE
         "${CMAKE_BINARY_DIR}/prerm"
     )
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "huawei")
@@ -472,7 +487,7 @@ function(set_cann_cpack_config component)
     set(CPACK_TARGET_ARCH "${TARGET_ARCH}")
     set(CPACK_PRE_BUILD_SCRIPTS "${CANN_CMAKE_DIR}/scripts/package/pre_package.cmake")
     set(CPACK_RPM_SPEC_MORE_DEFINE "%global __strip /bin/true")
-    set(CPACK_POST_BUILD_SCRIPTS "${CANN_CMAKE_DIR}/scripts/package/post_package.cmake") 
+    set(CPACK_POST_BUILD_SCRIPTS "${CANN_CMAKE_DIR}/scripts/package/post_package.cmake")
     # 每次include(CPack)都会重新生成CPackConfig.cmake
     include(CPack)
 endfunction()
@@ -728,7 +743,7 @@ function(cann_pack_targets_and_files)
         set(staging_dir "${staging_root_dir}")
         set(tar_src ".")
     endif()
-    
+
     # 仅当调用方传入 GEN_INI 选项时才生成 .ini 文件；同时需要
     # CANN_VERSION_CURRENT_PACKAGE 以解析版本号
     set(ini_file "")
@@ -933,7 +948,7 @@ function(__cann_generate_stub_with_output_name name output_name)
         add_library(${target_plain_name}_stub_tmp SHARED ${CMAKE_CURRENT_BINARY_DIR}/stub/${target_plain_name}.c)
         set_target_properties(${target_plain_name}_stub_tmp PROPERTIES
             WINDOWS_EXPORT_ALL_SYMBOLS TRUE
-            LIBRARY_OUTPUT_NAME ${target_plain_name} 
+            LIBRARY_OUTPUT_NAME ${target_plain_name}
             RUNTIME_OUTPUT_NAME ${target_plain_name}
             LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/stub
             RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/stub)
