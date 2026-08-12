@@ -19,6 +19,9 @@ endif()
 
 set(BOOST_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
 set(BOOST_SRC_PATH ${CANN_3RD_LIB_PATH}/boost)
+set(BOOST_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/boost)
+set(BOOST_FILESYSTEM_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/boost_filesystem)
+set(BOOST_FILESYSTEM_LIBRARY ${BOOST_FILESYSTEM_INSTALL_PATH}/lib/libboost_filesystem.a)
 set(BOOST_FILE "boost_1_87_0.tar.gz")
 set(DOWNLOAD_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/boost/${BOOST_FILE}")
 
@@ -69,11 +72,37 @@ ExternalProject_Add(third_party_boost_headers
     SOURCE_DIR ${BOOST_SRC_PATH}
     DOWNLOAD_COMMAND ""
     UPDATE_COMMAND ""
-    CONFIGURE_COMMAND  cd <SOURCE_DIR> && sh bootstrap.sh --prefix=${CANN_3RD_LIB_PATH}/lib_cache/boost --with-libraries=headers
+    CONFIGURE_COMMAND  cd <SOURCE_DIR> && sh bootstrap.sh --prefix=${BOOST_INSTALL_PATH} --with-libraries=headers
     BUILD_COMMAND   cd <SOURCE_DIR> &&  ./b2 headers install
+    COMMAND
+        ${CMAKE_COMMAND} -E chdir <SOURCE_DIR>
+        ./b2
+        --with-filesystem
+        --layout=system
+        --prefix=${BOOST_FILESYSTEM_INSTALL_PATH}
+        --libdir=${BOOST_FILESYSTEM_INSTALL_PATH}/lib
+        --includedir=${BOOST_FILESYSTEM_INSTALL_PATH}/include
+        variant=release
+        link=static
+        runtime-link=shared
+        threading=multi
+        cxxstd=17
+        "cxxflags=-fPIC -fstack-protector-all -D_FORTIFY_SOURCE=2 -fvisibility=hidden -fvisibility-inlines-hidden -fno-common -D_GLIBCXX_USE_CXX11_ABI=0 -DBOOST_FILESYSTEM_NO_CXX20_ATOMIC_REF"
+        install
     INSTALL_COMMAND ""
+    BUILD_BYPRODUCTS ${BOOST_FILESYSTEM_LIBRARY}
     EXCLUDE_FROM_ALL TRUE
 )
+
+file(MAKE_DIRECTORY ${BOOST_FILESYSTEM_INSTALL_PATH}/include)
+add_library(boost_filesystem STATIC IMPORTED GLOBAL)
+set_target_properties(boost_filesystem PROPERTIES
+    IMPORTED_LOCATION ${BOOST_FILESYSTEM_LIBRARY}
+    INTERFACE_INCLUDE_DIRECTORIES ${BOOST_FILESYSTEM_INSTALL_PATH}/include
+    INTERFACE_COMPILE_DEFINITIONS BOOST_FILESYSTEM_NO_LIB
+)
+add_dependencies(boost_filesystem third_party_boost_headers)
+add_library(Boost::filesystem ALIAS boost_filesystem)
 
 # use for dvpp service
 add_library(boost INTERFACE)
