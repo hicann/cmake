@@ -67,8 +67,9 @@ else()
     if(RDMA_CORE_PATCH_PROJECT_URL)
  	    ExternalProject_Add(rdma_core_patch
             URL ${RDMA_CORE_PATCH_PROJECT_URL}
- 	        URL_HASH SHA256=54ca56b3b68bc465a78dd5839cd7110610745c7152a1dc3a72b265deeebb905f
- 	        DOWNLOAD_DIR ${RDMA_CORE_PKG_DIR}
+  	        URL_HASH SHA256=54ca56b3b68bc465a78dd5839cd7110610745c7152a1dc3a72b265deeebb905f
+  	        TIMEOUT 60
+  	        DOWNLOAD_DIR ${RDMA_CORE_PKG_DIR}
  	        UPDATE_COMMAND ""
  	        CONFIGURE_COMMAND ""
  	        BUILD_COMMAND ""
@@ -100,6 +101,7 @@ else()
         ExternalProject_Add(rdma_core_src
             URL ${RDMA_CORE_PROJECT_URL}
             URL_HASH SHA256=aa935de1fcd07c42f7237b0284b5697b1ace2a64f2bcfca3893185bc91b8c74d
+            TIMEOUT 300
             SOURCE_DIR ${RDMA_CORE_SRC_DIR}
             DOWNLOAD_DIR ${RDMA_CORE_PKG_DIR}
             PATCH_COMMAND patch -p1 -i "${RDMA_CORE_PATCH}"
@@ -123,6 +125,8 @@ else()
             -DENABLE_RESOLVE_NEIGH=0
             -DCMAKE_SKIP_RPATH=True
             -DNO_PYVERBS=1
+            -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+            -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
             <SOURCE_DIR>
         BUILD_COMMAND $(MAKE) kern-abi
         INSTALL_COMMAND ""

@@ -35,6 +35,7 @@ else()
     ExternalProject_Add(external_seccomp
         URL ${REQ_URL}
         URL_HASH SHA256=96bbadb4384716272a6d2be82801dc564f7aab345febfe9b698b70fc606e3f75
+        TIMEOUT 300
         DOWNLOAD_DIR download/seccomp
         PREFIX third_party
         CONFIGURE_COMMAND cd <SOURCE_DIR> && ./autogen.sh && ./configure --prefix=<INSTALL_DIR>

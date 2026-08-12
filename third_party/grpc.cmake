@@ -1,9 +1,9 @@
 # -----------------------------------------------------------------------------------------------------------
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
-# This program is free software, you can redistribute it and/or modify it under the terms and conditions of 
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
-# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
@@ -30,7 +30,7 @@ if(NOT EXISTS ${GRPC_INCLUDE_DIR})
 endif()
 set(GRPC_STATIC_LIB ${GRPC_INSTALL_PATH}/lib/libgrpc.a)
 set(GRPCXX_STATIC_LIB ${GRPC_INSTALL_PATH}/lib/libgrpc++.a)
- 
+
 set(GRPC_INTERFACE_LINK_LIBRARIES
     ${GRPC_INSTALL_PATH}/lib/libupb_collections_lib.a
     ${GRPC_INSTALL_PATH}/lib/libupb_json_lib.a
@@ -119,21 +119,21 @@ set(GRPC_INTERFACE_LINK_LIBRARIES
     ${GRPC_INSTALL_PATH}/lib/libabsl_raw_logging_internal.a
     ${GRPC_INSTALL_PATH}/lib/libabsl_log_severity.a
 )
- 	 
+
 add_library(gRPC::grpc STATIC IMPORTED)
 set_target_properties(gRPC::grpc PROPERTIES
     IMPORTED_LOCATION "${GRPC_STATIC_LIB}"
     INTERFACE_INCLUDE_DIRECTORIES "${GRPC_INCLUDE_DIR}"
     INTERFACE_LINK_LIBRARIES "dl;m;Threads::Threads;rt;${GRPC_INTERFACE_LINK_LIBRARIES};OpenSSL::SSL;OpenSSL::Crypto"
 )
- 	 
+
 add_library(gRPC::grpc++ STATIC IMPORTED)
 set_target_properties(gRPC::grpc++ PROPERTIES
     IMPORTED_LOCATION "${GRPCXX_STATIC_LIB}"
     INTERFACE_INCLUDE_DIRECTORIES "${GRPC_INCLUDE_DIR}"
     INTERFACE_LINK_LIBRARIES "dl;m;Threads::Threads;rt;gRPC::grpc;${GRPC_INSTALL_PATH}/lib/libprotobuf.a"
 )
- 	 
+
 if(EXISTS ${GRPC_STATIC_LIB} AND EXISTS ${GRPCXX_STATIC_LIB})
     message(STATUS "[ThirdParty][grpc] grpc found, skip compiling.")
 else()
@@ -151,14 +151,15 @@ else()
             DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/pkg
         )
     endif()
-    
+
     set(GRPC_CXX_FLAGS "-Wl,-z,relro,-z,now,-z,noexecstack -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-all -s -D_GLIBCXX_USE_CXX11_ABI=${USE_CXX11_ABI}")
     ExternalProject_Add(grpc_build
         URL ${REQ_URL}
         URL_HASH SHA256=437068b8b777d3b339da94d3498f1dc20642ac9bfa76db43abdd522186b1542b
+        TIMEOUT 300
         ${GRPC_EXTRA_ARGS}
         PATCH_COMMAND ${CMAKE_COMMAND} -E make_directory <SOURCE_DIR>/third_party/opencensus-proto/src
-            COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/grpc-fix-compile-bug-in-device.patch
+            COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/grpc-fix-compile-bug-in-device.patch
         CONFIGURE_COMMAND ${CMAKE_COMMAND}
             # zlib
             -DgRPC_ZLIB_PROVIDER=module
@@ -237,9 +238,10 @@ else()
     ExternalProject_Add(protoc_grpc_build
         URL ${REQ_URL}
         URL_HASH SHA256=437068b8b777d3b339da94d3498f1dc20642ac9bfa76db43abdd522186b1542b
+        TIMEOUT 300
         ${GRPC_EXTRA_ARGS}
         PATCH_COMMAND ${CMAKE_COMMAND} -E make_directory <SOURCE_DIR>/third_party/opencensus-proto/src
-            COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/grpc-fix-compile-bug-in-device.patch
+            COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/grpc-fix-compile-bug-in-device.patch
         CONFIGURE_COMMAND ${CMAKE_COMMAND}
             # zlib
             -DgRPC_ZLIB_PROVIDER=none

@@ -109,6 +109,7 @@ include(ExternalProject)
 ExternalProject_Add(third_party_llvm
     URL ${REQ_URL}
     URL_HASH SHA256=59abea1c22e64933fad4de1671a61cdb934098793c7a31b333ff58dc41bff36c
+    TIMEOUT 600
     DOWNLOAD_DIR ${LLVM_DOWNLOAD_PATH}
     SOURCE_DIR ${LLVM_SOURCE_PATH}
     CONFIGURE_COMMAND ""

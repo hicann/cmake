@@ -76,6 +76,7 @@ else()
             DOWNLOAD_DIR ${ABS_PKG_DIR}
             DOWNLOAD_NO_EXTRACT TRUE
             DOWNLOAD_NO_PROGRESS TRUE
+            TIMEOUT 60
             UPDATE_COMMAND ""
             CONFIGURE_COMMAND ""
             BUILD_COMMAND ""
@@ -90,7 +91,8 @@ else()
         URL_HASH SHA256=987ce98f02eefbaf930d6e38ab16aa05737234d7afbab2d5c4ea7adbe50c28ed
         DOWNLOAD_DIR ${ABS_PKG_DIR}
         SOURCE_DIR ${ABS_INSTALL_DIR}
-        PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/protobuf-hide_absl_symbols.patch && patch -p1 < ${ABSL_CVE_PATCH_FILE} && patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/fix-gcc15-gcc16-container-memory-cstdint.patch
+        TIMEOUT 300
+        PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/protobuf-hide_absl_symbols.patch && patch -p1 < ${ABSL_CVE_PATCH_FILE} && patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/fix-gcc15-gcc16-container-memory-cstdint.patch
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
         INSTALL_COMMAND ""

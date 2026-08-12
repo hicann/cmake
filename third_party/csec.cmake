@@ -82,6 +82,7 @@ else()
         ExternalProject_Add(csec_src
             URL ${REQ_URL}
             URL_HASH SHA256=aee8368ef04a42a499edd5bfebce529e7f32dd138bfed383d316e48af4e45d2c
+            TIMEOUT 300
             DOWNLOAD_DIR ${CSEC_DOWNLOAD_DIR}
             SOURCE_DIR ${CSEC_SOURCE_DIR}
             PATCH_COMMAND ${CMAKE_COMMAND}

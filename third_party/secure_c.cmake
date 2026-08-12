@@ -15,9 +15,10 @@ if(CANN_PKG_SERVER)
 endif()
 include(ExternalProject)
 ExternalProject_Add(secure_c
-    URL ${_secure_c_url} 
+    URL ${_secure_c_url}
         https://gitee.com/openeuler/libboundscheck/repository/archive/v1.1.16.tar.gz
     URL_MD5 ae4865cec1bfb52f7dca03f5c05ac98a
+    TIMEOUT 300
     DOWNLOAD_DIR download/secure_c
     PREFIX third_party
     CONFIGURE_COMMAND ""

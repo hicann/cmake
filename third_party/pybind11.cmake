@@ -13,7 +13,7 @@ unset(pybind11_FOUND CACHE)
 unset(PYBIND11_INCLUDE CACHE)
 
 set(PYBIND11_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
-set(PYBIND11_INSTALL_PATH ${CANN_3RD_LIB_PATH}/pybind11)
+set(PYBIND11_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/pybind11)
 
 find_path(PYBIND11_INCLUDE
     NAMES pybind11/pybind11.h
@@ -25,52 +25,50 @@ find_path(PYBIND11_INCLUDE
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(pybind11
     FOUND_VAR
-    pybind11_FOUND
+        pybind11_FOUND
     REQUIRED_VARS
-    PYBIND11_INCLUDE
+        PYBIND11_INCLUDE
 )
 if(pybind11_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
-    message("[ThirdParty][pybind11] found in ${PYBIND11_INSTALL_PATH}, and not force rebuild cann third_party")
+    message(STATUS "[ThirdParty][pybind11] found in ${PYBIND11_INCLUDE}, and not force rebuild cann third_party")
     set(pybind11_INCLUDE_DIR ${PYBIND11_INCLUDE})
-    add_library(pybind11 INTERFACE IMPORTED)
-    set_target_properties(pybind11 PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${pybind11_INCLUDE_DIR}"
-    )
 else()
     set(REQ_URL "https://gitcode.com/cann-src-third-party/pybind11/releases/download/v2.13.6/pybind11-2.13.6.tar.gz")
     set(PYBIND11_ARCHIVE ${PYBIND11_DOWNLOAD_PATH}/pybind11-2.13.6.tar.gz)
-    file(MAKE_DIRECTORY ${PYBIND11_DOWNLOAD_PATH})
-
-    # Search in CANN_3RD_LIB_PATH and move to pkg if found
-    if(EXISTS ${CANN_3RD_LIB_PATH}/pybind11-2.13.6.tar.gz AND NOT EXISTS ${PYBIND11_ARCHIVE})
-        message("[ThirdParty][pybind11] found pybind11 archive in ${CANN_3RD_LIB_PATH}, moving to pkg")
-        file(RENAME ${CANN_3RD_LIB_PATH}/pybind11-2.13.6.tar.gz ${PYBIND11_ARCHIVE})
-    endif()
 
     if(EXISTS ${PYBIND11_ARCHIVE})
-        message("[ThirdParty][pybind11] not found in ${PYBIND11_INSTALL_PATH}, found archive at ${PYBIND11_ARCHIVE}")
+        message(STATUS "[ThirdParty][pybind11] found archive at ${PYBIND11_ARCHIVE}")
+        set(PYBIND11_URL_ARGS URL ${PYBIND11_ARCHIVE})
+    elseif(EXISTS ${CANN_3RD_LIB_PATH}/pybind11-2.13.6.tar.gz)
+        message(STATUS "[ThirdParty][pybind11] found archive at ${CANN_3RD_LIB_PATH}/pybind11-2.13.6.tar.gz")
+        set(PYBIND11_URL_ARGS URL ${CANN_3RD_LIB_PATH}/pybind11-2.13.6.tar.gz)
     else()
-        message("[ThirdParty][pybind11] not found in ${PYBIND11_INSTALL_PATH}, begin load from ${REQ_URL}")
-        file(DOWNLOAD
-            ${REQ_URL}
-            ${PYBIND11_ARCHIVE}
-            SHOW_PROGRESS
+        message(STATUS "[ThirdParty][pybind11] not found, need download from ${REQ_URL}")
+        set(PYBIND11_URL_ARGS
+            URL ${REQ_URL}
+            URL_HASH SHA256=e08cb87f4773da97fa7b5f035de8763abc656d87d5773e62f6da0587d1f0ec20
         )
     endif()
-    file(MAKE_DIRECTORY ${PYBIND11_INSTALL_PATH})
-    execute_process(
-        COMMAND tar xf "${PYBIND11_ARCHIVE}" --strip-components=1 -C ${PYBIND11_INSTALL_PATH}
-        RESULT_VARIABLE TAR_RESULT
-        OUTPUT_QUIET
-        ERROR_QUIET
+
+    include(ExternalProject)
+    ExternalProject_Add(pybind11_build
+        ${PYBIND11_URL_ARGS}
+        TIMEOUT 300
+        DOWNLOAD_DIR ${PYBIND11_DOWNLOAD_PATH}
+        SOURCE_DIR ${PYBIND11_INSTALL_PATH}
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ""
+        EXCLUDE_FROM_ALL TRUE
     )
 
-    if(NOT TAR_RESULT EQUAL 0)
-        message(FATAL_ERROR "[ThirdParty][pybind11] failed to tar xf ${PYBIND11_ARCHIVE}")
-    endif()
-
     set(pybind11_INCLUDE_DIR ${PYBIND11_INSTALL_PATH}/include)
-    add_library(pybind11 INTERFACE IMPORTED)
-    set_target_properties(pybind11 PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${pybind11_INCLUDE_DIR}")
+endif()
+
+add_library(pybind11 INTERFACE)
+set_target_properties(pybind11 PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${pybind11_INCLUDE_DIR}"
+)
+if(TARGET pybind11_build)
+    add_dependencies(pybind11 pybind11_build)
 endif()

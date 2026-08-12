@@ -79,9 +79,9 @@ set(HOST_PROTOBUF_STATIC_CXXFLAGS "${HOST_PROTOBUF_STATIC_CXXFLAGS} ${PROTOBUF_S
 # ==========================================================================================================
 # 3. Find Existing Libraries & Protoc
 # ==========================================================================================================
-find_program(PROTOC_PROGRAM 
-    NAMES protoc 
-    PATHS ${PROTOBUF_HOST_PROTOC_DIR} ${LD_BIN_PATHS} 
+find_program(PROTOC_PROGRAM
+    NAMES protoc
+    PATHS ${PROTOBUF_HOST_PROTOC_DIR} ${LD_BIN_PATHS}
     NO_DEFAULT_PATH
 )
 
@@ -158,8 +158,9 @@ endif()
 ExternalProject_Add(protobuf_src
     URL ${REQ_URL}
     URL_HASH SHA256=9bd87b8280ef720d3240514f884e56a712f2218f0d693b48050c836028940a42
+    TIMEOUT 300
     DOWNLOAD_DIR ${PROTOBUF_DOWNLOAD_DIR}
-    PATCH_COMMAND patch --forward --batch -p1 < ${CMAKE_CURRENT_LIST_DIR}/protobuf_25.1_change_version.patch
+    PATCH_COMMAND patch --forward --batch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/protobuf_25.1_change_version.patch
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
@@ -321,7 +322,7 @@ create_imported_interface_include_directories(ascend_protobuf_static)
 add_library(protobuf_static STATIC IMPORTED GLOBAL)
 if(HOST_PROTOBUF_STATIC_INCLUDE AND HOST_PROTOBUF_STATIC_LIB)
     message("[ThirdParty][protobuf] protobuf_host_static use cache.")
-    set_target_properties(protobuf_static PROPERTIES 
+    set_target_properties(protobuf_static PROPERTIES
         IMPORTED_LOCATION ${HOST_PROTOBUF_STATIC_LIB}
         INTERFACE_INCLUDE_DIRECTORIES "${HOST_PROTOBUF_STATIC_INCLUDE}"
     )
@@ -356,7 +357,7 @@ else()
         EXCLUDE_FROM_ALL TRUE
     )
 
-    set_target_properties(protobuf_static PROPERTIES 
+    set_target_properties(protobuf_static PROPERTIES
         IMPORTED_LOCATION ${PROTOBUF_HOST_STATIC_PKG_DIR}/lib/libhost_ascend_protobuf.a
         INTERFACE_INCLUDE_DIRECTORIES "${PROTOBUF_HOST_STATIC_PKG_DIR}/include"
     )

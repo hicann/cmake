@@ -44,7 +44,7 @@ find_library(SSL_LIB_PATH
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(openssl
     FOUND_VAR
-    openssl_FOUND 
+    openssl_FOUND
     REQUIRED_VARS
     OPENSSL_INCLUDE
     CRYPTO_LIB_PATH
@@ -117,6 +117,7 @@ else()
     ExternalProject_Add(openssl_project
             URL ${REQ_URL}                        # 从本地 tar.gz 获取源
             URL_HASH SHA256=2eec31f2ac0e126ff68d8107891ef534159c4fcfb095365d4cd4dc57d82616ee  # 校验哈希压缩包正确性
+            TIMEOUT 300
             DOWNLOAD_DIR ${OPENSSL_PKG_PATH}
             CONFIGURE_COMMAND
                 ${OPENSSL_CONFIGURE_COMMAND}

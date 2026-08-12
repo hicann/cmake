@@ -87,6 +87,7 @@ else()
     ExternalProject_Add(gtest_shared_build
         URL ${REQ_URL}
         URL_HASH SHA256=8ad598c73ad796e0d8280b082cebd82a630d73e73cd3c70057938a6501bba5d7
+        TIMEOUT 300
         DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/pkg
         SOURCE_DIR ${GTEST_INSTALL_PATH}
         CONFIGURE_COMMAND ${CMAKE_COMMAND}

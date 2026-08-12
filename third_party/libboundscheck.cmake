@@ -107,6 +107,7 @@ if (NOT EXISTS ${_TargetSourceDir})
     list(APPEND _ExtArgs
             URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/libboundscheck/libboundscheck-v1.1.16.tar.gz"
             URL_HASH SHA256=aee8368ef04a42a499edd5bfebce529e7f32dd138bfed383d316e48af4e45d2c
+            TIMEOUT 300
             DOWNLOAD_DIR ${PYPTO_THIRD_PARTY_PATH}
     )
 endif()

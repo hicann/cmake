@@ -20,23 +20,23 @@ endif()
 # 新增：检查本地 tar.gz 包是否存在
 if (EXISTS "${MAKESELF_TAR_PATH}")
     message(STATUS "[ThirdParty][makeself] found local tar.gz package: ${MAKESELF_TAR_PATH}, extracting...")
-    
+
     # 创建目标目录（如果不存在）
     file(MAKE_DIRECTORY "${MAKESELF_PATH}")
-    
+
     # 解压本地的 tar.gz 包
     execute_process(
         COMMAND tar xzf "${MAKESELF_TAR_PATH}" -C "${MAKESELF_PATH}" --strip-components=1
         RESULT_VARIABLE EXTRACT_RESULT
         ERROR_VARIABLE EXTRACT_ERROR
     )
-    
+
     if(NOT EXTRACT_RESULT EQUAL 0)
         message(FATAL_ERROR "[ThirdParty][makeself] failed to extract local tar.gz: ${EXTRACT_ERROR}")
     endif()
-    
+
     message(STATUS "[ThirdParty][makeself] local tar.gz extracted successfully to ${MAKESELF_PATH}")
-    
+
 # 如果本地包不存在，再检查解压后的目录是否存在
 elseif (NOT EXISTS "${MAKESELF_PATH}/makeself-header.sh" OR NOT EXISTS "${MAKESELF_PATH}/makeself.sh")
     set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/makeself/makeself-release-2.5.0-patch1.tar.gz")
@@ -47,6 +47,7 @@ elseif (NOT EXISTS "${MAKESELF_PATH}/makeself-header.sh" OR NOT EXISTS "${MAKESE
         ${MAKESELF_NAME}
         URL ${REQ_URL}
         URL_HASH SHA256=bfa730a5763cdb267904a130e02b2e48e464986909c0733ff1c96495f620369a
+        TIMEOUT 300
         SOURCE_DIR "${MAKESELF_PATH}"  # 直接解压到此目录
     )
     FetchContent_MakeAvailable(${MAKESELF_NAME})
