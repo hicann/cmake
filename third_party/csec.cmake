@@ -100,12 +100,10 @@ else()
             INSTALL_COMMAND ""
         )
     endif()
-    add_library(shared_c_sec_lib SHARED IMPORTED)
-    set_property(TARGET shared_c_sec_lib PROPERTY
+    add_library(shared_c_sec SHARED IMPORTED GLOBAL)
+    set_property(TARGET shared_c_sec PROPERTY
         IMPORTED_LOCATION ${CSEC_SOURCE_DIR}/lib/libc_sec.so
     )
-    add_library(shared_c_sec INTERFACE)
-    target_link_libraries(shared_c_sec INTERFACE shared_c_sec_lib)
 
     add_library(static_c_sec STATIC IMPORTED GLOBAL)
     set_property(TARGET static_c_sec PROPERTY
@@ -120,12 +118,12 @@ else()
     add_library(c_sec_static ALIAS static_c_sec)
     if(PRODUCT_SIDE STREQUAL "device")
         install(FILES
-            $<TARGET_FILE:shared_c_sec_lib>
+            $<TARGET_FILE:shared_c_sec>
             DESTINATION ${DEVICE_LIBRARY_PATH} COMPONENT npu-runtime
         )
     else()
         install(FILES
-            $<TARGET_FILE:shared_c_sec_lib> $<TARGET_FILE:static_c_sec>
+            $<TARGET_FILE:shared_c_sec> $<TARGET_FILE:static_c_sec>
             DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64 COMPONENT npu-runtime
         )
     endif()
