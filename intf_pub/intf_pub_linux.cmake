@@ -53,22 +53,18 @@ if(ENABLE_STRICT_WARNINGS)
     )
 endif()
 
-# ABI 值由 init_cann_project() 统一计算，此处直接引用
-# 若未调用 init_cann_project()（如直接 include intf_pub），使用与 init_cann_project 一致的默认值
-if(NOT DEFINED CANN_CXX11_ABI)
-    if(DEFINED USE_CXX11_ABI)
-        if(USE_CXX11_ABI)
-            set(CANN_CXX11_ABI 1)
-        else()
-            set(CANN_CXX11_ABI 0)
-        endif()
-    elseif(NOT PRODUCT_SIDE STREQUAL "device")
-        set(CANN_CXX11_ABI 0)
+unset(CXX11_ABI_VALUE)
+if(DEFINED USE_CXX11_ABI)
+    if(USE_CXX11_ABI)
+        set(CXX11_ABI_VALUE 1)
     else()
-        set(CANN_CXX11_ABI 1)
+        set(CXX11_ABI_VALUE 0)
     endif()
+elseif(NOT PRODUCT_SIDE STREQUAL "device")
+    set(CXX11_ABI_VALUE 0)
 endif()
-if(DEFINED CANN_CXX11_ABI)
+
+if(DEFINED CXX11_ABI_VALUE)
     # 支持target通设置CANN_GLIBCXX_USE_CXX11_ABI属性，配置_GLIBCXX_USE_CXX11_ABI编译宏的值
     string(CONCAT _GEN_EXPR
         "$<$<COMPILE_LANGUAGE:CXX>:"
@@ -77,7 +73,7 @@ if(DEFINED CANN_CXX11_ABI)
         "$<STREQUAL:$<TARGET_PROPERTY:CANN_GLIBCXX_USE_CXX11_ABI>,0>,"
         "$<BOOL:$<TARGET_PROPERTY:CANN_GLIBCXX_USE_CXX11_ABI>>>,"
         "_GLIBCXX_USE_CXX11_ABI=$<TARGET_PROPERTY:CANN_GLIBCXX_USE_CXX11_ABI>,"
-        "_GLIBCXX_USE_CXX11_ABI=${CANN_CXX11_ABI}>>"
+        "_GLIBCXX_USE_CXX11_ABI=${CXX11_ABI_VALUE}>>"
     )
     target_compile_definitions(intf_pub_base INTERFACE
         "${_GEN_EXPR}"

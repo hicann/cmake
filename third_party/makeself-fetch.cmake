@@ -13,6 +13,10 @@ set(MAKESELF_NAME "makeself")
 set(MAKESELF_PATH "${CANN_3RD_LIB_PATH}/${MAKESELF_NAME}")
 set(MAKESELF_TAR_PATH "${CANN_3RD_LIB_PATH}/makeself-release-2.5.0-patch1.tar.gz")
 
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
 # 新增：检查本地 tar.gz 包是否存在
 if (EXISTS "${MAKESELF_TAR_PATH}")
     message(STATUS "[ThirdParty][makeself] found local tar.gz package: ${MAKESELF_TAR_PATH}, extracting...")

@@ -95,8 +95,12 @@ else()
         set(GTEST_PROJECT_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/googletest/googletest-1.14.0.tar.gz")
     endif()
 
-    set(GTEST_CXXFLAGS "-D_GLIBCXX_USE_CXX11_ABI=${CANN_CXX11_ABI} -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
-    set(GTEST_CFLAGS "-O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
+    if(NOT DEFINED USE_CXX11_ABI)
+        set(USE_CXX11_ABI 0)
+    endif()
+
+    set(GTEST_CXXFLAGS "-D_GLIBCXX_USE_CXX11_ABI=${USE_CXX11_ABI} -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
+    set(GTEST_CFLAGS "-D_GLIBCXX_USE_CXX11_ABI=${USE_CXX11_ABI} -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
 
     include(ExternalProject)
     # adaptive the gtest upgrade scenario, reset the installation path.

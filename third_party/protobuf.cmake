@@ -9,6 +9,10 @@
 # -----------------------------------------------------------------------------------------------------------
 include_guard(GLOBAL)
 
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
 include(ExternalProject)
 include(GNUInstallDirs)
 include(${CMAKE_CURRENT_LIST_DIR}/abseil-cpp.cmake)
@@ -43,14 +47,17 @@ endif()
 # ==========================================================================================================
 # 2. Compile Flags & Optimization
 # ==========================================================================================================
-include(${CMAKE_CURRENT_LIST_DIR}/protobuf_sym_rename.cmake)
 set(SECURITY_COMPILE_OPT "-Wl,-z,relro,-z,now,-z,noexecstack -s -Wl,-Bsymbolic")
-set(PROTOBUF_SHARED_CXXFLAGS "${SECURITY_COMPILE_OPT} -Wno-maybe-uninitialized -Wno-unused-parameter -fPIC -fstack-protector-all -D_FORTIFY_SOURCE=2 -D_GLIBCXX_USE_CXX11_ABI=${CANN_CXX11_ABI} -O2 -Dgoogle=ascend_private ${PROTOBUF_SYM_RENAME}")
-set(PROTOBUF_STATIC_CXXFLAGS "-fvisibility=hidden -fvisibility-inlines-hidden -Wno-maybe-uninitialized -Wno-unused-parameter -fPIC -fstack-protector-all -D_FORTIFY_SOURCE=2 -D_GLIBCXX_USE_CXX11_ABI=${CANN_CXX11_ABI} -O2 -Dgoogle=ascend_private ${PROTOBUF_SYM_RENAME}")
+set(DEV_PROTOBUF_SHARED_CXXFLAGS "${SECURITY_COMPILE_OPT} -Wno-maybe-uninitialized -Wno-unused-parameter -fPIC -fstack-protector-all -D_FORTIFY_SOURCE=2 -D_GLIBCXX_USE_CXX11_ABI=1 -O2 -Dgoogle=ascend_private")
+set(HOST_PROTOBUF_SHARED_CXXFLAGS "${SECURITY_COMPILE_OPT} -Wno-maybe-uninitialized -Wno-unused-parameter -fPIC -fstack-protector-all -D_FORTIFY_SOURCE=2 -D_GLIBCXX_USE_CXX11_ABI=0 -O2 -Dgoogle=ascend_private")
+set(DEV_PROTOBUF_STATIC_CXXFLAGS "-fvisibility=hidden -fvisibility-inlines-hidden -Wno-maybe-uninitialized -Wno-unused-parameter -fPIC -fstack-protector-all -D_FORTIFY_SOURCE=2 -D_GLIBCXX_USE_CXX11_ABI=1 -O2 -Dgoogle=ascend_private")
+set(HOST_PROTOBUF_STATIC_CXXFLAGS "-fvisibility=hidden -fvisibility-inlines-hidden -Wno-maybe-uninitialized -Wno-unused-parameter -fPIC -fstack-protector-all -D_FORTIFY_SOURCE=2 -D_GLIBCXX_USE_CXX11_ABI=0 -O2 -Dgoogle=ascend_private")
 
 message("[ThirdParty][protobuf] PRODUCT_SIDE: ${PRODUCT_SIDE}")
 message("[ThirdParty][protobuf] CMAKE_TOOLCHAIN_FILE: ${CMAKE_TOOLCHAIN_FILE}")
 if(PRODUCT_SIDE STREQUAL "device")
+    set(HOST_PROTOBUF_SHARED_CXXFLAGS ${DEV_PROTOBUF_SHARED_CXXFLAGS})
+    set(HOST_PROTOBUF_STATIC_CXXFLAGS ${DEV_PROTOBUF_STATIC_CXXFLAGS})
     set(PROTOBUF_TOOLCHAIN_ARGS
         -DTOOLCHAIN_DIR=${TOOLCHAIN_DIR}
         -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
@@ -64,6 +71,10 @@ elseif(CMAKE_TOOLCHAIN_FILE)
 else()
     set(PROTOBUF_TOOLCHAIN_ARGS)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/protobuf_sym_rename.cmake)
+set(HOST_PROTOBUF_SHARED_CXXFLAGS "${HOST_PROTOBUF_SHARED_CXXFLAGS} ${PROTOBUF_SYM_RENAME}")
+set(HOST_PROTOBUF_STATIC_CXXFLAGS "${HOST_PROTOBUF_STATIC_CXXFLAGS} ${PROTOBUF_SYM_RENAME}")
 
 # ==========================================================================================================
 # 3. Find Existing Libraries & Protoc
@@ -149,7 +160,7 @@ ExternalProject_Add(protobuf_src
     URL_HASH SHA256=9bd87b8280ef720d3240514f884e56a712f2218f0d693b48050c836028940a42
     TIMEOUT 300
     DOWNLOAD_DIR ${PROTOBUF_DOWNLOAD_DIR}
-    PATCH_COMMAND patch --forward --batch --quiet -r - -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/protobuf_25.1_change_version.patch
+    PATCH_COMMAND patch --forward --batch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/protobuf_25.1_change_version.patch
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
@@ -192,7 +203,7 @@ else()
             -DLIB_PREFIX=ascend_
             -DCMAKE_SKIP_RPATH=TRUE
             -Dprotobuf_BUILD_TESTS=OFF
-            -DCMAKE_CXX_FLAGS=${PROTOBUF_SHARED_CXXFLAGS}
+            -DCMAKE_CXX_FLAGS=${HOST_PROTOBUF_SHARED_CXXFLAGS}
             -DCMAKE_INSTALL_PREFIX=${PROTOBUF_SHARED_PKG_DIR}
             -Dprotobuf_BUILD_PROTOC_BINARIES=OFF
             -DABSL_ROOT_DIR=${ABS_INSTALL_DIR}
@@ -283,7 +294,7 @@ else()
             -DLIB_PREFIX=ascend_
             -DCMAKE_SKIP_RPATH=TRUE
             -Dprotobuf_BUILD_TESTS=OFF
-            -DCMAKE_CXX_FLAGS=${PROTOBUF_STATIC_CXXFLAGS}
+            -DCMAKE_CXX_FLAGS=${HOST_PROTOBUF_STATIC_CXXFLAGS}
             -DCMAKE_INSTALL_PREFIX=${PROTOBUF_STATIC_PKG_DIR}
             -Dprotobuf_BUILD_PROTOC_BINARIES=OFF
             -DABSL_COMPILE_OBJ=TRUE
@@ -335,7 +346,7 @@ else()
             -DLIB_PREFIX=host_ascend_
             -DCMAKE_SKIP_RPATH=TRUE
             -Dprotobuf_BUILD_TESTS=OFF
-            -DCMAKE_CXX_FLAGS=${PROTOBUF_STATIC_CXXFLAGS}
+            -DCMAKE_CXX_FLAGS=${HOST_PROTOBUF_STATIC_CXXFLAGS}
             -DCMAKE_INSTALL_PREFIX=${PROTOBUF_HOST_STATIC_PKG_DIR}
             -Dprotobuf_BUILD_PROTOC_BINARIES=OFF
             -DABSL_COMPILE_OBJ=TRUE

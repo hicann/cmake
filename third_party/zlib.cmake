@@ -8,6 +8,9 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 include_guard(GLOBAL)
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
 include(ExternalProject)
 
 set(ZLIB_INSTALL_DIR ${CANN_3RD_LIB_PATH}/lib_cache/zlib)
@@ -32,31 +35,21 @@ set_target_properties(minizip_static PROPERTIES
     INTERFACE_LINK_LIBRARIES ${ZLIB_LIBRARY}
 )
 
-set(ZLIB_GZ_HASH SHA256=1525952a0a567581792613a9723333d7f8cc20b87a81f920fb8bc7e3f2251428)
-set(ZLIB_XZ_HASH SHA256=d14c38e313afc35a9a8760dadf26042f51ea0f5d154b0630a31da0540107fb98)
-
-if(EXISTS "${CANN_3RD_LIB_PATH}/zlib/zlib-1.2.13.tar.xz")
-    set(REQ_URL "${CANN_3RD_LIB_PATH}/zlib/zlib-1.2.13.tar.xz")
-    set(ZLIB_URL_HASH ${ZLIB_XZ_HASH})
+set(REQ_URL "${CANN_3RD_LIB_PATH}/zlib/zlib-1.2.13.tar.xz")
+set(REQ_URL_BACK "${CANN_3RD_LIB_PATH}/zlib/zlib-1.2.13.tar.gz")
+if(EXISTS ${REQ_URL})
     message(STATUS "[ThirdParty][zlib] ${REQ_URL} found.")
-elseif(EXISTS "${CANN_3RD_LIB_PATH}/zlib/zlib-1.2.13.tar.gz")
-    set(REQ_URL "${CANN_3RD_LIB_PATH}/zlib/zlib-1.2.13.tar.gz")
-    set(ZLIB_URL_HASH ${ZLIB_GZ_HASH})
-    message(STATUS "[ThirdParty][zlib] ${REQ_URL} found.")
-elseif(EXISTS "${CANN_3RD_LIB_PATH}/zlib-1.2.13.tar.gz")
-    set(REQ_URL "${CANN_3RD_LIB_PATH}/zlib-1.2.13.tar.gz")
-    set(ZLIB_URL_HASH ${ZLIB_GZ_HASH})
-    message(STATUS "[ThirdParty][zlib] ${REQ_URL} found.")
+elseif(EXISTS ${REQ_URL_BACK})
+    message(STATUS "[ThirdParty][zlib] ${REQ_URL_BACK} found.")
+    set(REQ_URL ${REQ_URL_BACK})
 else()
-    set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/zlib/zlib-1.2.13.tar.gz")
-    set(ZLIB_URL_HASH ${ZLIB_GZ_HASH})
     message(STATUS "[ThirdParty][zlib] ${REQ_URL} not found, need download.")
+    set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/zlib/zlib-1.2.13.tar.gz")
 endif()
 ExternalProject_Add(zlib_src
     URL ${REQ_URL}
-    URL_HASH ${ZLIB_URL_HASH}
     TIMEOUT 300
-    PATCH_COMMAND patch --forward --batch --quiet -r - -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/zlib_add_minizip_static_lib.patch
+    PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/zlib_add_minizip_static_lib.patch
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""

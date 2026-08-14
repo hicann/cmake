@@ -130,20 +130,6 @@ macro(init_cann_project)
             set(PRODUCT_SIDE "${CANN_PRODUCT_SIDE}")
         endif()
 
-        # 统一计算 CXX11 ABI 值，供 intf_pub 和三方库共用
-        # USE_CXX11_ABI 支持 0/1/ON/OFF/TRUE/FALSE 等布尔写法，统一归一化为 0 或 1
-        if(DEFINED USE_CXX11_ABI)
-            if(USE_CXX11_ABI)
-                set(CANN_CXX11_ABI 1)
-            else()
-                set(CANN_CXX11_ABI 0)
-            endif()
-        elseif(NOT PRODUCT_SIDE STREQUAL "device")
-            set(CANN_CXX11_ABI 0)
-        else()
-            set(CANN_CXX11_ABI 1)
-        endif()
-
         if(POLICY CMP0135)
             cmake_policy(SET CMP0135 NEW)
         endif()

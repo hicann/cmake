@@ -9,6 +9,10 @@
 # ----------------------------------------------------------------------------
 include_guard(GLOBAL)
 
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
 unset(abseil-cpp_FOUND CACHE)
 unset(ABSL_SOURCE_DIR CACHE)
 
@@ -88,7 +92,7 @@ else()
         DOWNLOAD_DIR ${ABS_PKG_DIR}
         SOURCE_DIR ${ABS_INSTALL_DIR}
         TIMEOUT 300
-        PATCH_COMMAND patch --forward --batch --quiet -r - -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/protobuf-hide_absl_symbols.patch && patch --forward --batch --quiet -r - -p1 < ${ABSL_CVE_PATCH_FILE} && patch --forward --batch --quiet -r - -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/fix-gcc15-gcc16-container-memory-cstdint.patch
+        PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/protobuf-hide_absl_symbols.patch && patch -p1 < ${ABSL_CVE_PATCH_FILE} && patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/fix-gcc15-gcc16-container-memory-cstdint.patch
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
