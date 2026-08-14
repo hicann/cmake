@@ -44,6 +44,16 @@ function(__cann_get_target_arch)
     endif()
 endfunction()
 
+# 检查构建环境是否满足要求：编译器版本、依赖工具等
+function(__cann_check_build_env)
+    set(_min_version "7.3.0")
+    if(CMAKE_C_COMPILER_ID STREQUAL "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_LESS "${_min_version}")
+        message(FATAL_ERROR "gcc version ${CMAKE_C_COMPILER_VERSION} is too old, requires >= ${_min_version}.")
+    endif()
+
+    check_cann_build_tool(python3)
+endfunction()
+
 # 添加target公共编译和链接选项
 macro(add_cann_target_options)
     include(${CANN_CMAKE_DIR}/intf_pub/intf_pub_linux.cmake)
@@ -190,6 +200,7 @@ macro(init_cann_project)
         endif()
 
         __cann_get_target_arch()
+        __cann_check_build_env()
 
         if(CANN_PREPEND_MODULE_PATH)
             list(PREPEND CMAKE_MODULE_PATH "${CANN_CMAKE_DIR}/modules")
@@ -284,6 +295,7 @@ endmacro()
 # 添加三方库
 macro(add_cann_third_party name)
     if(TOPLEVEL_PROJECT OR ENABLE_UNIFIED_BUILD)
+        check_cann_build_tool(patch)
         include(${CANN_CMAKE_DIR}/third_party/${name}.cmake)
     endif()
 endmacro()
@@ -601,6 +613,32 @@ function(check_cann_pkg_build_deps pkg_name)
     if(result)
         message(FATAL_ERROR "Check ${pkg_name} build dependencies failed!")
     endif()
+endfunction()
+
+# 检查构建依赖的工具是否已安装，未安装则报错终止
+# 多仓联合编译时通过全局属性确保同一工具只检查一次
+function(check_cann_build_tool tool_name)
+    cmake_parse_arguments(CANN_TOOL "" "HINT" "" ${ARGN})
+
+    if(NOT (TOPLEVEL_PROJECT OR ENABLE_UNIFIED_BUILD))
+        return()
+    endif()
+
+    get_property(_already_checked GLOBAL PROPERTY CANN_TOOL_CHECKED_${tool_name})
+    if(_already_checked)
+        return()
+    endif()
+
+    find_program(${tool_name}_EXECUTABLE ${tool_name})
+    if(NOT ${tool_name}_EXECUTABLE)
+        set(_msg "Required build tool '${tool_name}' is not found in PATH. Please install it before building.")
+        if(CANN_TOOL_HINT)
+            set(_msg "${_msg}\nHint: ${CANN_TOOL_HINT}")
+        endif()
+        message(FATAL_ERROR "${_msg}")
+    endif()
+
+    set_property(GLOBAL PROPERTY CANN_TOOL_CHECKED_${tool_name} TRUE)
 endfunction()
 
 # 添加生成version.info的目标

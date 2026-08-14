@@ -51,6 +51,21 @@ set_cann_build_dependencies(runtime "CUR_MAJOR_MINOR_VER")
 
 检查构建依赖是否满足。调用 `scripts/version/check_build_dependencies.py`。仅 `TOPLEVEL_PROJECT ON` 时生效。
 
+### `check_cann_build_tool(tool_name [HINT <message>])`
+
+检查构建依赖的工具是否已安装，未安装则 `FATAL_ERROR` 终止。多仓联编时通过全局属性确保同一工具只检查一次。
+
+| 参数 | 说明 |
+|------|------|
+| `tool_name` | 必选，工具名（如 `cmake`、`protoc`） |
+| `HINT` | 可选，安装提示信息，拼接到报错消息末尾 |
+
+`TOPLEVEL_PROJECT ON` 或 `ENABLE_UNIFIED_BUILD` 时生效。
+
+```cmake
+check_cann_build_tool(protoc HINT "Run: pip install protobuf")
+```
+
 ## Device 构建
 
 ### `add_cann_device_project(component)`

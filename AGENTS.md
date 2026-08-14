@@ -56,7 +56,7 @@ pre-commit run --all-files  # manual full-repo check
 
 ## Public API consumed by CANN repos
 
-Functions in `function/prepare.cmake` are the framework's public API: `init_cann_project`, `set_cann_package`, `set_cann_build_dependencies`, `set_cann_run_dependencies`, `set_cann_cpack_config`, `add_cann_third_party`, `find_cann_package`, `generate_cann_stub_library`, `cann_pack_targets_and_files`, `gen_cann_version_header`, `add_cann_sign_file`. Consumer repos call these from their own `CMakeLists.txt`; changing signatures or behavior is a cross-repo breaking change.
+Functions in `function/prepare.cmake` are the framework's public API: `init_cann_project`, `set_cann_package`, `set_cann_build_dependencies`, `set_cann_run_dependencies`, `check_cann_build_tool`, `set_cann_cpack_config`, `add_cann_third_party`, `find_cann_package`, `generate_cann_stub_library`, `cann_pack_targets_and_files`, `gen_cann_version_header`, `add_cann_sign_file`. Consumer repos call these from their own `CMakeLists.txt`; changing signatures or behavior is a cross-repo breaking change.
 
 ## Directory map
 
@@ -81,4 +81,5 @@ Functions in `function/prepare.cmake` are the framework's public API: `init_cann
 - **License header required** on every source file (CANN-2.0), enforced by `OAT.xml`. Copy the header block from any existing file when creating new `.cmake`/`.py`/`.sh` files.
 - **C++ standard is C++17** (`CMAKE_CXX_STANDARD 17`, no extensions), set in `init_cann_project`.
 - Comments throughout the framework are in Chinese — match this when editing existing files.
+- **Docs must stay in sync with code changes:** when modifying `build.sh` parameters/options, `superbuild/CMakeLists.txt` behavior, `config.cmake` package mappings, or any public API in `function/prepare.cmake`, update the corresponding docs (`docs/superbuild/getting-started.md`, `docs/superbuild/internals.md`, `docs/framework/public-api.md`, `AGENTS.md` Build/Architecture sections) in the same change. Do not leave docs describing stale behavior.
 - Consumer integration pattern (see `README.md`): `fetch_cann_cmake.cmake` → `include(function/prepare.cmake)` → `init_cann_project()` after `project()`.

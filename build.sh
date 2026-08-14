@@ -10,8 +10,7 @@
 # -----------------------------------------------------------------------------------------------------------
 
 set -e
-BASEPATH=$(cd "$(dirname $0)"; pwd)
-TOP_DIR="$(dirname "$BASEPATH")"
+BASEPATH=$(cd "$(dirname "$0")"; pwd)
 OUTPUT_PATH="${BASEPATH}/build_out"
 BUILD_PATH="${BASEPATH}/build"
 
@@ -22,7 +21,8 @@ usage() {
   echo "              [--binary-pkgs=<PACKAGES>]"
   echo "              [--superbuild-config=<PATH>] [--p=<PATH> | --cann_path=<PATH>]"
   echo "              [--cann_3rd_lib_path=<PATH>]"
-  echo "              [--asan] [--build_host_only] [--cov]"
+  echo "              [--build_host_only] [--build-type=<TYPE>] [--pkg-type=<TYPE>]"
+  echo "              [--asan] [--cov]"
   echo "              [--sign-script <PATH>] [--enable-sign]"
   echo "              [--rule-launch | --rule_launch]"
   echo ""
@@ -30,24 +30,24 @@ usage() {
   echo "    -h, --help     Print usage"
   echo "    --pkgs=<PACKAGES>"
   echo "                   Packages to be built, separate the package names with commas"
+  echo "    -j<N>          Set the number of threads used for building, default is the number of processors"
+  echo "    -v, --verbose  Display build command"
   echo "    --binary-pkgs=<PACKAGES>"
   echo "                   Use the binary in the package"
   echo "    --superbuild-config=<PATH>"
   echo "                   Config path for superbuild"
-  echo "    --asan         Enable AddressSanitizer"
-  echo "    --cov          Enable Coverage"
-  echo "    --build_host_only
-                           Only build host target"
-  echo "    --build-type=<TYPE>"
-  echo "                   Specify build type (TYPE options: Release/Debug), Default: Release"
-  echo "    --pkg-type=<TYPE>"
-  echo "                   Specify pkg type （TYPE options: run/rpm/deb, Default: run"
-  echo "    -v, --verbose  Display build command"
-  echo "    -j<N>          Set the number of threads used for building, default is the number of processors"
   echo "    -p, --cann_path=<PATH>"
   echo "                   Set ascend package install path, default /usr/local/Ascend/cann"
   echo "    --cann_3rd_lib_path=<PATH>"
   echo "                   Set ascend third_party package install path, default ./output/third_party"
+  echo "    --build_host_only"
+  echo "                   Only build host target"
+  echo "    --build-type=<TYPE>"
+  echo "                   Specify build type (TYPE options: Release/Debug), Default: Release"
+  echo "    --pkg-type=<TYPE>"
+  echo "                   Specify pkg type （TYPE options: run/rpm/deb, Default: run"
+  echo "    --asan         Enable AddressSanitizer"
+  echo "    --cov          Enable Coverage"
   echo "    --sign-script <PATH>"
   echo "                   Set sign-script's path to <PATH>"
   echo "    --enable-sign"
@@ -130,13 +130,13 @@ checkopts() {
       --pkg-type)
         PACKAGE_TYPE=$2
         shift 2
-        ;; 
+        ;;
       --cann_path | -p)
-        CANN_PATH="$(realpath $2)"
+        CANN_PATH="$(realpath "$2")"
         shift 2
         ;;
       --cann_3rd_lib_path)
-        CANN_3RD_LIB_PATH="$(realpath $2)"
+        CANN_3RD_LIB_PATH="$(realpath "$2")"
         shift 2
         ;;
       --sign-script)
@@ -196,7 +196,7 @@ set_env() {
   elif [ -n "${ASCEND_HOME_PATH}" ];then
     ASCEND_CANN_PACKAGE_PATH=${ASCEND_HOME_PATH}
   elif [ -n "${ASCEND_OPP_PATH}" ];then
-    ASCEND_CANN_PACKAGE_PATH=$(dirname ${ASCEND_OPP_PATH})
+    ASCEND_CANN_PACKAGE_PATH=$(dirname "${ASCEND_OPP_PATH}")
   elif [ -d "${DEFAULT_TOOLKIT_INSTALL_DIR}" ];then
     ASCEND_CANN_PACKAGE_PATH=${DEFAULT_TOOLKIT_INSTALL_DIR}
   elif [ -d "${DEFAULT_INSTALL_DIR}" ];then
@@ -244,16 +244,17 @@ build_project() {
   fi
 
   cmake_cmd=(cmake -S "$BASEPATH/superbuild" -B "$BUILD_PATH" "${CMAKE_ARGS[@]}")
-  "${cmake_cmd[@]}"
-  if [ $? -ne 0 ]; then
-    echo "execute command: ${cmake_cmd[@]} failed."
+  if ! "${cmake_cmd[@]}"; then
+    echo "execute command: ${cmake_cmd[*]} failed."
     return 1
   fi
 
-  cmake_cmd=(cmake --build "$BUILD_PATH" --target package "-j${THREAD_NUM}" ${VERBOSE})
-  "${cmake_cmd[@]}"
-  if [ $? -ne 0 ]; then
-    echo "execute command: ${cmake_cmd[@]} failed."
+  cmake_cmd=(cmake --build "$BUILD_PATH" --target package "-j${THREAD_NUM}")
+  if [[ -n "$VERBOSE" ]]; then
+    cmake_cmd+=("$VERBOSE")
+  fi
+  if ! "${cmake_cmd[@]}"; then
+    echo "execute command: ${cmake_cmd[*]} failed."
     return 1
   fi
   echo "build success!"
@@ -283,7 +284,7 @@ function main() {
   local minutes=$(( (duration % 3600) / 60 ))
   local seconds=$((duration % 60))
   echo "---------------- Total duration: ${hours} hour ${minutes} min ${seconds} sec ----------------"
- 
+
 }
 
 main "$@"

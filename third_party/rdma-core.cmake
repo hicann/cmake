@@ -9,6 +9,7 @@
 # ------------------------------------------------------------------------------------------------------------
 include_guard(GLOBAL)
 include(ExternalProject)
+check_cann_build_tool(pkg-config)
 unset(rdma_core_FOUND CACHE)
 unset(RDMA_CORE_INCLUDE CACHE)
 
