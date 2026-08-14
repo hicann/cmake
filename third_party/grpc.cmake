@@ -9,9 +9,6 @@
 # -----------------------------------------------------------------------------------------------------------
 include_guard(GLOBAL)
 include(ExternalProject)
-if(POLICY CMP0135)
-    cmake_policy(SET CMP0135 NEW)
-endif()
 
 include(${CMAKE_CURRENT_LIST_DIR}/openssl.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/re2.cmake)
@@ -152,25 +149,25 @@ else()
         )
     endif()
 
-    set(GRPC_CXX_FLAGS "-Wl,-z,relro,-z,now,-z,noexecstack -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-all -s -D_GLIBCXX_USE_CXX11_ABI=${USE_CXX11_ABI}")
+    set(GRPC_CXX_FLAGS "-Wl,-z,relro,-z,now,-z,noexecstack -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-all -s -D_GLIBCXX_USE_CXX11_ABI=${CANN_CXX11_ABI}")
     ExternalProject_Add(grpc_build
         URL ${REQ_URL}
         URL_HASH SHA256=437068b8b777d3b339da94d3498f1dc20642ac9bfa76db43abdd522186b1542b
         TIMEOUT 300
         ${GRPC_EXTRA_ARGS}
         PATCH_COMMAND ${CMAKE_COMMAND} -E make_directory <SOURCE_DIR>/third_party/opencensus-proto/src
-            COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/grpc-fix-compile-bug-in-device.patch
+            COMMAND patch --forward --batch --quiet -r - -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/grpc-fix-compile-bug-in-device.patch
         CONFIGURE_COMMAND ${CMAKE_COMMAND}
             # zlib
             -DgRPC_ZLIB_PROVIDER=module
             -DZLIB_ROOT_DIR=${ZLIB_SRC_DIR}
             # cares
             -DgRPC_CARES_PROVIDER=module
-            -DCARES_ROOT_DIR=${CARES_INTALL_PATH}
+            -DCARES_ROOT_DIR=${CARES_INSTALL_PATH}
             -DCARES_BUILD_TOOLS=OFF
             # re2
             -DgRPC_RE2_PROVIDER=module
-            -DRE2_ROOT_DIR=${RE2_INTALL_PATH}
+            -DRE2_ROOT_DIR=${RE2_INSTALL_PATH}
             # absl
             -DgRPC_ABSL_PROVIDER=module
             -DABSL_ROOT_DIR=${ABS_INSTALL_DIR}
@@ -233,7 +230,7 @@ else()
         )
     endif()
 
-    set(GRPC_CXX_FLAGS "-Wl,-z,relro,-z,now,-z,noexecstack -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-all -s -D_GLIBCXX_USE_CXX11_ABI=${USE_CXX11_ABI}")
+    set(GRPC_CXX_FLAGS "-Wl,-z,relro,-z,now,-z,noexecstack -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-all -s -D_GLIBCXX_USE_CXX11_ABI=${CANN_CXX11_ABI}")
 
     ExternalProject_Add(protoc_grpc_build
         URL ${REQ_URL}
@@ -241,16 +238,16 @@ else()
         TIMEOUT 300
         ${GRPC_EXTRA_ARGS}
         PATCH_COMMAND ${CMAKE_COMMAND} -E make_directory <SOURCE_DIR>/third_party/opencensus-proto/src
-            COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/grpc-fix-compile-bug-in-device.patch
+            COMMAND patch --forward --batch --quiet -r - -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/grpc-fix-compile-bug-in-device.patch
         CONFIGURE_COMMAND ${CMAKE_COMMAND}
             # zlib
             -DgRPC_ZLIB_PROVIDER=none
             # cares
             -DgRPC_CARES_PROVIDER=module
-            -DCARES_ROOT_DIR=${CARES_INTALL_PATH}
+            -DCARES_ROOT_DIR=${CARES_INSTALL_PATH}
             # re2
             -DgRPC_RE2_PROVIDER=module
-            -DRE2_ROOT_DIR=${RE2_INTALL_PATH}
+            -DRE2_ROOT_DIR=${RE2_INSTALL_PATH}
             # absl
             -DgRPC_ABSL_PROVIDER=module
             -DABSL_ROOT_DIR=${ABS_INSTALL_DIR}

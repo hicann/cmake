@@ -10,19 +10,15 @@
 
 include_guard(GLOBAL)
 
-if(POLICY CMP0135)
-    cmake_policy(SET CMP0135 NEW)
-endif()
-
 if(PRODUCT_SIDE STREQUAL "device")
-    set(CARES_INTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/device/c-ares)
+    set(CARES_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/device/c-ares)
     set(CARES_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg/device)
 else()
-    set(CARES_INTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/c-ares)
+    set(CARES_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/c-ares)
     set(CARES_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg)
 endif()
 
-set(CARES_FILE ${CARES_INTALL_PATH}/include/ares.h)
+set(CARES_FILE ${CARES_INSTALL_PATH}/include/ares.h)
 if (EXISTS ${CARES_FILE})
     message(STATUS "[ThirdPartyLib][c-ares] ${CARES_FILE} found.")
     add_custom_target(cares_build)
@@ -45,11 +41,11 @@ else()
         URL_HASH SHA256=321700399b72ed0e037d0074c629e7741f6b2ec2dda92956abe3e9671d3e268e
         TIMEOUT 300
         DOWNLOAD_DIR ${CARES_PKG_PATH}
-        SOURCE_DIR ${CARES_INTALL_PATH}
+        SOURCE_DIR ${CARES_INSTALL_PATH}
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
         EXCLUDE_FROM_ALL TRUE
-        DWONLOAD_NO_PROGRESS TRUE
+        DOWNLOAD_NO_PROGRESS TRUE
     )
 endif()

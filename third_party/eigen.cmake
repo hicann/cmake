@@ -9,10 +9,6 @@
 # -----------------------------------------------------------------------------------------------------------
 include_guard(GLOBAL)
 
-if(POLICY CMP0135)
-    cmake_policy(SET CMP0135 NEW)
-endif()
-
 if(EXISTS "${CANN_3RD_LIB_PATH}/eigen-5.0.0.tar.gz")
     message(STATUS "[ThirdParty][eigen] tar.gz found in cache: ${CANN_3RD_LIB_PATH}/eigen-5.0.0.tar.gz")
     set(REQ_URL "${CANN_3RD_LIB_PATH}/eigen-5.0.0.tar.gz")
@@ -36,7 +32,7 @@ ExternalProject_Add(external_eigen
     PREFIX third_party
     INSTALL_COMMAND ""
     BUILD_COMMAND ""
-    INSTALL_COMMAND ""
+    EXCLUDE_FROM_ALL TRUE
 )
 
 ExternalProject_Get_Property(external_eigen SOURCE_DIR)

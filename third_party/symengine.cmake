@@ -34,13 +34,13 @@ else()
     elseif(EXISTS ${CMAKE_FILE})
         message(STATUS "[ThirdParty][symengine] ${CMAKE_FILE} found, symengine is ready without patch installed.")
         list(APPEND SYMENGINE_EXTRA_ARGS
-            PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/symengine_add_mod.patch
+            PATCH_COMMAND patch --forward --batch --quiet -r - -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/symengine_add_mod.patch
         )
     elseif(EXISTS ${REQ_URL})
         message(STATUS "[ThirdParty][symengine] ${REQ_URL} found.")
         list(APPEND SYMENGINE_EXTRA_ARGS
             URL ${REQ_URL}
-            PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/symengine_add_mod.patch
+            PATCH_COMMAND patch --forward --batch --quiet -r - -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/symengine_add_mod.patch
         )
     else()
         message(STATUS "[ThirdParty][symengine] symengine not found, need download.")
@@ -50,10 +50,10 @@ else()
             URL_HASH SHA256=1b5c3b0bc6a9f187635f93585649f24a18e9c7f2167cebcd885edeaaf211d956
             TIMEOUT 300
             DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/symengine
-            PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/symengine_add_mod.patch
+            PATCH_COMMAND patch --forward --batch --quiet -r - -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/symengine_add_mod.patch
         )
     endif()
-    set(SYMENGINE_CXXFLAGS "-fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -std=c++17")
+    set(SYMENGINE_CXXFLAGS "-fPIC -D_GLIBCXX_USE_CXX11_ABI=${CANN_CXX11_ABI} -std=c++17")
     include(ExternalProject)
     ExternalProject_Add(symengine_build
         SOURCE_DIR ${CANN_3RD_LIB_PATH}/symengine

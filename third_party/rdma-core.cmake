@@ -12,10 +12,6 @@ include(ExternalProject)
 unset(rdma_core_FOUND CACHE)
 unset(RDMA_CORE_INCLUDE CACHE)
 
-if(POLICY CMP0135)
-    cmake_policy(SET CMP0135 NEW)
-endif()
-
 if(PRODUCT_SIDE STREQUAL "device")
     set(RDMA_CORE_SRC_DIR ${CANN_3RD_LIB_PATH}/lib_cache/device/rdma_core_src)
     set(RDMA_CORE_BUILD_DIR ${CANN_3RD_LIB_PATH}/lib_cache/device/rdma_core_build)
@@ -52,7 +48,7 @@ add_library(rdma_core_headers INTERFACE)
 
 if(rdma_core_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     set(RDMA_CORE_INCLUDE_DIR "${RDMA_CORE_INCLUDE}")
-    message(STATUS "[ThirdParty][rdma-core] rdma-core found in ${RDMA_CORE_BUILD_PATH}, and not force rebuild cann third_party")
+    message(STATUS "[ThirdParty][rdma-core] rdma-core found in ${RDMA_CORE_BUILD_DIR}, and not force rebuild cann third_party")
 else()
     if(EXISTS "${RDMA_CORE_PKG_DIR}/${RDMA_CORE_PATCH_FILE}")
         set(RDMA_CORE_PATCH "${RDMA_CORE_PKG_DIR}/${RDMA_CORE_PATCH_FILE}")
@@ -104,7 +100,7 @@ else()
             TIMEOUT 300
             SOURCE_DIR ${RDMA_CORE_SRC_DIR}
             DOWNLOAD_DIR ${RDMA_CORE_PKG_DIR}
-            PATCH_COMMAND patch -p1 -i "${RDMA_CORE_PATCH}"
+            PATCH_COMMAND patch --forward --batch --quiet -r - -p1 -i "${RDMA_CORE_PATCH}"
             CONFIGURE_COMMAND ""
             BUILD_COMMAND ""
             INSTALL_COMMAND ""

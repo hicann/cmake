@@ -9,10 +9,6 @@
 # -----------------------------------------------------------------------------------------------------------
 include_guard(GLOBAL)
 
-if(POLICY CMP0135)
-    cmake_policy(SET CMP0135 NEW)
-endif()
-
 set(seccomp_download_dependent FALSE)
 if(IS_DIRECTORY "${CANN_3RD_LIB_PATH}/../tools/minios/arm64/include/libseccomp")
     message("[ThirdParty][seccomp] use tools cache.")
@@ -41,6 +37,7 @@ else()
         CONFIGURE_COMMAND cd <SOURCE_DIR> && ./autogen.sh && ./configure --prefix=<INSTALL_DIR>
         INSTALL_COMMAND   ""
         BUILD_COMMAND     ""
+        EXCLUDE_FROM_ALL TRUE
     )
 
   ExternalProject_Get_Property(external_seccomp SOURCE_DIR)

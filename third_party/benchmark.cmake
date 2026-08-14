@@ -43,7 +43,7 @@ else()
 endif()
 
 include(ExternalProject)
-set(benchmark_CXXFLAGS "-D_GLIBCXX_USE_CXX11_ABI=${USE_CXX11_ABI} -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
+set(benchmark_CXXFLAGS "-D_GLIBCXX_USE_CXX11_ABI=${CANN_CXX11_ABI} -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
 ExternalProject_Add(benchmark_build
     URL ${REQ_URL}
     URL_HASH SHA256=6bc180a57d23d4d9515519f92b0c83d61b05b5bab188961f36ac7b06b0d9e9ce

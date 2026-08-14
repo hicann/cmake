@@ -10,19 +10,15 @@
 
 include_guard(GLOBAL)
 
-if(POLICY CMP0135)
-    cmake_policy(SET CMP0135 NEW)
-endif()
-
 if(PRODUCT_SIDE STREQUAL "device")
-    set(RE2_INTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/device/re2)
+    set(RE2_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/device/re2)
     set(RE2_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg/device)
 else()
-    set(RE2_INTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/re2)
+    set(RE2_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/re2)
     set(RE2_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg)
 endif()
 
-set(RE2_FILE ${RE2_INTALL_PATH}/re2.h)
+set(RE2_FILE ${RE2_INSTALL_PATH}/re2.h)
 if (EXISTS ${RE2_FILE})
     message(STATUS "[ThirdParty][re2] re2.h found.")
     add_custom_target(re2_build)
@@ -45,12 +41,12 @@ else()
         URL_HASH SHA256=cd191a311b84fcf37310e5cd876845b4bf5aee76fdd755008eef3b6478ce07bb
         TIMEOUT 300
         DOWNLOAD_DIR ${RE2_PKG_PATH}
-        SOURCE_DIR ${RE2_INTALL_PATH}
-        PATCH_COMMAND patch -N --batch --quiet -r - -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/re2-add_compatible_functions.patch
+        SOURCE_DIR ${RE2_INSTALL_PATH}
+        PATCH_COMMAND patch --forward --batch --quiet -r - -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/re2-add_compatible_functions.patch
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
         EXCLUDE_FROM_ALL TRUE
-        DWONLOAD_NO_PROGRESS TRUE
+        DOWNLOAD_NO_PROGRESS TRUE
     )
 endif()
