@@ -29,6 +29,9 @@ set(BUILD_METADEF TRUE)
 # pypto打开pypto_impl在线编译特性
 set(ENABLE_FEATURE_PYBIND11_IMPL_COMPILE_ONLINE TRUE)
 
+# 防止package时触发all编译，部分make的profiling工具在重编时会覆盖原有的性能数据
+set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
+
 if(NOT "asc-devkit" IN_LIST CANN_BINARY_PACKAGES AND NOT "all" IN_LIST CANN_BINARY_PACKAGES)
     # 从源码导入asc包
     set(CUSTOM_ASC_CMAKE_PATH "${CANN_TOP_DIR}/${CANN_PACKAGE_DIR_asc-devkit}/cmake/asc")

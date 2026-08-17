@@ -54,6 +54,8 @@ usage() {
   echo "                   Enable to sign"
   echo "    --rule-launch/--rule_launch"
   echo "                   Set compiler launcher rule"
+  echo "    --cmake-extra-args"
+  echo "                   Set cmake extra arguments"
   echo ""
 }
 
@@ -76,10 +78,11 @@ checkopts() {
   CANN_BINARY_PACKAGES=""
   CANN_SUPERBUILD_CONFIG=""
   LAUNCH_RULE=""
+  CMAKE_EXTRA_ARGS=()
   PACKAGE_TYPE="run"
 
   # Process the options
-  parsed_args=$(getopt -a -o j:hp:v -l help,pkgs:,superbuild-config:,binary-pkgs:,verbose,cov,build_host_only,cann_path:,build-type:,pkg-type:,cann_3rd_lib_path:,asan,sign-script:,enable-sign,rule-launch:,rule_launch: -- "$@") || {
+  parsed_args=$(getopt -a -o j:hp:v -l help,pkgs:,superbuild-config:,binary-pkgs:,verbose,cov,build_host_only,cann_path:,build-type:,pkg-type:,cann_3rd_lib_path:,asan,sign-script:,enable-sign,rule-launch:,rule_launch:,cmake-extra-args: -- "$@") || {
     usage
     exit 1
   }
@@ -151,6 +154,10 @@ checkopts() {
         LAUNCH_RULE="$2"
         shift 2
         ;;
+      --cmake-extra-args)
+        CMAKE_EXTRA_ARGS+=("$2")
+        shift 2
+        ;;
       --)
         shift
         break
@@ -220,6 +227,7 @@ build_project() {
   touch "$BUILD_PATH/.cmake/api/v1/query/codemodel-v2"
 
   CMAKE_ARGS=(
+    "${CMAKE_EXTRA_ARGS[@]}"
     "-DBUILD_OPEN_PROJECT=TRUE"
     "-DENABLE_OPEN_SRC=TRUE"
     "-DENABLE_UNIFIED_BUILD=TRUE"
@@ -249,10 +257,16 @@ build_project() {
     return 1
   fi
 
-  cmake_cmd=(cmake --build "$BUILD_PATH" --target package "-j${THREAD_NUM}")
+  cmake_cmd=(cmake --build "$BUILD_PATH" "-j${THREAD_NUM}")
   if [[ -n "$VERBOSE" ]]; then
     cmake_cmd+=("$VERBOSE")
   fi
+  if ! "${cmake_cmd[@]}"; then
+    echo "execute command: ${cmake_cmd[*]} failed."
+    return 1
+  fi
+
+  cmake_cmd=(cpack -B "$BUILD_PATH" --config "$BUILD_PATH/CPackConfig.cmake")
   if ! "${cmake_cmd[@]}"; then
     echo "execute command: ${cmake_cmd[*]} failed."
     return 1

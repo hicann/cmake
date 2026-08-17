@@ -94,6 +94,7 @@ sh build.sh --pkgs=runtime --build_host_only
 | `--sign-script <PATH>` | 指定签名脚本路径 | 内置默认 |
 | `--superbuild-config=<PATH>` | 自定义 superbuild 配置文件 | 无 |
 | `--rule-launch <TOOL>` | 设置编译器和链接器启动规则 | 无 |
+| `--cmake-extra-args <ARGS>` | cmake工程配置时，传递的额外参数，支持多次指定，参数累加 | 无 |
 
 ## 构建产物
 
