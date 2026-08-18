@@ -52,7 +52,6 @@ pre-commit run --all-files  # manual full-repo check
 - **ccache** is on by default (`ENABLE_CCACHE`).
 - **Dependency pairs are stride-2 lists:** `set_cann_build_dependencies`/`set_cann_run_dependencies` append `pkg;version` pairs to `CANN_VERSION_*_BUILD_DEPS`/`_RUN_DEPS`. Consumers (`get_build_pkg_deps` in `function/function.cmake`, `scripts/version/generate_version_info.py`) walk the list 2 at a time, so changing the call format requires updating both (flagged in code comments).
 - **Never set `EXCLUDE_FROM_ALL` on `add_subdirectory`** — CMake then skips that dir's `install()` rules, silently dropping components from packages. `set_cann_all_targets` (`function/function.cmake:182`) instead marks individual *targets* `EXCLUDE_FROM_ALL` and aggregates wanted ones under `cann_all_targets`; the `add_subdirectory` calls in `superbuild/CMakeLists.txt:67` deliberately omit it for the same reason.
-- **Don't `set(RUN_DEPENDENCIES_LIST "")` inside `set_cann_cpack_config`** — it would create a local variable shadowing the caller's accumulator (explicit warning at `function/prepare.cmake:327`).
 
 ## Public API consumed by CANN repos
 

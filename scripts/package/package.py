@@ -19,10 +19,9 @@ import csv
 from argparse import Namespace
 from collections import namedtuple
 from collections import defaultdict
-from datetime import datetime, timezone
 from functools import partial
 from itertools import chain
-from typing import Dict, Iterator, List, Set, Tuple, TextIO
+from typing import Iterator, List, Set, Tuple
 import shlex
 import json
 
@@ -889,44 +888,6 @@ def get_pkg_xml_relative_path(pkg_args: Namespace) -> str:
     return os.path.join(*parts())
 
 
-def write_config_inc_var(name: str, package_attr: Dict, file: TextIO):
-    """向config.inc文件写入变量。"""
-    if name in package_attr:
-        value = str(package_attr[name]).lower()
-        file.write(f"{name.upper()}={value}\n")
-
-
-def generate_config_inc(
-    package_attr: Dict,
-    build_dir: str,
-):
-    """生成config.inc文件。"""
-    if (
-        "parallel" not in package_attr
-        and "parallel_limit" not in package_attr
-        and "use_move" not in package_attr
-    ):
-        return
-    year = datetime.now(timezone.utc).year
-    config_inc = os.path.join(build_dir, "config.inc")
-    header = [
-        "#!/bin/sh\n",
-        "#----------------------------------------------------------------------------\n",
-        f"# Copyright Huawei Technologies Co., Ltd. 2023-{year}. All rights reserved.\n",
-        "#----------------------------------------------------------------------------\n",
-        "\n",
-    ]
-    if os.path.isfile(config_inc):
-        os.chmod(config_inc, 0o700)
-    with open(config_inc, "w", encoding="utf-8") as file:
-        file.writelines(header)
-        write_config_inc_var("parallel", package_attr, file)
-        write_config_inc_var("parallel_limit", package_attr, file)
-        write_config_inc_var("use_move", package_attr, file)
-
-    os.chmod(config_inc, 0o500)
-
-
 def get_filter_key(pkg_name):
     if pkg_name in ["driver", "firmware"]:
         return ["all", "docker"]
@@ -947,13 +908,7 @@ def main(pkg_name="", xml_file="", main_args=None):
         CommLog.cilog_error("Delivery dir is empty.")
         return False
 
-    delivery_dir = ""
-    if main_args.suffix == "rpm" or main_args.suffix == "deb":
-        delivery_dir = main_args.delivery_dir
-    else:
-        delivery_dir = os.path.join(
-            main_args.delivery_dir, "_CPack_Packages/makeself_staging"
-        )
+    delivery_dir = main_args.delivery_dir
     if not os.path.exists(delivery_dir):
         CommLog.cilog_error(f"Delivery dir does not exist: {delivery_dir}")
         return False
@@ -1000,9 +955,6 @@ def main(pkg_name="", xml_file="", main_args=None):
     except FilelistError as ex:
         CommLog.cilog_error("check filelist error! %s", str(ex))
         return False
-
-    if main_args.suffix not in ("rpm", "deb"):
-        generate_config_inc(xml_config.package_attr, main_args.delivery_dir)
 
     package_option = PackageOption(
         main_args.os_arch,

@@ -71,7 +71,7 @@ function(normalize_version_cond input_str output_var)
     set(${output_var} "${normalized}" PARENT_SCOPE)
 endfunction()
 
-function(convert_dependencies_to_package_formats DEP_LIST OUT_DEB OUT_RPM)
+function(__cann_convert_dependencies_to_package_formats DEP_LIST OUT_DEB OUT_RPM)
     # 获取依赖列表的值
     set(dependencies ${${DEP_LIST}})
 
@@ -320,7 +320,7 @@ function(__cann_expand_list_to_dict varname)
 endfunction()
 
 # 根据 SOC 字符串推导芯片名称（去除 "ascend" 前缀）
-function(remove_ascend OUTPUT_VAR SOC_VALUE)
+function(__cann_get_chip_name_by_compute_unit OUTPUT_VAR SOC_VALUE)
     if(NOT SOC_VALUE)
         return()
     endif()
@@ -339,10 +339,11 @@ endfunction()
 
 # 设置打包配置，支持多次调用打多个包
 # component: 组件名
-# NO_COMPONENT_INSTALL: 不带--component参数安装
 # ENABLE_DEVICE: 是否解压device-${component}.tar.gz
 # COMPUTE_UNIT: 芯片型号
 # SHARE_INFO_NAME: 如果子包在share/info目录下的名字与component不一致，则需要设置
+# PRE_PKG: 打包前处理脚本路径
+# ARCHIVE_FILE_NAME: TGZ包名
 function(set_cann_cpack_config component)
     if(NOT TOPLEVEL_PROJECT AND NOT ENABLE_UNIFIED_BUILD)
         return()
@@ -355,7 +356,7 @@ function(set_cann_cpack_config component)
     endif()
 
     cmake_parse_arguments(CANN
-        "NO_COMPONENT_INSTALL;NO_CLEAN;TGZ"
+        "TGZ"
         "PRE_PKG;ENABLE_DEVICE;PACKAGE_TYPE;COMPUTE_UNIT;SHARE_INFO_NAME;OUTPUT;ARCHIVE_FILE_NAME"
         ""
         ${ARGN}
@@ -414,53 +415,48 @@ function(set_cann_cpack_config component)
     endif()
     __cann_expand_list_to_dict(CPACK_CANN_PRE_PKG)
 
-    # 获取当前组件的依赖配对列表 (pkg;version;pkg;version;...)
-    # 同一源码仓库（如 air）可定义多个 set_cann_package，必须按组件隔离依赖，避免并集污染。
-    set(_RUN_DEPS_PAIRS "${CANN_VERSION_${component}_RUN_DEPS}")
-    # 转换为 "pkg version" 格式列表
-    set(COMPONENT_RUN_DEPS "")
-    while(_RUN_DEPS_PAIRS)
-        list(POP_FRONT _RUN_DEPS_PAIRS _DEP_PKG) # 取包名
-        list(POP_FRONT _RUN_DEPS_PAIRS _DEP_VER) # 取版本
-        list(APPEND COMPONENT_RUN_DEPS "${_DEP_PKG} ${_DEP_VER}")
-    endwhile()
-    # 去重
-    list(REMOVE_DUPLICATES COMPONENT_RUN_DEPS)
-    set(DEB_DEPENDS "")
-    set(RPM_REQUIRES "")
-    message(STATUS "COMPONENT_RUN_DEPS(${component}): ${COMPONENT_RUN_DEPS}")
-    # 转换为 DEB/RPM 格式
-    convert_dependencies_to_package_formats(COMPONENT_RUN_DEPS DEB_DEPENDS RPM_REQUIRES)
-
-    # 将生成的依赖字符串传递给 Cpack
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "${DEB_DEPENDS}")
-    set(CPACK_RPM_PACKAGE_REQUIRES "${RPM_REQUIRES}")
-    message(STATUS "DEB depends: ${CPACK_DEBIAN_PACKAGE_DEPENDS}")
-    message(STATUS "RPM requires: ${CPACK_RPM_PACKAGE_REQUIRES}")
-    if(NOT CANN_CHIP_NAME AND CPACK_SOC)
-        remove_ascend(CANN_CHIP_NAME "${CPACK_SOC}")
-    endif()
-    string(TOUPPER "${component}" UPPER_COMP)
-    set(CPACK_DEBIAN_${UPPER_COMP}_PACKAGE_NAME "${component}")
-    set(CPACK_RPM_${UPPER_COMP}_PACKAGE_NAME "${component}")
-    string(TOLOWER "${CMAKE_SYSTEM_NAME}" CPACK_SYSTEM_NAME)
-    set(CPACK_ARCHITECTURE "${CMAKE_SYSTEM_PROCESSOR}")
+    # CPACK_PACKAGE_VERSION没有对应的组件变量CPACK_<COMPONENT>_PACKAGE_VERSION
     set(CPACK_PACKAGE_VERSION "${CANN_VERSION_${component}_VERSION}")
-    if(CANN_CHIP_NAME)
-        set(PACKAGE_FILE_NAME_TEMPLATE "cann-${CANN_CHIP_NAME}-${component}_${CPACK_PACKAGE_VERSION}_${CPACK_SYSTEM_NAME}-${CPACK_ARCHITECTURE}")
-    else()
-        set(PACKAGE_FILE_NAME_TEMPLATE "cann-${component}_${CPACK_PACKAGE_VERSION}_${CPACK_SYSTEM_NAME}-${CPACK_ARCHITECTURE}")
-    endif()
-    set(CPACK_PACKAGE_FILE_NAME "${PACKAGE_FILE_NAME_TEMPLATE}")
-    set(CPACK_DEBIAN_FILE_NAME "${PACKAGE_FILE_NAME_TEMPLATE}.deb")
-    set(CPACK_RPM_FILE_NAME "${PACKAGE_FILE_NAME_TEMPLATE}.rpm")
 
-    if(NOT CANN_NO_COMPONENT_INSTALL)
-        set(CPACK_CANN_INSTALL_COMPONENT "${component}")
+    if(NOT CANN_CHIP_NAME AND CANN_COMPUTE_UNIT)
+        __cann_get_chip_name_by_compute_unit(CANN_CHIP_NAME "${CANN_COMPUTE_UNIT}")
     endif()
-    if(CANN_NO_CLEAN)
-        set(CPACK_CANN_NO_CLEAN True)
-    endif()
+    string(TOLOWER "${CMAKE_SYSTEM_NAME}" CPACK_SYSTEM_NAME)
+
+    foreach(component IN LISTS CPACK_COMPONENTS_ALL)
+        string(TOUPPER "${component}" UPPER_COMP)
+
+        set(CPACK_DEBIAN_${UPPER_COMP}_PACKAGE_NAME "${component}")
+        set(CPACK_RPM_${UPPER_COMP}_PACKAGE_NAME "${component}")
+
+        # 获取当前组件的依赖配对列表 (pkg;version;pkg;version;...)
+        # 同一源码仓库（如 air）可定义多个 set_cann_package，必须按组件隔离依赖，避免并集污染。
+        set(_RUN_DEPS_PAIRS "${CANN_VERSION_${component}_RUN_DEPS}")
+        # 转换为 "pkg version" 格式列表
+        set(COMPONENT_RUN_DEPS "")
+        while(_RUN_DEPS_PAIRS)
+            list(POP_FRONT _RUN_DEPS_PAIRS _DEP_PKG) # 取包名
+            list(POP_FRONT _RUN_DEPS_PAIRS _DEP_VER) # 取版本
+            list(APPEND COMPONENT_RUN_DEPS "${_DEP_PKG} ${_DEP_VER}")
+        endwhile()
+        # 去重
+        list(REMOVE_DUPLICATES COMPONENT_RUN_DEPS)
+        # 转换为 DEB/RPM 格式
+        __cann_convert_dependencies_to_package_formats(COMPONENT_RUN_DEPS DEB_DEPENDS RPM_REQUIRES)
+
+        # 将生成的依赖字符串传递给 Cpack
+        set(CPACK_DEBIAN_${UPPER_COMP}_PACKAGE_DEPENDS "${DEB_DEPENDS}")
+        set(CPACK_RPM_${UPPER_COMP}_PACKAGE_REQUIRES "${RPM_REQUIRES}")
+
+        if(CANN_CHIP_NAME)
+            set(PACKAGE_FILE_NAME_TEMPLATE "cann-${CANN_CHIP_NAME}-${component}_${CPACK_PACKAGE_VERSION}_${CPACK_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+        else()
+            set(PACKAGE_FILE_NAME_TEMPLATE "cann-${component}_${CPACK_PACKAGE_VERSION}_${CPACK_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+        endif()
+        set(CPACK_DEBIAN_${UPPER_COMP}_FILE_NAME "${PACKAGE_FILE_NAME_TEMPLATE}.deb")
+        set(CPACK_RPM_${UPPER_COMP}_FILE_NAME "${PACKAGE_FILE_NAME_TEMPLATE}.rpm")
+    endforeach()
+
     __cann_append_global_property(CPACK_CMAKE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
     set(CPACK_CMAKE_BINARY_DIR "${CMAKE_BINARY_DIR}")
     __cann_append_global_property(CPACK_ENABLE_DEVICE "${CANN_ENABLE_DEVICE}")
@@ -491,6 +487,7 @@ function(set_cann_cpack_config component)
         "${CMAKE_BINARY_DIR}/prerm"
     )
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "huawei")
+
     set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CANN_CMAKE_DIR}/scripts/package/makeself.cmake")
     set(CPACK_EXTERNAL_ENABLE_STAGING TRUE)
     set(CPACK_PACKAGE_DIRECTORY "${CMAKE_BINARY_DIR}")
@@ -582,9 +579,6 @@ function(set_cann_run_dependencies pkg_name depend)
     # CANN_VERSION_*_RUN_DEPS 存储为 pkg;version 配对列表，供 generate_version_info.py 按对解析
     list(APPEND CANN_VERSION_${CANN_VERSION_CURRENT_PACKAGE}_RUN_DEPS "${pkg_name}" "${depend}")
     set(CANN_VERSION_${CANN_VERSION_CURRENT_PACKAGE}_RUN_DEPS "${CANN_VERSION_${CANN_VERSION_CURRENT_PACKAGE}_RUN_DEPS}" PARENT_SCOPE)
-    # RUN_DEPENDENCIES_LIST 存储为 "pkg version" 组合字符串，供 convert_dependencies_to_package_formats 按 regex 解析
-    list(APPEND RUN_DEPENDENCIES_LIST "${pkg_name} ${depend}")
-    set(RUN_DEPENDENCIES_LIST "${RUN_DEPENDENCIES_LIST}" PARENT_SCOPE)
 endfunction()
 
 # 检查构建依赖

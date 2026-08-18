@@ -14,7 +14,6 @@
 """Tests for package module."""
 
 import csv
-import io
 import os
 import subprocess
 from argparse import Namespace
@@ -635,48 +634,6 @@ class TestGenerateCustomizedFile:
         assert "#define DEFINE_A 100" in content
 
 
-class TestWriteConfigIncVar:
-    """Test write_config_inc_var function."""
-
-    def test_write_config_inc_var(self):
-        """Test writing config variable."""
-        f = io.StringIO()
-        package_attr = {"parallel": True, "parallel_limit": 4}
-        package_module.write_config_inc_var("parallel", package_attr, f)
-        assert "PARALLEL=true" in f.getvalue()
-
-    def test_write_config_inc_var_not_in_attr(self):
-        """Test writing non-existent config variable."""
-        f = io.StringIO()
-        package_attr = {"parallel": True}
-        package_module.write_config_inc_var("nonexistent", package_attr, f)
-        assert f.getvalue() == ""
-
-
-class TestGenerateConfigInc:
-    """Test generate_config_inc function."""
-
-    def test_generate_config_inc(self, tmp_path):
-        """Test generating config.inc file."""
-        package_attr = {"parallel": True, "parallel_limit": 4, "use_move": False}
-        package_module.generate_config_inc(package_attr, str(tmp_path))
-
-        config_file = tmp_path / "config.inc"
-        assert config_file.exists()
-        content = config_file.read_text()
-        assert "PARALLEL=true" in content
-        assert "PARALLEL_LIMIT=4" in content
-        assert "USE_MOVE=false" in content
-
-    def test_generate_config_inc_no_attrs(self, tmp_path):
-        """Test generate_config_inc with no relevant attrs."""
-        package_attr = {"other_attr": "value"}
-        package_module.generate_config_inc(package_attr, str(tmp_path))
-
-        config_file = tmp_path / "config.inc"
-        assert not config_file.exists()
-
-
 class TestCheckPathIsConflict:
     """Test check_path_is_conflict function."""
 
@@ -697,8 +654,6 @@ class TestCheckPathIsConflict:
 
     def test_check_path_is_conflict_with_conflict(self):
         """Test check_path_is_conflict with conflict."""
-        import os
-
         # The function joins install_path with target_name from value
         # value='path/file' -> target_name='file'
         # install_path='/install' + 'file' -> os.path.join('/install', 'file')
@@ -2340,24 +2295,6 @@ class TestMainSuccessFlow:
         mock_xml_config.version = "8.0.0"
         _mock_main_success_env(monkeypatch, mock_xml_config, True)
         assert package_module.main("test", "", args) is True
-
-
-class TestMainRpmDebSkipsConfigInc:
-    """main() 在 rpm/deb 模式下不调用 generate_config_inc。"""
-
-    @staticmethod
-    def test_main_rpm_no_config_inc(tmp_path, monkeypatch):
-        args = _make_main_args(tmp_path, suffix="rpm")
-        mock_xml_config = mock.MagicMock()
-        mock_xml_config.package_attr = {"package_check": False, "func_name": "test"}
-        mock_xml_config.version = "8.0.0"
-        _mock_main_success_env(monkeypatch, mock_xml_config, True)
-        called = []
-        monkeypatch.setattr(
-            package_module, "generate_config_inc", lambda *a, **k: called.append(True)
-        )
-        package_module.main("test", "", args)
-        assert called == []
 
 
 class TestGenerateModulesYaml:

@@ -9,6 +9,8 @@
 # -----------------------------------------------------------------------------------------------------------
 # makeself.cmake - 自定义 makeself 打包脚本
 
+include(${CMAKE_CURRENT_LIST_DIR}/pkg_func.cmake)
+
 include(CMakePrintHelpers)
 
 set(CMAKE_SYSTEM_PROCESSOR ${CPACK_TARGET_ARCH})
@@ -22,60 +24,20 @@ endif()
 function(pack_run_package component share_info_name source_dir enable_device)
     # 创建临时安装目录
     set(STAGING_DIR "${CPACK_CMAKE_BINARY_DIR}/_CPack_Packages/makeself_staging")
-    if(NOT CPACK_CANN_NO_CLEAN)
-        file(REMOVE_RECURSE "${STAGING_DIR}")
-    endif()
+    file(REMOVE_RECURSE "${STAGING_DIR}")
     file(MAKE_DIRECTORY "${STAGING_DIR}")
 
     # 执行安装到临时目录
-    if(CPACK_CANN_INSTALL_COMPONENT)
-        execute_process(
-            COMMAND "${CMAKE_COMMAND}" --install "${CPACK_CMAKE_BINARY_DIR}" --prefix "${STAGING_DIR}" --component "${component}"
-            RESULT_VARIABLE INSTALL_RESULT
-        )
-    else()
-        execute_process(
-            COMMAND "${CMAKE_COMMAND}" --install "${CPACK_CMAKE_BINARY_DIR}" --prefix "${STAGING_DIR}"
-            RESULT_VARIABLE INSTALL_RESULT
-        )
-    endif()
+    execute_process(
+        COMMAND "${CMAKE_COMMAND}" --install "${CPACK_CMAKE_BINARY_DIR}" --prefix "${STAGING_DIR}" --component "${component}"
+        RESULT_VARIABLE INSTALL_RESULT
+    )
 
     if(NOT INSTALL_RESULT EQUAL 0)
         message(FATAL_ERROR "Installation to staging directory failed: ${INSTALL_RESULT}")
     endif()
 
-    if(enable_device)
-        # 解压子工程包
-        execute_process(
-            COMMAND tar --keep-old-files -zxpf "${STAGING_DIR}/device-${component}.tar.gz" -C "${STAGING_DIR}"
-            RESULT_VARIABLE RETCODE
-        )
-        if(RETCODE)
-            message(FATAL_ERROR "Extract device-${component}.tar.gz failed, return code is ${RETCODE}.")
-        endif()
-
-        # 刪除子工程压缩包，避免打到run包中
-        file(REMOVE "${STAGING_DIR}/device-${component}.tar.gz")
-    endif()
-
-    if(CPACK_CANN_PRE_PKG_${component})
-        include(${CPACK_CANN_PRE_PKG_${component}})
-    endif()
-
-    # 生成安装配置文件
-    execute_process(
-        COMMAND python3 ${CMAKE_CURRENT_LIST_DIR}/package.py --pkg_name ${share_info_name} --chip_name ${CPACK_SOC} --os_arch linux-${CMAKE_SYSTEM_PROCESSOR} --version_dir ${CPACK_VERSION} --delivery_dir ${CPACK_CMAKE_BINARY_DIR} --source_dir ${source_dir}
-        WORKING_DIRECTORY ${CPACK_CMAKE_BINARY_DIR}
-        OUTPUT_VARIABLE result
-        ERROR_VARIABLE error
-        RESULT_VARIABLE code
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (NOT code EQUAL 0)
-        message(FATAL_ERROR "Filelist generation failed: ${result} ${error}")
-    else ()
-        message(STATUS "Filelist generated successfully: ${result}")
-    endif ()
+    pre_package_process("${component}" "${share_info_name}" "${source_dir}" "${enable_device}" "${STAGING_DIR}" "run")
 
     # 统一修正文件权限
     if(EXISTS "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/conf/path.cfg")
