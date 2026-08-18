@@ -908,7 +908,15 @@ def main(pkg_name="", xml_file="", main_args=None):
         CommLog.cilog_error("Delivery dir is empty.")
         return False
 
-    delivery_dir = main_args.delivery_dir
+    if main_args.suffix == "rpm" or main_args.suffix == "deb":
+        delivery_dir = main_args.delivery_dir
+    else:
+        if os.path.basename(main_args.delivery_dir) == "makeself_staging":
+            delivery_dir = main_args.delivery_dir
+        else:
+            delivery_dir = os.path.join(
+                main_args.delivery_dir, "_CPack_Packages/makeself_staging"
+            )
     if not os.path.exists(delivery_dir):
         CommLog.cilog_error(f"Delivery dir does not exist: {delivery_dir}")
         return False
