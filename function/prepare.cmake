@@ -215,6 +215,8 @@ function(add_cann_device_project component)
         return()
     endif()
 
+    cmake_parse_arguments(CANN "" "" "EXT_ARGS" ${ARGN})
+
     set(EP_CMAKE_ARGS)
     if(ASCEND_CANN_PACKAGE_PATH)
         list(APPEND EP_CMAKE_ARGS "-D" "ASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}")
@@ -223,6 +225,9 @@ function(add_cann_device_project component)
     endif()
     if(HI_PYTHON)
         list(APPEND EP_CMAKE_ARGS "-D" "HI_PYTHON=${HI_PYTHON}")
+    endif()
+    if(CANN_EXT_ARGS)
+        list(APPEND EP_CMAKE_ARGS ${CANN_EXT_ARGS})
     endif()
 
     if(NOT DEFINED DEVICE_TOOLCHAIN_DIR)
