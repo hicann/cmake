@@ -56,6 +56,14 @@ usage() {
   echo "                   Set compiler launcher rule"
   echo "    --cmake-extra-args"
   echo "                   Set cmake extra arguments"
+  echo "    --host-toolchain=<PATH>"
+  echo "                   Set host CMAKE_TOOLCHAIN_FILE (absolute path or filename under toolchain/)"
+  echo "    --host-toolchain-dir=<PATH>"
+  echo "                   Set host TOOLCHAIN_DIR (compiler root referenced by toolchain file)"
+  echo "    --device-toolchain=<PATH>"
+  echo "                   Set device CMAKE_TOOLCHAIN_FILE (absolute path or filename under toolchain/)"
+  echo "    --device-toolchain-dir=<PATH>"
+  echo "                   Set device TOOLCHAIN_DIR (compiler root referenced by toolchain file)"
   echo ""
 }
 
@@ -63,26 +71,39 @@ trans_commas() {
   printf -v "$1" '%s' "${2//,/;}"
 }
 
+resolve_toolchain_file() {
+  local input="$1"
+  if [[ "$input" = /* ]]; then
+    echo "$input"
+  else
+    echo "$BASEPATH/toolchain/$input"
+  fi
+}
+
 # parse and set options
 checkopts() {
   VERBOSE=""
   THREAD_NUM=$(grep -c ^processor /proc/cpuinfo)
-  ENABLE_GCOV="off"
-  ENABLE_ASAN="off"
+  ENABLE_GCOV=""
+  ENABLE_ASAN=""
   CANN_3RD_LIB_PATH="$BASEPATH/output/third_party"
   BUILD_TYPE="Release"
   CUSTOM_SIGN_SCRIPT=""
-  ENABLE_SIGN="OFF"
-  ENABLE_BUILD_DEVICE="ON"
+  ENABLE_SIGN=""
+  ENABLE_BUILD_DEVICE=""
   CANN_PACKAGES=""
   CANN_BINARY_PACKAGES=""
   CANN_SUPERBUILD_CONFIG=""
   LAUNCH_RULE=""
   CMAKE_EXTRA_ARGS=()
   PACKAGE_TYPE="run"
+  HOST_TOOLCHAIN=""
+  HOST_TOOLCHAIN_DIR=""
+  DEVICE_TOOLCHAIN=""
+  DEVICE_TOOLCHAIN_DIR=""
 
   # Process the options
-  parsed_args=$(getopt -a -o j:hp:v -l help,pkgs:,superbuild-config:,binary-pkgs:,verbose,cov,build_host_only,cann_path:,build-type:,pkg-type:,cann_3rd_lib_path:,asan,sign-script:,enable-sign,rule-launch:,rule_launch:,cmake-extra-args: -- "$@") || {
+  parsed_args=$(getopt -a -o j:hp:v -l help,pkgs:,superbuild-config:,binary-pkgs:,verbose,cov,build_host_only,cann_path:,build-type:,pkg-type:,cann_3rd_lib_path:,asan,sign-script:,enable-sign,rule-launch:,rule_launch:,cmake-extra-args:,host-toolchain:,host-toolchain-dir:,device-toolchain:,device-toolchain-dir: -- "$@") || {
     usage
     exit 1
   }
@@ -158,6 +179,22 @@ checkopts() {
         CMAKE_EXTRA_ARGS+=("$2")
         shift 2
         ;;
+      --host-toolchain)
+        HOST_TOOLCHAIN=$(resolve_toolchain_file "$2")
+        shift 2
+        ;;
+      --host-toolchain-dir)
+        HOST_TOOLCHAIN_DIR="$2"
+        shift 2
+        ;;
+      --device-toolchain)
+        DEVICE_TOOLCHAIN=$(resolve_toolchain_file "$2")
+        shift 2
+        ;;
+      --device-toolchain-dir)
+        DEVICE_TOOLCHAIN_DIR="$2"
+        shift 2
+        ;;
       --)
         shift
         break
@@ -228,23 +265,49 @@ build_project() {
 
   CMAKE_ARGS=(
     "${CMAKE_EXTRA_ARGS[@]}"
-    "-DBUILD_OPEN_PROJECT=TRUE"
     "-DENABLE_OPEN_SRC=TRUE"
     "-DENABLE_UNIFIED_BUILD=TRUE"
     "-DCANN_PACKAGES=${CANN_PACKAGES}"
-    "-DCANN_BINARY_PACKAGES=${CANN_BINARY_PACKAGES}"
-    "-DCANN_SUPERBUILD_CONFIG=${CANN_SUPERBUILD_CONFIG}"
     "-DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
     "-DCMAKE_INSTALL_PREFIX=${OUTPUT_PATH}"
     "-DASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}"
     "-DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}"
-    "-DENABLE_GCOV=${ENABLE_GCOV}"
-    "-DENABLE_ASAN=${ENABLE_ASAN}"
-    "-DENABLE_SIGN=${ENABLE_SIGN}"
-    "-DENABLE_BUILD_DEVICE=${ENABLE_BUILD_DEVICE}"
-    "-DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT}"
     "-DPACKAGE_TYPE=${PACKAGE_TYPE}"
   )
+
+  if [ -n "${CANN_BINARY_PACKAGES}" ]; then
+    CMAKE_ARGS+=("-DCANN_BINARY_PACKAGES=${CANN_BINARY_PACKAGES}")
+  fi
+  if [ -n "${CANN_SUPERBUILD_CONFIG}" ]; then
+    CMAKE_ARGS+=("-DCANN_SUPERBUILD_CONFIG=${CANN_SUPERBUILD_CONFIG}")
+  fi
+  if [ -n "${ENABLE_GCOV}" ]; then
+    CMAKE_ARGS+=("-DENABLE_GCOV=${ENABLE_GCOV}")
+  fi
+  if [ -n "${ENABLE_ASAN}" ]; then
+    CMAKE_ARGS+=("-DENABLE_ASAN=${ENABLE_ASAN}")
+  fi
+  if [ -n "${ENABLE_SIGN}" ]; then
+    CMAKE_ARGS+=("-DENABLE_SIGN=${ENABLE_SIGN}")
+  fi
+  if [ -n "${ENABLE_BUILD_DEVICE}" ]; then
+    CMAKE_ARGS+=("-DENABLE_BUILD_DEVICE=${ENABLE_BUILD_DEVICE}")
+  fi
+  if [ -n "${CUSTOM_SIGN_SCRIPT}" ]; then
+    CMAKE_ARGS+=("-DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT}")
+  fi
+  if [ -n "${HOST_TOOLCHAIN}" ]; then
+    CMAKE_ARGS+=("-DCMAKE_TOOLCHAIN_FILE=${HOST_TOOLCHAIN}")
+  fi
+  if [ -n "${HOST_TOOLCHAIN_DIR}" ]; then
+    CMAKE_ARGS+=("-DTOOLCHAIN_DIR=${HOST_TOOLCHAIN_DIR}")
+  fi
+  if [ -n "${DEVICE_TOOLCHAIN}" ]; then
+    CMAKE_ARGS+=("-DDEVICE_TOOLCHAIN_FILE=${DEVICE_TOOLCHAIN}")
+  fi
+  if [ -n "${DEVICE_TOOLCHAIN_DIR}" ]; then
+    CMAKE_ARGS+=("-DDEVICE_TOOLCHAIN_DIR=${DEVICE_TOOLCHAIN_DIR}")
+  fi
 
   if [ -n "${LAUNCH_RULE}" ]; then
     CMAKE_ARGS+=("-DLAUNCH_COMPILE_TOOL=${LAUNCH_RULE}")

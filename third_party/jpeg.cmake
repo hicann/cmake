@@ -24,6 +24,13 @@ message("[ThirdParty][libjpeg-turbo] valued url path: ${REQ_URL}.")
 set(JPEG_C_FLAGS "-fPIC -fexceptions -D_FORTIFY_SOURCE=2 -O2 -fvisibility=hidden -DCONFIG_MASK_JWARN")
 set(JPEG_INSTALL_PATH ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo)
 
+set(JPEG_TOOLCHAIN_ARGS)
+if(CMAKE_TOOLCHAIN_FILE)
+    list(APPEND JPEG_TOOLCHAIN_ARGS -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE})
+    if(TOOLCHAIN_DIR)
+        list(APPEND JPEG_TOOLCHAIN_ARGS -DTOOLCHAIN_DIR=${TOOLCHAIN_DIR})
+    endif()
+endif()
 
 include(ExternalProject)
 ExternalProject_Add(third_party_jpeg
@@ -33,8 +40,6 @@ ExternalProject_Add(third_party_jpeg
     TIMEOUT 300
     CONFIGURE_COMMAND ${CMAKE_COMMAND}
         -DCMAKE_C_COMPILER_LAUNCHER=${CCACHE_PROGRAM}
-        -DTOOLCHAIN_DIR=${TOOLCHAIN_DIR}
-        -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
         -DCMAKE_C_FLAGS=${JPEG_C_FLAGS}
         -DCMAKE_INSTALL_PREFIX=${JPEG_INSTALL_PATH}
         -DCMAKE_INSTALL_DEFAULT_LIBDIR=lib
@@ -42,6 +47,7 @@ ExternalProject_Add(third_party_jpeg
         -DENABLE_SHARED=FALSE
         -DWITH_JPEG8=ON
         -DWITH_SIMD=ON
+        ${JPEG_TOOLCHAIN_ARGS}
     <SOURCE_DIR>
     BUILD_COMMAND $(MAKE)
     INSTALL_COMMAND $(MAKE) install

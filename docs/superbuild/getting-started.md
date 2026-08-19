@@ -95,6 +95,10 @@ sh build.sh --pkgs=runtime --build_host_only
 | `--superbuild-config=<PATH>` | 自定义 superbuild 配置文件 | 无 |
 | `--rule-launch <TOOL>` | 设置编译器和链接器启动规则 | 无 |
 | `--cmake-extra-args <ARGS>` | cmake工程配置时，传递的额外参数，支持多次指定，参数累加 | 无 |
+| `--host-toolchain=<PATH>` | 指定 host 侧 `CMAKE_TOOLCHAIN_FILE` | 无 |
+| `--host-toolchain-dir=<PATH>` | 指定 host 侧 `TOOLCHAIN_DIR`（toolchain file 内部引用的编译器根目录） | 无 |
+| `--device-toolchain=<PATH>` | 指定 device 侧 `CMAKE_TOOLCHAIN_FILE` | 内置 `aarch64-hcc-toolchain.cmake` |
+| `--device-toolchain-dir=<PATH>` | 指定 device 侧 `TOOLCHAIN_DIR`（toolchain file 内部引用的编译器根目录） | `${ASCEND_INSTALL_PATH}/toolkit/toolchain/hcc` |
 
 ## 构建产物
 
@@ -122,6 +126,18 @@ sh build.sh --pkgs=runtime --build_host_only
 - 判断是否需要 device 交叉编译
 
 详细机制参见 [internals.md](internals.md)。
+
+## 自定义工具链
+
+内置 `toolchain/aarch64-hcc-toolchain.cmake` 用于 hcc 交叉编译 device 侧。如需使用 clang/LLVM 工具链，可指定 `--device-toolchain` 指向 `toolchain/aarch64-clang-toolchain.cmake`：
+
+```bash
+sh build.sh --pkgs=runtime \
+  --device-toolchain=cmake/toolchain/aarch64-clang-toolchain.cmake \
+  --device-toolchain-dir=/usr/lib/llvm-15
+```
+
+`TOOLCHAIN_DIR` 指向 LLVM 安装根目录，其 `bin/` 下应包含 `clang`、`clang++`、`lld`、`llvm-ar` 等工具。
 
 ## 可用的包名
 

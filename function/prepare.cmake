@@ -225,14 +225,21 @@ function(add_cann_device_project component)
         list(APPEND EP_CMAKE_ARGS "-D" "HI_PYTHON=${HI_PYTHON}")
     endif()
 
+    if(NOT DEFINED DEVICE_TOOLCHAIN_DIR)
+        set(DEVICE_TOOLCHAIN_DIR ${ASCEND_INSTALL_PATH}/toolkit/toolchain/hcc)
+    endif()
+    if(NOT DEFINED DEVICE_TOOLCHAIN_FILE)
+        set(DEVICE_TOOLCHAIN_FILE "${CANN_CMAKE_DIR}/toolchain/aarch64-hcc-toolchain.cmake")
+    endif()
+
     include(ExternalProject)
     ExternalProject_Add(cann_device
         SOURCE_DIR ${CMAKE_SOURCE_DIR}/cmake/device
         BINARY_DIR ${CMAKE_BINARY_DIR}/device_build
         CMAKE_ARGS
             ${EP_CMAKE_ARGS}
-            -D TOOLCHAIN_DIR=${ASCEND_INSTALL_PATH}/toolkit/toolchain/hcc
-            -D CMAKE_TOOLCHAIN_FILE=${CANN_CMAKE_DIR}/toolchain/aarch64-hcc-toolchain.cmake
+            -D TOOLCHAIN_DIR=${DEVICE_TOOLCHAIN_DIR}
+            -D CMAKE_TOOLCHAIN_FILE=${DEVICE_TOOLCHAIN_FILE}
             -D CANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}
             -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
             -D ENABLE_SIGN=${ENABLE_SIGN}

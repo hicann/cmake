@@ -339,7 +339,8 @@ cmake -S superbuild -B build         ← host 侧配置
         │   │
         │   ▼
         │   cmake -S superbuild/device -B build/device_build
-        │   -DCMAKE_TOOLCHAIN_FILE=.../aarch64-hcc-toolchain.cmake
+        │   -DCMAKE_TOOLCHAIN_FILE=${DEVICE_TOOLCHAIN_FILE}
+        │   -DTOOLCHAIN_DIR=${DEVICE_TOOLCHAIN_DIR}
         │       │
         │       ├── init_cann_superbuild_project(PRODUCT_SIDE "device")
         │       ├── add_subdirectory(${CANN_TOP_DIR}/runtime/cmake/device)
@@ -369,7 +370,9 @@ cmake --build build --target package   ← 编译并打包
 | `CANN_TOP_DIR` | `init_cann_superbuild_project` 自动解析 | 组件仓的共同父目录 |
 | `CANN_CMAKE_DIR` | `init_cann_superbuild_project` 自动解析 | 本仓库根目录 |
 | `PRODUCT_SIDE` | `init_cann_superbuild_project` 参数 | `"host"` 或 `"device"` |
-| `TOOLCHAIN_DIR` | `${ASCEND_INSTALL_PATH}/toolkit/toolchain/hcc` | hcc 交叉编译工具链路径 |
+| `TOOLCHAIN_DIR` | `${ASCEND_INSTALL_PATH}/toolkit/toolchain/hcc` | hcc 交叉编译工具链路径（device 侧，由 `DEVICE_TOOLCHAIN_DIR` 覆盖） |
+| `DEVICE_TOOLCHAIN_DIR` | `build.sh --device-toolchain-dir` | device 侧编译器根目录，未指定时回退到 `TOOLCHAIN_DIR` 默认值 |
+| `DEVICE_TOOLCHAIN_FILE` | `build.sh --device-toolchain` | device 侧 `CMAKE_TOOLCHAIN_FILE`，未指定时回退到内置 `aarch64-hcc-toolchain.cmake` |
 | `EP_DEVICE_CANN_PACKAGES` | `::` 分隔的字符串 | ExternalProject 透传用 |
 
 ## 7. 打包流程

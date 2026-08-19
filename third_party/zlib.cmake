@@ -62,6 +62,13 @@ if(EXISTS ${ZLIB_LIBRARY} AND EXISTS ${MINIZIP_LIBRARY})
     message(STATUS "zlib lib found in ${ZLIB_LIBRARY}.")
 else()
     set(ZLIB_C_FLAGS "-fPIC -fexceptions -O2")
+    set(ZLIB_TOOLCHAIN_ARGS)
+    if(CMAKE_TOOLCHAIN_FILE)
+        list(APPEND ZLIB_TOOLCHAIN_ARGS -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE})
+        if(TOOLCHAIN_DIR)
+            list(APPEND ZLIB_TOOLCHAIN_ARGS -DTOOLCHAIN_DIR=${TOOLCHAIN_DIR})
+        endif()
+    endif()
     ExternalProject_Add(zlib_bin_build
         DOWNLOAD_COMMAND ""
         UPDATE_COMMAND ""
@@ -73,7 +80,7 @@ else()
             -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
             -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
             -DLLVM_PATH=${LLVM_PATH}
-            -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
+            ${ZLIB_TOOLCHAIN_ARGS}
             <SOURCE_DIR>
         BUILD_COMMAND $(MAKE)
         INSTALL_COMMAND $(MAKE) install

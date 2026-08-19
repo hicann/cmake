@@ -153,6 +153,13 @@ else()
     endif()
 
     set(GRPC_CXX_FLAGS "-Wl,-z,relro,-z,now,-z,noexecstack -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-all -s -D_GLIBCXX_USE_CXX11_ABI=${USE_CXX11_ABI}")
+    set(GRPC_TOOLCHAIN_ARGS)
+    if(CMAKE_TOOLCHAIN_FILE)
+        list(APPEND GRPC_TOOLCHAIN_ARGS -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE})
+        if(TOOLCHAIN_DIR)
+            list(APPEND GRPC_TOOLCHAIN_ARGS -DTOOLCHAIN_DIR=${TOOLCHAIN_DIR})
+        endif()
+    endif()
     ExternalProject_Add(grpc_build
         URL ${REQ_URL}
         URL_HASH SHA256=437068b8b777d3b339da94d3498f1dc20642ac9bfa76db43abdd522186b1542b
@@ -192,7 +199,7 @@ else()
             -DgRPC_BUILD_TESTS=OFF
             -DCMAKE_INSTALL_LIBDIR=lib
             -DLLVM_PATH=${LLVM_PATH}
-            -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
+            ${GRPC_TOOLCHAIN_ARGS}
             -DgRPC_BUILD_CSHARP_EXT=OFF
             -DgRPC_BUILD_CODEGEN=OFF
             -DgRPC_BUILD_GRPC_CPP_PLUGIN=OFF
