@@ -82,7 +82,7 @@ resolve_toolchain_file() {
 
 # parse and set options
 checkopts() {
-  VERBOSE=""
+  VERBOSE="0"
   THREAD_NUM=$(grep -c ^processor /proc/cpuinfo)
   ENABLE_GCOV=""
   ENABLE_ASAN=""
@@ -95,7 +95,9 @@ checkopts() {
   CANN_BINARY_PACKAGES=""
   CANN_SUPERBUILD_CONFIG=""
   LAUNCH_RULE=""
+  MAKE_PROFILER=""
   CMAKE_EXTRA_ARGS=()
+  CMAKE_EXTRA_ARGS_STR=""
   PACKAGE_TYPE="run"
   HOST_TOOLCHAIN=""
   HOST_TOOLCHAIN_DIR=""
@@ -103,7 +105,7 @@ checkopts() {
   DEVICE_TOOLCHAIN_DIR=""
 
   # Process the options
-  parsed_args=$(getopt -a -o j:hp:v -l help,pkgs:,superbuild-config:,binary-pkgs:,verbose,cov,build_host_only,cann_path:,build-type:,pkg-type:,cann_3rd_lib_path:,asan,sign-script:,enable-sign,rule-launch:,rule_launch:,cmake-extra-args:,host-toolchain:,host-toolchain-dir:,device-toolchain:,device-toolchain-dir: -- "$@") || {
+  parsed_args=$(getopt -a -o j:hp:v -l help,pkgs:,superbuild-config:,binary-pkgs:,verbose,cov,build_host_only,cann_path:,build-type:,pkg-type:,cann_3rd_lib_path:,asan,sign-script:,enable-sign,rule-launch:,rule_launch:,make-profiler:,cmake-extra-args:,host-toolchain:,host-toolchain-dir:,device-toolchain:,device-toolchain-dir: -- "$@") || {
     usage
     exit 1
   }
@@ -120,7 +122,7 @@ checkopts() {
         shift 2
         ;;
       -v | --verbose)
-        VERBOSE="--verbose"
+        VERBOSE="1"
         shift
         ;;
       --pkgs)
@@ -175,8 +177,12 @@ checkopts() {
         LAUNCH_RULE="$2"
         shift 2
         ;;
+      --make-profiler)
+        MAKE_PROFILER="$2"
+        shift 2
+        ;;
       --cmake-extra-args)
-        CMAKE_EXTRA_ARGS+=("$2")
+        CMAKE_EXTRA_ARGS_STR="$2"
         shift 2
         ;;
       --host-toolchain)
@@ -223,6 +229,21 @@ checkopts() {
   esac
 
   set_env
+  parse_cmake_extra_args
+}
+
+parse_cmake_extra_args() {
+  local kv_pairs kv_pair key value
+  IFS=',' read -ra kv_pairs <<< "$CMAKE_EXTRA_ARGS_STR"
+
+  for kv_pair in "${kv_pairs[@]}"; do
+    if [[ -z "$kv_pair" ]]; then
+        continue
+    fi
+    key="${kv_pair%%=*}"
+    value="${kv_pair#*=}"
+    CMAKE_EXTRA_ARGS+=("-D${key}=${value}")
+  done
 }
 
 set_env() {
@@ -320,9 +341,16 @@ build_project() {
     return 1
   fi
 
-  cmake_cmd=(cmake --build "$BUILD_PATH" "-j${THREAD_NUM}")
-  if [[ -n "$VERBOSE" ]]; then
-    cmake_cmd+=("$VERBOSE")
+  if [[ -n "$MAKE_PROFILER" ]]; then
+    cmake_cmd=("$MAKE_PROFILER" -C "$BUILD_PATH" "-j${THREAD_NUM}")
+    if [[ "$VERBOSE" == "1" ]]; then
+      cmake_cmd+=("VERBOSE=1")
+    fi
+  else
+    cmake_cmd=(cmake --build "$BUILD_PATH" "-j${THREAD_NUM}")
+    if [[ "$VERBOSE" == "1" ]]; then
+      cmake_cmd+=("--verbose")
+    fi
   fi
   if ! "${cmake_cmd[@]}"; then
     echo "execute command: ${cmake_cmd[*]} failed."

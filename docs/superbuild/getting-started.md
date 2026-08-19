@@ -94,7 +94,8 @@ sh build.sh --pkgs=runtime --build_host_only
 | `--sign-script <PATH>` | 指定签名脚本路径 | 内置默认 |
 | `--superbuild-config=<PATH>` | 自定义 superbuild 配置文件 | 无 |
 | `--rule-launch <TOOL>` | 设置编译器和链接器启动规则 | 无 |
-| `--cmake-extra-args <ARGS>` | cmake工程配置时，传递的额外参数，支持多次指定，参数累加 | 无 |
+| `--make-profiler <TOOL>` | 设置make阶段性能剖析工具 | 无 |
+| `--cmake-extra-args <ARGS>` | 支持向cmake工程传递的额外参数，参数之间以逗号分隔，如`--cmake-extra-args ENABLE_BUILD_DEVICE=OFF,USE_CXX_API=1` | 无 |
 | `--host-toolchain=<PATH>` | 指定 host 侧 `CMAKE_TOOLCHAIN_FILE` | 无 |
 | `--host-toolchain-dir=<PATH>` | 指定 host 侧 `TOOLCHAIN_DIR`（toolchain file 内部引用的编译器根目录） | 无 |
 | `--device-toolchain=<PATH>` | 指定 device 侧 `CMAKE_TOOLCHAIN_FILE` | 内置 `aarch64-hcc-toolchain.cmake` |
