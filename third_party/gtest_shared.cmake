@@ -52,12 +52,6 @@ find_library(GMOCK_MAIN_LIBRARY
     NO_CMAKE_FIND_ROOT_PATH
     PATHS ${GTEST_INSTALL_PATH})
 
-find_program(CCACHE_PROGRAM ccache)
-if(CCACHE_PROGRAM)
-    set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
-    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
-endif()
-
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(gtest
     FOUND_VAR
@@ -68,7 +62,6 @@ find_package_handle_standard_args(gtest
     GTEST_MAIN_LIBRARY
     GMOCK_LIBRARY
     GMOCK_MAIN_LIBRARY)
-message(STATUS "[ThirdParty][gtest_shared] shared FOUND found:${gtest_FOUND}")
 
 if(GTEST_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     message(STATUS "[ThirdParty][gtest_shared] shared found in ${GTEST_INSTALL_PATH}, and not force rebuild cann third_party")
@@ -80,8 +73,8 @@ else()
         message(STATUS "[ThirdParty][gtest_shared] not use cache, download the source code")
         set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/googletest/googletest-1.14.0.tar.gz")
     endif()
-    set (gtest_CXXFLAGS "-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
-    set (gtest_CFLAGS   "-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
+    set (gtest_CXXFLAGS "-D_GLIBCXX_USE_CXX11_ABI=${CANN_CXX11_ABI} -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
+    set (gtest_CFLAGS   "-O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
 
     include(ExternalProject)
     ExternalProject_Add(gtest_shared_build
@@ -96,8 +89,8 @@ else()
         -DCMAKE_INSTALL_PREFIX=${GTEST_INSTALL_PATH}
         -DCMAKE_INSTALL_LIBDIR=lib64
         -DBUILD_SHARED_LIBS=ON
-        -DCMAKE_C_COMPILER_LAUNCHER=${CCACHE_PROGRAM}
-        -DCMAKE_CXX_COMPILER_LAUNCHER=${CCACHE_PROGRAM}
+        -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+        -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
         <SOURCE_DIR>
         BUILD_COMMAND $(MAKE)
         INSTALL_COMMAND $(MAKE) install
@@ -116,8 +109,6 @@ add_dependencies(GTestShared::gtest_main gtest_shared_build)
 
 add_library(GTestShared::gmock_main SHARED IMPORTED GLOBAL)
 add_dependencies(GTestShared::gmock_main gtest_shared_build)
-
-message(STATUS "[ThirdParty][gtest_shared] GTEST_INSTALL_PATH = ${GTEST_INSTALL_PATH}")
 
 if (NOT EXISTS ${GTEST_INSTALL_PATH}/include)
     file(MAKE_DIRECTORY "${GTEST_INSTALL_PATH}/include")

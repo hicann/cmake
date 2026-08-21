@@ -19,8 +19,6 @@ unset(GMOCK_MAIN_STATIC_LIBRARY CACHE)
 
 set(GTEST_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/gtest)
 set(GTEST_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
-message(STATUS "[ThirdParty][gtest] GTEST_INSTALL_PATH=${GTEST_INSTALL_PATH}")
-message(STATUS "[ThirdParty][gtest] GTEST_DOWNLOAD_PATH=${GTEST_DOWNLOAD_PATH}")
 
 find_path(GTEST_INCLUDE
     NAMES gtest/gtest.h
@@ -69,8 +67,6 @@ find_package_handle_standard_args(gtest
     GMOCK_MAIN_STATIC_LIBRARY
 )
 
-message(STATUS "[ThirdParty][gtest] Found GTest: ${gtest_FOUND}")
-
 if(gtest_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     message(STATUS "[ThirdParty][gtest] GTest found in ${GTEST_INSTALL_PATH}, and not force rebuild")
 else()
@@ -95,12 +91,8 @@ else()
         set(GTEST_PROJECT_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/googletest/googletest-1.14.0.tar.gz")
     endif()
 
-    if(NOT DEFINED USE_CXX11_ABI)
-        set(USE_CXX11_ABI 0)
-    endif()
-
-    set(GTEST_CXXFLAGS "-D_GLIBCXX_USE_CXX11_ABI=${USE_CXX11_ABI} -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
-    set(GTEST_CFLAGS "-D_GLIBCXX_USE_CXX11_ABI=${USE_CXX11_ABI} -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
+    set(GTEST_CXXFLAGS "-D_GLIBCXX_USE_CXX11_ABI=${CANN_CXX11_ABI} -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
+    set(GTEST_CFLAGS "-O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
 
     include(ExternalProject)
     # adaptive the gtest upgrade scenario, reset the installation path.
@@ -150,5 +142,3 @@ set_target_properties(GTest::gmock PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INCLUDE}
     IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib/libgmock.a
 )
-
-message(STATUS "[ThirdParty][gtest] configured successfully.")

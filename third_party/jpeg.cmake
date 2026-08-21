@@ -9,9 +9,6 @@
 # the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 include_guard(GLOBAL)
-if(POLICY CMP0135)
-    cmake_policy(SET CMP0135 NEW)
-endif()
 
 set(JPEG_TAR_PKG_PATH ${CANN_3RD_LIB_PATH}/libjpeg-turbo/libjpeg-turbo-3.0.1.tar.gz)
 if(EXISTS "${JPEG_TAR_PKG_PATH}")
@@ -19,7 +16,7 @@ if(EXISTS "${JPEG_TAR_PKG_PATH}")
 else()
     set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/libjpeg-turbo/libjpeg-turbo-3.0.1.tar.gz")
 endif()
-message("[ThirdParty][libjpeg-turbo] valued url path: ${REQ_URL}.")
+message(STATUS "[ThirdParty][libjpeg-turbo] valued url path: ${REQ_URL}.")
 
 set(JPEG_C_FLAGS "-fPIC -fexceptions -D_FORTIFY_SOURCE=2 -O2 -fvisibility=hidden -DCONFIG_MASK_JWARN")
 set(JPEG_INSTALL_PATH ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo)
@@ -39,7 +36,7 @@ ExternalProject_Add(third_party_jpeg
     URL_HASH SHA256=22429507714ae147b3acacd299e82099fce5d9f456882fc28e252e4579ba2a75
     TIMEOUT 300
     CONFIGURE_COMMAND ${CMAKE_COMMAND}
-        -DCMAKE_C_COMPILER_LAUNCHER=${CCACHE_PROGRAM}
+        -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
         -DCMAKE_C_FLAGS=${JPEG_C_FLAGS}
         -DCMAKE_INSTALL_PREFIX=${JPEG_INSTALL_PATH}
         -DCMAKE_INSTALL_DEFAULT_LIBDIR=lib
@@ -64,7 +61,7 @@ set_target_properties(jpeg PROPERTIES
 add_dependencies(jpeg third_party_jpeg)
 
 add_library(jpeg_headers INTERFACE)
-target_include_directories(jpeg_headers INTERFACE ${JPEG_INSTALL_PATH}/include)
+target_include_directories(jpeg_headers SYSTEM INTERFACE ${JPEG_INSTALL_PATH}/include)
 add_dependencies(jpeg_headers third_party_jpeg)
 
 add_library(static_turbojpeg STATIC IMPORTED)

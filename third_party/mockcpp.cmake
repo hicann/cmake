@@ -9,8 +9,6 @@
 # -----------------------------------------------------------------------------------------------------------
 include_guard(GLOBAL)
 
-set(open_source_target_name mockcpp)
-
 if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
     set(mockcpp_CXXFLAGS "-fPIC")
 else()
@@ -19,11 +17,7 @@ endif()
 set(mockcpp_FLAGS "-fPIC")
 set(mockcpp_LINKER_FLAGS "")
 
-if(NOT DEFINED USE_CXX11_ABI)
-    set(USE_CXX11_ABI 0)
-endif()
-set(mockcpp_CXXFLAGS "${mockcpp_CXXFLAGS} -D_GLIBCXX_USE_CXX11_ABI=${USE_CXX11_ABI}")
-set(mockcpp_FLAGS "${mockcpp_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=${USE_CXX11_ABI}")
+set(mockcpp_CXXFLAGS "${mockcpp_CXXFLAGS} -D_GLIBCXX_USE_CXX11_ABI=${CANN_CXX11_ABI}")
 
 #依赖蓝区二进制仓mockcpp
 set(FILE_NAME mockcpp-2.7.tar.gz)
@@ -32,16 +26,13 @@ set(MOCKCPP_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
 set(MOCKCPP_SOURCE_PATH ${CANN_3RD_LIB_PATH}/mockcpp)
 set(MOCK_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/mockcpp)
 
-message(STATUS "[ThirdParty][mockcpp] cmake install prefix ${CMAKE_INSTALL_PREFIX}")
 include(ExternalProject)
 
 if(EXISTS ${CANN_3RD_LIB_PATH}/mockcpp-2.7-h5.patch)
     set(PATCH_FILE "${CANN_3RD_LIB_PATH}/mockcpp-2.7-h5.patch")
-    message(STATUS "[ThirdParty][mockcpp] patch use cache: ${PATCH_FILE}")
     add_custom_target(mockcpp_patch)
 elseif(EXISTS ${MOCKCPP_DOWNLOAD_PATH}/mockcpp-2.7-h5.patch)
     set(PATCH_FILE ${MOCKCPP_DOWNLOAD_PATH}/mockcpp-2.7-h5.patch)
-    message(STATUS "[ThirdParty][mockcpp] patch use cache: ${PATCH_FILE}")
     add_custom_target(mockcpp_patch)
 else()
     set(PATCH_FILE ${MOCKCPP_DOWNLOAD_PATH}/mockcpp-2.7-h5.patch)
@@ -60,8 +51,10 @@ else()
     )
     message(STATUS "[ThirdParty][mockcpp] patch need download to: ${PATCH_FILE}")
 endif()
+if(TARGET mockcpp_patch)
+    message(STATUS "[ThirdParty][mockcpp] patch use cache: ${PATCH_FILE}")
+endif()
 
-message(STATUS "[ThirdParty][mockcpp] CMAKE_COMMAND is ${CMAKE_COMMAND}")
 if(EXISTS ${CANN_3RD_LIB_PATH}/mockcpp/${FILE_NAME})
     set(REQ_URL ${CANN_3RD_LIB_PATH}/mockcpp/${FILE_NAME})
     message(STATUS "[ThirdParty][mockcpp] use cache file: ${REQ_URL}")
@@ -80,7 +73,7 @@ ExternalProject_Add(mockcpp_static_build
     DEPENDS third_party_boost mockcpp_patch
     DOWNLOAD_DIR ${MOCKCPP_DOWNLOAD_PATH}
     SOURCE_DIR ${MOCKCPP_SOURCE_PATH}
-    PATCH_COMMAND patch -p1 < ${PATCH_FILE}
+    PATCH_COMMAND patch --forward --batch --quiet -r - -p1 < ${PATCH_FILE}
     CONFIGURE_COMMAND ${CMAKE_COMMAND} -G ${CMAKE_GENERATOR}
         -DCMAKE_CXX_FLAGS=${mockcpp_CXXFLAGS}
         -DCMAKE_C_FLAGS=${mockcpp_FLAGS}

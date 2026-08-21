@@ -9,10 +9,6 @@
 # -----------------------------------------------------------------------------------------------------------
 include_guard(GLOBAL)
 
-if(POLICY CMP0135)
-    cmake_policy(SET CMP0135 NEW)
-endif()
-
 if(EXISTS "${CANN_3RD_LIB_PATH}/eigen-5.0.0.tar.gz")
     message(STATUS "[ThirdParty][eigen] tar.gz found in cache: ${CANN_3RD_LIB_PATH}/eigen-5.0.0.tar.gz")
     set(REQ_URL "${CANN_3RD_LIB_PATH}/eigen-5.0.0.tar.gz")
@@ -23,7 +19,7 @@ elseif(IS_DIRECTORY "${CANN_3RD_LIB_PATH}/eigen")
     message(STATUS "[ThirdParty][eigen] path found in cache: ${CANN_3RD_LIB_PATH}/eigen")
     set(REQ_URL "${CANN_3RD_LIB_PATH}/eigen")
 else()
-  message("[ThirdParty][eigen] package needs to be downloaded.")
+  message(STATUS "[ThirdParty][eigen] package needs to be downloaded.")
   set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/eigen/eigen-5.0.0.tar.gz")
 endif()
 
@@ -36,17 +32,14 @@ ExternalProject_Add(external_eigen
     PREFIX third_party
     INSTALL_COMMAND ""
     BUILD_COMMAND ""
-    INSTALL_COMMAND ""
+    EXCLUDE_FROM_ALL TRUE
 )
 
 ExternalProject_Get_Property(external_eigen SOURCE_DIR)
 
 add_library(Eigen INTERFACE)
 target_compile_options(Eigen INTERFACE -w)
-
-set_target_properties(Eigen PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${SOURCE_DIR}"
-)
+target_include_directories(Eigen SYSTEM INTERFACE "${SOURCE_DIR}")
 add_dependencies(Eigen external_eigen)
 
 add_library(Eigen3::Eigen ALIAS Eigen)

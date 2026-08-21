@@ -84,10 +84,11 @@ else()
     # ========== 编译选项 ==========
     set(OPENSSL_OPTION "-fstack-protector-all -D_FORTIFY_SOURCE=2 -fvisibility=hidden -O2 -Wl,-z,relro,-z,now,-z,noexecstack -Wl,--build-id=none -s")
 
-    find_program(CCACHE_PROGRAM ccache)
-    if(CCACHE_PROGRAM)
-        set(OPENSSL_CC "${CCACHE_PROGRAM} ${CMAKE_C_COMPILER}")
-        set(OPENSSL_CXX "${CCACHE_PROGRAM} ${CMAKE_CXX_COMPILER}")
+    # ccache 由 init_cann_project() 统一探测并设置到 CMAKE_*_COMPILER_LAUNCHER；
+    # OpenSSL 非 CMake 构建（Configure+make），不支持 launcher 语义，需前缀拼接。
+    if(CMAKE_C_COMPILER_LAUNCHER)
+        set(OPENSSL_CC "${CMAKE_C_COMPILER_LAUNCHER} ${CMAKE_C_COMPILER}")
+        set(OPENSSL_CXX "${CMAKE_CXX_COMPILER_LAUNCHER} ${CMAKE_CXX_COMPILER}")
     else()
         set(OPENSSL_CC "${CMAKE_C_COMPILER}")
         set(OPENSSL_CXX "${CMAKE_CXX_COMPILER}")
@@ -144,7 +145,6 @@ else()
     endif()
 endif()
 
-message(STATUS "[ThirdParty][openssl] libcrypto: ${CRYPTO_LIB_PATH} libssl: ${SSL_LIB_PATH} include: ${OPENSSL_INCLUDE}")
 if(NOT TARGET crypto_static)
     add_library(crypto_static STATIC IMPORTED GLOBAL)
     add_dependencies(crypto_static openssl_project)

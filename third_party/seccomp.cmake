@@ -9,27 +9,24 @@
 # -----------------------------------------------------------------------------------------------------------
 include_guard(GLOBAL)
 
-if(POLICY CMP0135)
-    cmake_policy(SET CMP0135 NEW)
-endif()
-
 set(seccomp_download_dependent FALSE)
 if(IS_DIRECTORY "${CANN_3RD_LIB_PATH}/../tools/minios/arm64/include/libseccomp")
-    message("[ThirdParty][seccomp] use tools cache.")
+    message(STATUS "[ThirdParty][seccomp] use tools cache.")
     set(LIB_SECCOMP_INCLUDE_PATH "${CANN_3RD_LIB_PATH}/../tools/minios/arm64/include/libseccomp")
 elseif (EXISTS "${CANN_3RD_LIB_PATH}/lib_cache/libseccomp-2.5.4/include/seccomp.h")
-    message("[ThirdParty][seccomp] use opensource cache.")
+    message(STATUS "[ThirdParty][seccomp] use opensource cache.")
     set(LIB_SECCOMP_INCLUDE_PATH "${CANN_3RD_LIB_PATH}/lib_cache/libseccomp-2.5.4/include")
 else()
     if(EXISTS "${CANN_3RD_LIB_PATH}/libseccomp-2.5.4.tar.gz")
-        message("[ThirdParty][seccomp] use cache.")
         set(REQ_URL "${CANN_3RD_LIB_PATH}/libseccomp-2.5.4.tar.gz")
     elseif(NOT EXISTS "${CANN_3RD_LIB_PATH}/libseccomp-2.5.4/")
-        message("[ThirdParty][seccomp] not use cache in ${CANN_3RD_LIB_PATH}, download seccomp.")
+        message(STATUS "[ThirdParty][seccomp] not use cache in ${CANN_3RD_LIB_PATH}, download seccomp.")
         set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/libseccomp/libseccomp-2.5.4.tar.gz")
     else()
-        message("[ThirdParty][seccomp] use cache.")
         set(REQ_URL "${CANN_3RD_LIB_PATH}/libseccomp-2.5.4/")
+    endif()
+    if(EXISTS "${REQ_URL}")
+        message(STATUS "[ThirdParty][seccomp] use cache.")
     endif()
     include(ExternalProject)
     ExternalProject_Add(external_seccomp
@@ -41,6 +38,7 @@ else()
         CONFIGURE_COMMAND cd <SOURCE_DIR> && ./autogen.sh && ./configure --prefix=<INSTALL_DIR>
         INSTALL_COMMAND   ""
         BUILD_COMMAND     ""
+        EXCLUDE_FROM_ALL TRUE
     )
 
   ExternalProject_Get_Property(external_seccomp SOURCE_DIR)
@@ -49,9 +47,7 @@ else()
 endif()
 
 add_library(seccomp_headers INTERFACE)
-set_target_properties(seccomp_headers PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${LIB_SECCOMP_INCLUDE_PATH}"
-)
+target_include_directories(seccomp_headers SYSTEM INTERFACE "${LIB_SECCOMP_INCLUDE_PATH}")
 if(seccomp_download_dependent)
     add_dependencies(seccomp_headers external_seccomp)
 endif()

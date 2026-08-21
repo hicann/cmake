@@ -66,9 +66,7 @@ else()
 endif()
 
 add_library(pybind11 INTERFACE)
-set_target_properties(pybind11 PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${pybind11_INCLUDE_DIR}"
-)
+target_include_directories(pybind11 SYSTEM INTERFACE "${pybind11_INCLUDE_DIR}")
 if(TARGET pybind11_build)
     add_dependencies(pybind11 pybind11_build)
 endif()

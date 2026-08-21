@@ -10,33 +10,30 @@
 
 include_guard(GLOBAL)
 
-if(POLICY CMP0135)
-    cmake_policy(SET CMP0135 NEW)
-endif()
-
 if(PRODUCT_SIDE STREQUAL "device")
-    set(CARES_INTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/device/c-ares)
+    set(CARES_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/device/c-ares)
     set(CARES_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg/device)
 else()
-    set(CARES_INTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/c-ares)
+    set(CARES_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/c-ares)
     set(CARES_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg)
 endif()
 
-set(CARES_FILE ${CARES_INTALL_PATH}/include/ares.h)
+set(CARES_FILE ${CARES_INSTALL_PATH}/include/ares.h)
 if (EXISTS ${CARES_FILE})
-    message(STATUS "[ThirdPartyLib][c-ares] ${CARES_FILE} found.")
+    message(STATUS "[ThirdParty][cares] ${CARES_FILE} found.")
     add_custom_target(cares_build)
 else()
 
     if(EXISTS ${CANN_3RD_LIB_PATH}/c-ares/c-ares-1.19.1.tar.gz)
         set(REQ_URL "${CANN_3RD_LIB_PATH}/c-ares/c-ares-1.19.1.tar.gz")
-        message(STATUS "[ThirdPartyLib][c-ares] ${REQ_URL} found.")
     elseif(EXISTS ${CANN_3RD_LIB_PATH}/c-ares-1.19.1.tar.gz)
         set(REQ_URL "${CANN_3RD_LIB_PATH}/c-ares-1.19.1.tar.gz")
-        message(STATUS "[ThirdPartyLib][c-ares] ${REQ_URL} found.")
     else()
         set(REQ_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/c-ares/c-ares-1.19.1.tar.gz")
-        message(STATUS "[ThirdPartyLib][c-ares] ${REQ_URL} not found, need download.")
+        message(STATUS "[ThirdParty][cares] ${REQ_URL} not found, need download.")
+    endif()
+    if(EXISTS ${REQ_URL})
+        message(STATUS "[ThirdParty][cares] ${REQ_URL} found.")
     endif()
 
     include(ExternalProject)
@@ -45,11 +42,11 @@ else()
         URL_HASH SHA256=321700399b72ed0e037d0074c629e7741f6b2ec2dda92956abe3e9671d3e268e
         TIMEOUT 300
         DOWNLOAD_DIR ${CARES_PKG_PATH}
-        SOURCE_DIR ${CARES_INTALL_PATH}
+        SOURCE_DIR ${CARES_INSTALL_PATH}
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
         EXCLUDE_FROM_ALL TRUE
-        DWONLOAD_NO_PROGRESS TRUE
+        DOWNLOAD_NO_PROGRESS TRUE
     )
 endif()

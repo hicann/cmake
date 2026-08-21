@@ -137,7 +137,7 @@ cmake -B build -DCMAKE_BUILD_TYPE=Debug ...
 | `ENABLE_ASAN` | 启用 AddressSanitizer | `FALSE` |
 | `ENABLE_GCOV` | 启用代码覆盖率 | `FALSE` |
 | `ENABLE_STRICT_WARNINGS` | 启用增强告警（须在首次 include `intf_pub` 前设置） | `FALSE` |
-| `USE_CXX11_ABI` | 覆盖 CXX11 ABI 设置（host 默认 `0`） | 自动 |
+| `USE_CXX11_ABI` | 覆盖 CXX11 ABI 设置（host 默认 `0`，device 默认 `1`） | 自动 |
 | `CMAKE_BUILD_TYPE` | 构建类型 | `Release` |
 
 ## host 侧与 device 侧构建
@@ -167,7 +167,7 @@ cmake --build build -j8
 |------|------|--------|
 | 工具链 | 系统默认 GCC | hcc 交叉编译工具链 |
 | `PRODUCT_SIDE` | `host`（或不设置） | `device` |
-| ABI | `_GLIBCXX_USE_CXX11_ABI=0` | 不设置 |
+| ABI | `_GLIBCXX_USE_CXX11_ABI=0` | `_GLIBCXX_USE_CXX11_ABI=1` |
 | 源码目录 | `<pkg>/` | `<pkg>/cmake/device/` |
 
 ## 环境依赖

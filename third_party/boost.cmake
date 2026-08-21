@@ -13,10 +13,6 @@ include(ExternalProject)
 unset(boost_FOUND CACHE)
 unset(BOOST_INCLUDE CACHE)
 
-if(NOT OPEN_PKG_PATH)
-    set(OPEN_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg)
-endif()
-
 set(BOOST_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
 set(BOOST_SRC_PATH ${CANN_3RD_LIB_PATH}/boost)
 set(BOOST_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/boost)
@@ -44,15 +40,16 @@ if(boost_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
 else()
     if(EXISTS ${CANN_3RD_LIB_PATH}/boost/${BOOST_FILE})
         set(REQ_URL ${CANN_3RD_LIB_PATH}/boost/${BOOST_FILE})
-        message(STATUS "[ThirdParty][boost] Found local boost package: ${REQ_URL}")
     elseif(EXISTS ${CANN_3RD_LIB_PATH}/${BOOST_FILE})
         # 离线编译场景，优先使用已下载的包
         set(REQ_URL ${CANN_3RD_LIB_PATH}/${BOOST_FILE})
-        message(STATUS "[ThirdParty][boost] Found local boost package: ${REQ_URL}")
     else()
         # 下载并解压
-        message(STATUS "[ThirdParty][boost] Downloading ${BOOST_NAME} from ${DOWNLOAD_URL}")
+        message(STATUS "[ThirdParty][boost] Downloading ${BOOST_FILE} from ${DOWNLOAD_URL}")
         set(REQ_URL ${DOWNLOAD_URL})
+    endif()
+    if(EXISTS ${REQ_URL})
+        message(STATUS "[ThirdParty][boost] Found local boost package: ${REQ_URL}")
     endif()
 
     ExternalProject_Add(third_party_boost
@@ -64,6 +61,7 @@ else()
         CONFIGURE_COMMAND ""    # 无需编译，只需解压
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
+        EXCLUDE_FROM_ALL TRUE
     )
 endif()
 
@@ -87,7 +85,7 @@ ExternalProject_Add(third_party_boost_headers
         runtime-link=shared
         threading=multi
         cxxstd=17
-        "cxxflags=-fPIC -fstack-protector-all -D_FORTIFY_SOURCE=2 -fvisibility=hidden -fvisibility-inlines-hidden -fno-common -D_GLIBCXX_USE_CXX11_ABI=0 -DBOOST_FILESYSTEM_NO_CXX20_ATOMIC_REF"
+        "cxxflags=-fPIC -fstack-protector-all -D_FORTIFY_SOURCE=2 -fvisibility=hidden -fvisibility-inlines-hidden -fno-common -D_GLIBCXX_USE_CXX11_ABI=${CANN_CXX11_ABI} -DBOOST_FILESYSTEM_NO_CXX20_ATOMIC_REF"
         install
     INSTALL_COMMAND ""
     BUILD_BYPRODUCTS ${BOOST_FILESYSTEM_LIBRARY}
@@ -106,9 +104,7 @@ add_library(Boost::filesystem ALIAS boost_filesystem)
 
 # use for dvpp service
 add_library(boost INTERFACE)
-set_property(TARGET boost PROPERTY
-    INTERFACE_INCLUDE_DIRECTORIES ${BOOST_SRC_PATH}
-)
+target_include_directories(boost SYSTEM INTERFACE ${BOOST_SRC_PATH})
 add_library(Boost::boost ALIAS boost)
 if(TARGET third_party_boost)
     add_dependencies(third_party_boost_headers third_party_boost)

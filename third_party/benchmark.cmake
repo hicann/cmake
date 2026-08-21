@@ -43,7 +43,7 @@ else()
 endif()
 
 include(ExternalProject)
-set(benchmark_CXXFLAGS "-D_GLIBCXX_USE_CXX11_ABI=${USE_CXX11_ABI} -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
+set(benchmark_CXXFLAGS "-D_GLIBCXX_USE_CXX11_ABI=${CANN_CXX11_ABI} -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
 set(BENCHMARK_TOOLCHAIN_ARGS)
 if(CMAKE_TOOLCHAIN_FILE)
     list(APPEND BENCHMARK_TOOLCHAIN_ARGS -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE})

@@ -9,10 +9,6 @@
 # ----------------------------------------------------------------------------
 include_guard(GLOBAL)
 
-if(POLICY CMP0135)
-    cmake_policy(SET CMP0135 NEW)
-endif()
-
 unset(abseil-cpp_FOUND CACHE)
 unset(ABSL_SOURCE_DIR CACHE)
 
@@ -61,11 +57,9 @@ else()
 
     if(EXISTS ${CANN_3RD_LIB_PATH}/abseil-cpp/backport-CVE-2025-0838.patch)
         set(ABSL_CVE_PATCH_FILE ${CANN_3RD_LIB_PATH}/abseil-cpp/backport-CVE-2025-0838.patch)
-        message(STATUS "[ThirdParty][abseil-cpp] cve patch use cache: ${ABSL_CVE_PATCH_FILE}")
         add_custom_target(abseil_cve_patch)
     elseif(EXISTS ${ABS_PKG_DIR}/backport-CVE-2025-0838.patch)
         set(ABSL_CVE_PATCH_FILE ${ABS_PKG_DIR}/backport-CVE-2025-0838.patch)
-        message(STATUS "[ThirdParty][abseil-cpp] cve patch use cache: ${ABSL_CVE_PATCH_FILE}")
         add_custom_target(abseil_cve_patch)
     else()
         # 路径不能与 abseil 源码目录相同,构建时会清理
@@ -85,6 +79,9 @@ else()
         )
         message(STATUS "[ThirdParty][abseil-cpp] cve patch need download to: ${ABSL_CVE_PATCH_FILE}")
     endif()
+    if(TARGET abseil_cve_patch)
+        message(STATUS "[ThirdParty][abseil-cpp] cve patch use cache: ${ABSL_CVE_PATCH_FILE}")
+    endif()
 
     ExternalProject_Add(abseil_build
         URL ${REQ_URL}
@@ -92,7 +89,7 @@ else()
         DOWNLOAD_DIR ${ABS_PKG_DIR}
         SOURCE_DIR ${ABS_INSTALL_DIR}
         TIMEOUT 300
-        PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/protobuf-hide_absl_symbols.patch && patch -p1 < ${ABSL_CVE_PATCH_FILE} && patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/fix-gcc15-gcc16-container-memory-cstdint.patch
+        PATCH_COMMAND patch --forward --batch --quiet -r - -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/protobuf-hide_absl_symbols.patch && patch --forward --batch --quiet -r - -p1 < ${ABSL_CVE_PATCH_FILE} && patch --forward --batch --quiet -r - -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/fix-gcc15-gcc16-container-memory-cstdint.patch
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
         INSTALL_COMMAND ""

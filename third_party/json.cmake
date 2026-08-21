@@ -15,9 +15,6 @@ endif()
 
 unset(json_FOUND CACHE)
 unset(JSON_SOURCE CACHE)
-if(NOT OPEN_PKG_PATH)
-  set(OPEN_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg)
-endif()
 
 set(JSON_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
 
@@ -76,7 +73,7 @@ if(NOT json_FOUND OR FORCE_REBUILD_CANN_3RD)
     ExternalProject_Add(third_party_json
         ${JSON_URL_ARGS}
         ${JSON_DOWNLOAD_ARGS}
-        PATCH_COMMAND patch -N --batch --quiet -r - -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/json_3.12.0_change_version.patch
+        PATCH_COMMAND patch --forward --batch --quiet -r - -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch/json_3.12.0_change_version.patch
         SOURCE_DIR ${JSON_SOURCE_PATH}
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
@@ -85,13 +82,12 @@ if(NOT json_FOUND OR FORCE_REBUILD_CANN_3RD)
     )
 endif()
 
-message(STATUS "[ThirdParty][json] build json end, JSON_SOURCE_PATH: ${JSON_SOURCE_PATH}.")
 if(NOT TARGET json)
     add_library(json INTERFACE)
     add_dependencies(json third_party_json)
     # use for transformer service's reference path
     set(JSON_INCLUDE_DIR ${JSON_SOURCE_PATH}/include)
-    target_include_directories(json INTERFACE ${JSON_SOURCE_PATH}/include)
+    target_include_directories(json SYSTEM INTERFACE ${JSON_SOURCE_PATH}/include)
     target_compile_definitions(json INTERFACE
         nlohmann=ascend_nlohmann  # 如果需要命名空间重映射
     )

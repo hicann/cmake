@@ -37,10 +37,6 @@ set(LLVM_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/llvm_${LLVM_PROJECT_VERSION
 set(LLVM_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
 set(LLVM_ARCHIVE ${LLVM_DOWNLOAD_PATH}/llvm-project-${LLVM_PROJECT_TAG}.tar.gz)
 
-message(STATUS "[ThirdParty][llvm] LLVM_SOURCE_PATH=${LLVM_SOURCE_PATH}")
-message(STATUS "[ThirdParty][llvm] LLVM_INSTALL_PATH=${LLVM_INSTALL_PATH}")
-message(STATUS "[ThirdParty][llvm] LLVM_DOWNLOAD_PATH=${LLVM_DOWNLOAD_PATH}")
-
 if(NOT CMAKE_FIND_LIBRARY_PREFIXES)
     set(CMAKE_FIND_LIBRARY_PREFIXES "lib")
 endif()
@@ -86,9 +82,6 @@ find_package_handle_standard_args(llvm
     MLIR_SUPPORT_LIBRARY
 )
 
-message(STATUS "[ThirdParty][llvm] Found LLVM/MLIR install cache: ${llvm_FOUND}")
-message(STATUS "[ThirdParty][llvm] LLVM_REQUIRE_SOURCE=${LLVM_REQUIRE_SOURCE}")
-
 if(llvm_FOUND AND NOT FORCE_REBUILD_CANN_3RD AND NOT LLVM_REQUIRE_SOURCE)
     message(STATUS "[ThirdParty][llvm] LLVM/MLIR found in ${LLVM_INSTALL_PATH}, and not force rebuild")
     return()
@@ -103,7 +96,6 @@ else()
     message(STATUS "[ThirdParty][llvm] Downloading LLVM from ${LLVM_PROJECT_URL}")
     set(REQ_URL ${LLVM_PROJECT_URL})
 endif()
-message("[ThirdParty][llvm] valued url path: ${REQ_URL}.")
 
 include(ExternalProject)
 ExternalProject_Add(third_party_llvm
@@ -117,5 +109,3 @@ ExternalProject_Add(third_party_llvm
     INSTALL_COMMAND ""
     EXCLUDE_FROM_ALL TRUE
 )
-
-message(STATUS "[ThirdParty][llvm] configured successfully.")
