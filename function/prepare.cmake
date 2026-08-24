@@ -1139,3 +1139,92 @@ function(cann_get_asan_real_path output_var)
         set(${output_var} "${_asan_path}" PARENT_SCOPE)
     endif()
 endfunction()
+
+# 生成protobuf相关文件
+# comp: 组件名
+# c_var: 输出变量，生成的.pb.cc文件列表
+# h_var: 输出变量，生成的.pb.h文件列表
+# TYPE <TYPE>: 生成类型，可选值: grpc
+# TARGET: 创建${comp}的目标，如果有多个目标依赖${c_var}，使用者需要依赖${comp}目标，
+#         避免protobuf生成被并发拉起，一个目标在编译${c_var}时，另一个目标在生成。
+function(generate_cann_protobuf comp c_var h_var)
+    cmake_parse_arguments(CANN "TARGET" "TYPE" "" ${ARGN})
+
+    if(NOT CANN_UNPARSED_ARGUMENTS)
+        message(SEND_ERROR "Error: generate_cann_protobuf() called without any proto files")
+        return()
+    endif()
+
+    if(CANN_TYPE AND NOT CANN_TYPE STREQUAL "grpc")
+        message(SEND_ERROR "Error: Unsupported TYPE ${CANN_TYPE} in generate_cann_protobuf, valid parameter is grpc.")
+        return()
+    endif()
+
+    set(${c_var})
+    set(${h_var})
+    set(_protoc_grogram $<TARGET_FILE:host_protoc>)
+
+    set(extra_option "")
+    foreach(arg IN LISTS CANN_UNPARSED_ARGUMENTS)
+        if("${arg}" MATCHES "--proto_path")
+            set(extra_option ${arg})
+        endif()
+    endforeach()
+
+    foreach(file IN LISTS CANN_UNPARSED_ARGUMENTS)
+        if("${file}" MATCHES "--proto_path")
+            continue()
+        endif()
+
+        get_filename_component(abs_file ${file} ABSOLUTE)
+        get_filename_component(file_name ${file} NAME_WE)
+        get_filename_component(file_dir ${abs_file} DIRECTORY)
+        get_filename_component(parent_subdir ${file_dir} NAME)
+
+        if(CANN_TYPE STREQUAL "grpc")
+            if("${parent_subdir}" STREQUAL "proto")
+                set(proto_output_path ${CMAKE_BINARY_DIR}/proto_grpc/${comp}/proto)
+            else()
+                set(proto_output_path ${CMAKE_BINARY_DIR}/proto_grpc/${comp}/proto_grpc/${parent_subdir})
+            endif()
+        else()
+            if("${parent_subdir}" STREQUAL "proto")
+                set(proto_output_path ${CMAKE_BINARY_DIR}/proto/${comp}/proto)
+            else()
+                set(proto_output_path ${CMAKE_BINARY_DIR}/proto/${comp}/proto/${parent_subdir})
+            endif()
+        endif()
+        set(OUTPUT_FILES "${proto_output_path}/${file_name}.pb.cc" "${proto_output_path}/${file_name}.pb.h")
+        list(APPEND ${c_var} "${proto_output_path}/${file_name}.pb.cc")
+        list(APPEND ${h_var} "${proto_output_path}/${file_name}.pb.h")
+        set(extra_command)
+        set(extra_depends)
+        if(CANN_TYPE STREQUAL "grpc")
+            list(APPEND OUTPUT_FILES "${proto_output_path}/${file_name}.grpc.pb.cc" "${proto_output_path}/${file_name}.grpc.pb.h")
+            list(APPEND ${c_var} "${proto_output_path}/${file_name}.grpc.pb.cc")
+            list(APPEND ${h_var} "${proto_output_path}/${file_name}.grpc.pb.h")
+            set(extra_command COMMAND ${_protoc_grogram} -I${file_dir} ${extra_option} --grpc_out=${proto_output_path} --plugin=protoc-gen-grpc=$<TARGET_FILE:grpc_cpp_plugin> ${abs_file})
+            set(extra_depends "grpc_cpp_plugin")
+        endif()
+
+        add_custom_command(
+            OUTPUT ${OUTPUT_FILES}
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${proto_output_path}"
+            COMMAND ${_protoc_grogram} -I${file_dir} ${extra_option} --cpp_out=${proto_output_path} ${abs_file}
+            ${extra_command}
+            DEPENDS ${abs_file} host_protoc ${extra_depends}
+            COMMENT "Running C++ protocol buffer compiler on ${file}" VERBATIM
+        )
+    endforeach()
+
+    if(CANN_TARGET)
+        add_custom_target(
+            ${comp} DEPENDS ${${c_var}} ${${h_var}}
+        )
+    endif()
+
+    set_source_files_properties(${${c_var}} ${${h_var}} PROPERTIES GENERATED TRUE)
+    set(${c_var} ${${c_var}} PARENT_SCOPE)
+    set(${h_var} ${${h_var}} PARENT_SCOPE)
+endfunction()
