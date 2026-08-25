@@ -199,6 +199,9 @@ macro(init_cann_project)
             message("set third_party default path: ${CANN_3RD_LIB_PATH}.")
         endif()
 
+        # Currently used in third_party cmake scripts
+        set(ENABLE_BIN_SRC FALSE CACHE BOOL "Use bin source path under CMAKE_BINARY_DIR to avoid concurrent write conflicts")
+
         __cann_get_target_arch()
         __cann_check_build_env()
 

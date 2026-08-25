@@ -24,6 +24,10 @@ else()
     set(JSON_SOURCE_PATH ${CANN_3RD_LIB_PATH}/lib_cache/json)
 endif()
 
+if(ENABLE_BIN_SRC)
+    set(JSON_SOURCE_PATH ${CMAKE_BINARY_DIR}/json)
+endif()
+
 find_path(JSON_SOURCE
     NAMES nlohmann/json.hpp
     PATHS ${JSON_SOURCE_PATH}/include
@@ -57,7 +61,7 @@ if(NOT json_FOUND OR FORCE_REBUILD_CANN_3RD)
     include(ExternalProject)
     if(IS_DIRECTORY "${REQ_URL}")
         set(JSON_DOWNLOAD_ARGS
-            DOWNLOAD_COMMAND flock ${JSON_SOURCE_PATH}/.json_build.lock ${CMAKE_COMMAND} -E copy_directory ${REQ_URL} <SOURCE_DIR>
+            DOWNLOAD_COMMAND ${CMAKE_COMMAND} -E copy_directory ${REQ_URL} <SOURCE_DIR>
         )
         set(JSON_URL_ARGS "")
     else()
