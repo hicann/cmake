@@ -78,7 +78,7 @@ if(MAKESELF_NEED_EXTRACT)
         RESULT_VARIABLE PATCH_RESULT
         ERROR_VARIABLE PATCH_ERROR
     )
-    if(NOT PATCH_RESULT EQUAL 0 AND NOT PATCH_RESULT EQUAL 1)
+    if(NOT PATCH_RESULT EQUAL 0)
         message(FATAL_ERROR "[ThirdParty][makeself] failed to apply patch: ${PATCH_ERROR}")
     endif()
     message(STATUS "[ThirdParty][makeself] patch applied successfully")
