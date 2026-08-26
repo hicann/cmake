@@ -975,11 +975,7 @@ do_copy_files() {
     if [ -d ./tools ]; then
         find ./tools -type f -print0 | \
             xargs -0 -r file -N | \
-            awk -F: '
-                $1 !~ /\.so$/ && ($0 ~ /ELF/ || $0 ~ /executable/ || $0 ~ /script/) {
-                    print $1
-                }
-            ' | \
+            awk -F: '/ELF [0-9]+-bit.*executable|script text executable|shell script|executable.*script/ {print $1}' | \
             xargs -r chmod "${exec_mod}"
     fi
 
