@@ -141,8 +141,6 @@ python3 scripts/sign/add_header_sign.py /path/to/images true \
     --version=8.0.0
 ```
 
-自定义脚本示例骨架参见 [sign-extension-design.md](sign-extension-design.md) §11。
-
 ## 配置文件格式
 
 `bios_check_cfg.xml` 声明每个镜像的签名属性：

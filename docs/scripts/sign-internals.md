@@ -216,8 +216,6 @@ query_certtype(sign_tool_path)
 
 **并行安全**：查询是无状态操作，脚本只 `print` 静态常量并退出，不读写文件、不依赖全局状态，多个签名目标并行查询无竞争。
 
-详细设计参见 [sign-extension-design.md](sign-extension-design.md)。
-
 ## 4. CMS 签名执行器设计原理
 
 ### 4.1 签名流程
@@ -582,7 +580,7 @@ CRL → DER 格式转换
 - **`.py` 脚本**：需遵循与 `community_sign_build.py` 相同的调用契约——签名模式接收 `--crl-dir <dir> <file1> [file2 ...]`；查询模式支持 `--print-sign-ext`/`--print-certtype` flag 声明产物扩展名与证书类型。返回 `0`（成功）或 `1`（失败）退出码。
 - **`.sh` 脚本**：需接收 `<output_sig> <config> <sign_flag>` 三个位置参数。
 
-编排器在签名前通过查询 flag 获取产物扩展名与证书类型，替换后端不需要修改编排器代码。查询失败时回退默认值（`.p7s`/`0x1`）。详见 [sign-extension-design.md](sign-extension-design.md)。
+编排器在签名前通过查询 flag 获取产物扩展名与证书类型，替换后端不需要修改编排器代码。查询失败时回退默认值（`.p7s`/`0x1`）。
 
 ### 11.3 新增配置属性
 

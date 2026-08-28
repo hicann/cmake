@@ -827,7 +827,10 @@ function(cann_pack_targets_and_files)
     endif()
 
     # --- Collect all source items (as generator expressions) ---
+    # 可执行目标需显式强制 750：它必须带 x 才能运行，而 gcc 产物权限 = 0777 & ~umask，
+    # 极端 umask(≥100) 会剥掉 owner-x 导致无法运行；动态库不在此列——无 x 仍可加载。
     set(src_items "")
+    set(chmod_exe "")
     foreach(tgt IN LISTS ARG_TARGETS)
         if(NOT TARGET ${tgt})
             message(FATAL_ERROR "[pack_targets_and_files] Target '${tgt}' does not exist")
@@ -836,6 +839,9 @@ function(cann_pack_targets_and_files)
         get_target_property(type ${tgt} TYPE)
         if(type MATCHES "^(EXECUTABLE|SHARED_LIBRARY|STATIC_LIBRARY)$")
             list(APPEND src_items "$<TARGET_FILE:${tgt}>")
+            if(type STREQUAL "EXECUTABLE")
+                list(APPEND chmod_exe "${staging_dir}/$<TARGET_FILE_NAME:${tgt}>")
+            endif()
         endif()
     endforeach()
     list(APPEND src_items ${ARG_FILES})
@@ -880,6 +886,11 @@ function(cann_pack_targets_and_files)
         set(size_check_command COMMAND ${CMAKE_COMMAND} -D_OUTPUT_FILE=${ARG_OUTPUT} -D_SIZE_LIMIT_KB=${ARG_SIZE_LIMIT} -P ${CANN_CMAKE_DIR}/function/_check_size_limit.cmake)
     endif()
 
+    set(exec_chmod "")
+    if(chmod_exe)
+        set(exec_chmod COMMAND chmod 750 ${chmod_exe})
+    endif()
+
     add_custom_command(
         OUTPUT "${ARG_OUTPUT}" ${ini_output}
         ${ini_command}
@@ -889,8 +900,9 @@ function(cann_pack_targets_and_files)
             ${manifest_arg}
             -D "_ITEMS=$<JOIN:${src_items},;>"
             -P "${CANN_CMAKE_DIR}/function/_pack_stage.cmake"
+        ${exec_chmod}
         COMMAND tar "czf" "${ARG_OUTPUT}" ${tar_src}
-                "--mode=750"
+                "--mode=u=rwX,g=rX,o="
         ${size_check_command}
         WORKING_DIRECTORY ${staging_root_dir}
         DEPENDS ${ARG_TARGETS} ${staging_dir} ${ini_depends}

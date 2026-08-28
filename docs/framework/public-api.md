@@ -116,6 +116,8 @@ check_cann_build_tool(protoc HINT "Run: pip install protobuf")
 | `SIZE_LIMIT` | 大小限制（KB），Release 模式下超出则报错 |
 | `GEN_INI` | 传入该选项时生成 .ini 文件（另需 `CANN_VERSION_CURRENT_PACKAGE` 以解析版本号） |
 
+归档权限：`EXECUTABLE` 目标在暂存后显式 `chmod 750`（`rwxr-x---`，与 umask 无关——可执行程序须带 x 才能运行）；其余成员由 `tar --mode=u=rwX,g=rX,o=` 规整——动态库/目录为 `750`、普通文件（含生成的 `.ini` 与 manifest `.cfg`）为 `640`（`rw-r-----`）。动态库无 x 亦可加载，故不强制。
+
 ## 第三方依赖
 
 ### `add_cann_third_party(name)`
