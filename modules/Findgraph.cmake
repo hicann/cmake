@@ -37,6 +37,12 @@ find_library(_CANN_register_SHARED_LIBRARY
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH)
 
+find_library(_CANN_lowering_SHARED_LIBRARY
+    NAMES liblowering.so
+    PATH_SUFFIXES lib64
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH)
+
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(graph
     FOUND_VAR
@@ -46,6 +52,7 @@ find_package_handle_standard_args(graph
         _CANN_graph_SHARED_LIBRARY
         _CANN_graph_base_SHARED_LIBRARY
         _CANN_register_SHARED_LIBRARY
+        _CANN_lowering_SHARED_LIBRARY
 )
 
 if(graph_FOUND)
@@ -70,5 +77,10 @@ if(graph_FOUND)
     add_library(register SHARED IMPORTED GLOBAL)
     set_target_properties(register PROPERTIES
         IMPORTED_LOCATION "${_CANN_register_SHARED_LIBRARY}"
+    )
+
+    add_library(lowering SHARED IMPORTED GLOBAL)
+    set_target_properties(lowering PROPERTIES
+        IMPORTED_LOCATION "${_CANN_lowering_SHARED_LIBRARY}"
     )
 endif()
