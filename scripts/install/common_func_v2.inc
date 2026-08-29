@@ -11,7 +11,7 @@
 
 # 公共函数库
 # 总setenv文件权限
-SETENV_MOD="550"
+SETENV_MOD="750"
 # 总setenv文件可写状态权限
 SETENV_WRITEABLE_MOD="600"
 # 默认特性配置

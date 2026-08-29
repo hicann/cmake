@@ -16,7 +16,7 @@
 #export PS4='+ ${FUNCNAME[0]:+${FUNCNAME[0]}():} ${BASH_SOURCE}:${LINENO}: '
 #set -x
 # 总uninstall.sh文件权限
-TOTAL_UNINSTALL_MOD="500"
+TOTAL_UNINSTALL_MOD="750"
 # db.info文件权限
 DB_INFO_MOD="640"
 # 包架构
@@ -957,7 +957,33 @@ do_copy_files() {
     local feature_param="$5"
     local total_uninstall_path exec_mode ret
 
-    if [ "$COPY_ALL" = "y" ]; then   
+    local file_mod="640"
+    local exec_mod="750"
+
+    if [ "${install_for_all}" = "y" ]; then
+        file_mod="644"
+        exec_mod="755"
+    fi
+
+    # 拷贝前在源目录设置文件权限，cp -af 会保留
+    find ./ -type f -exec chmod "${file_mod}" {} + 2>/dev/null
+
+    # Shell 脚本（可执行）
+    find ./ -type f \( -name "*.py" -o -name "*.sh" -o -name "*.bash" -o -name "*.fish" -o -name "*.csh" \) -exec chmod "${exec_mod}" {} + 2>/dev/null
+
+    # ELF 二进制文件 + 无后缀可执行文件
+    if [ -d ./tools ]; then
+        find ./tools -type f ! -name "*.*" -exec file {} \; | \
+            grep -E 'ELF|executable|script' | \
+            cut -d: -f1 | \
+            xargs -r chmod "${exec_mod}"
+    fi
+
+    if [ -d "./${PKG_ARCH}-linux/bin" ]; then
+        find "./${PKG_ARCH}-linux/bin" -type f ! -name "*.*" -exec chmod "${exec_mod}" {} + 2>/dev/null
+    fi
+
+    if [ "$COPY_ALL" = "y" ]; then
         cp -af * "$install_path"
         ret="$?" && [ $ret -ne 0 ] && return $ret
     else
@@ -1058,23 +1084,56 @@ do_chmod_file_dir() {
     local package="$5"
     local ret
 
-    if [ "$COPY_ALL" != "y" ] || [ "$INSTALL_FOR_ALL" = "y" ]; then
-        foreach_filelist "NA" "change_mod_and_own_files" "$install_type" "$install_path" "copy del move" "$filelist_path" "${feature_param}" "no" "concurrency"
-        ret="$?" && [ $ret -ne 0 ] && return $ret
-    fi
-
-    foreach_filelist "NA" "change_mod_and_own_files_recursive" "$install_type" "$install_path" "copy_entity" "$filelist_path" "${feature_param}" "no" "concurrency"
-    ret="$?" && [ $ret -ne 0 ] && return $ret
-
-    foreach_filelist "NA" "change_mod_and_own_dirs" "$install_type" "$install_path" "mkdir" "$filelist_path" "${feature_param}" "reverse" "normal"
-    ret="$?" && [ $ret -ne 0 ] && return $ret
-
     if [ "${package}" != "" ]; then
         add_filelist_blocks_info "$install_type" "$install_path" "$filelist_path" "${feature_param}" "$package"
         ret="$?" && [ $ret -ne 0 ] && return $ret
     fi
 
     return 0
+}
+
+# 统一修正文件目录权限
+set_install_permissions() {
+    local install_path_full="$1"
+    local package_real="$2"
+    local install_for_all="${3:-n}"
+
+    # 目录不存在则跳过
+    [ -d "${install_path_full}" ] || return 0
+
+    local file_mod="640"
+    local dir_mod="750"
+    local exec_mod="750"
+    local script_mod="740"
+    local opp_mod="550"
+
+    if [ "${install_for_all}" = "y" ]; then
+        file_mod="644"
+        dir_mod="755"
+        exec_mod="755"
+        script_mod="744"
+        opp_mod="555"
+    fi
+
+    # 目录权限
+    find "${install_path_full}" -type d -exec chmod "${dir_mod}" {} + 2>/dev/null
+
+    # pip install 产物
+    if [ -d "${install_path_full}/python/site-packages" ]; then
+        find "${install_path_full}/python/site-packages" -type f -exec chmod "${file_mod}" {} + 2>/dev/null
+        find "${install_path_full}/python/site-packages/bin" -type f ! -name "*.*" -exec chmod "${exec_mod}" {} + 2>/dev/null
+        find "${install_path_full}/python/site-packages" -type f \(  -name "*.py" -o -name "*.sh" -o -name "*.bash" -o -name "*.fish" -o -name "*.csh" \) -exec chmod "${exec_mod}" {} + 2>/dev/null
+    fi
+
+    # script 目录下安装/卸载脚本
+    if [ -n "${package_real}" ] && [ -d "${install_path_full}/share/info/${package_real}/script" ]; then
+        find "${install_path_full}/share/info/${package_real}/script" -type f -exec chmod "${script_mod}" {} + 2>/dev/null
+    fi
+
+    # opp/built-in 目录权限统一为 550
+    if [ -d "${install_path_full}/opp/built-in" ]; then
+        find "${install_path_full}/opp/built-in" -type d -exec chmod "${opp_mod}" {} + 2>/dev/null
+    fi
 }
 
 # 删除安装生成的pkg_inner_softlinks
@@ -1432,12 +1491,8 @@ version_install() {
         ret="$?" && [ $ret -ne 0 ] && return $ret
     fi
 
-    # 文件与目录赋权
-    do_chmod_file_dir "${install_type}" "${install_path_full}" "${filelist_path}" "${feature_param}" "${package_real}"
-    if [ $? -ne 0 ]; then
-        log "ERROR" "failed to chown files."
-        return 1
-    fi
+    # 文件与目录规范赋权
+    set_install_permissions "${install_path_full}" "${package_real}" "${INSTALL_FOR_ALL:-n}"
 
     return 0
 }
@@ -1509,7 +1564,7 @@ do_install() {
     local feature_param="$5"
     local docker_root="$6"
     local is_simple="$7"
-    local install_path_real ret 
+    local install_path_real ret
 
     check_param_not_empty "package" "need set package parameter in install!"
     ret="$?" && [ ${ret} -ne 0 ] && return ${ret}
