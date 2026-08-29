@@ -973,14 +973,14 @@ do_copy_files() {
 
     # ELF 二进制文件 + 无后缀可执行文件
     if [ -d ./tools ]; then
-        find ./tools -type f ! -name "*.*" -exec file {} \; | \
+        find ./tools -type f \( ! -name "*.*" -o -name "*.bin" \) -exec file {} \; | \
             grep -E 'ELF|executable|script' | \
             cut -d: -f1 | \
             xargs -r chmod "${exec_mod}"
     fi
 
     if [ -d "./${PKG_ARCH}-linux/bin" ]; then
-        find "./${PKG_ARCH}-linux/bin" -type f ! -name "*.*" -exec chmod "${exec_mod}" {} + 2>/dev/null
+        find "./${PKG_ARCH}-linux/bin" -type f -exec chmod "${exec_mod}" {} + 2>/dev/null
     fi
 
     if [ "$COPY_ALL" = "y" ]; then
@@ -1121,7 +1121,7 @@ set_install_permissions() {
     # pip install 产物
     if [ -d "${install_path_full}/python/site-packages" ]; then
         find "${install_path_full}/python/site-packages" -type f -exec chmod "${file_mod}" {} + 2>/dev/null
-        find "${install_path_full}/python/site-packages/bin" -type f ! -name "*.*" -exec chmod "${exec_mod}" {} + 2>/dev/null
+        find "${install_path_full}/python/site-packages/bin" -type f -exec chmod "${exec_mod}" {} + 2>/dev/null
         find "${install_path_full}/python/site-packages" -type f \(  -name "*.py" -o -name "*.sh" -o -name "*.bash" -o -name "*.fish" -o -name "*.csh" \) -exec chmod "${exec_mod}" {} + 2>/dev/null
     fi
 
