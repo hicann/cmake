@@ -971,8 +971,12 @@ do_copy_files() {
     # Shell 脚本（可执行）
     find ./ -type f \( -name "*.py" -o -name "*.sh" -o -name "*.bash" -o -name "*.fish" -o -name "*.csh" \) -exec chmod "${exec_mod}" {} + 2>/dev/null
 
-    # ELF 二进制文件 + 无后缀可执行文件
+    # ELF 二进制文件
     if [ -d ./tools ]; then
+        # bin 目录下的所有文件
+        find ./tools -type f -path "*/bin/*" -exec chmod "${exec_mod}" {} +
+
+        # 无后缀可执行文件 + bin后缀
         find ./tools -type f \( ! -name "*.*" -o -name "*.bin" \) -exec file {} \; | \
             grep -E 'ELF|executable|script' | \
             cut -d: -f1 | \
