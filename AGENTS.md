@@ -22,8 +22,11 @@ sh build.sh --pkgs=<PACKAGES> [-j<N>] [-v] [--pkg-type=run|rpm|deb|deb,rpm|all] 
 ## Tests
 
 ```bash
+python3 -m pytest scripts/                        # all tests (package, version, sign, build_analysis)
 python3 -m pytest scripts/package/tests/          # packaging tests (from repo root)
+python3 -m pytest scripts/version/tests/          # version info generation tests
 python3 -m pytest scripts/build_analysis/tests/   # IWYU log parser tests
+python3 -m pytest scripts/sign/tests/             # signing script tests
 python3 -m pytest scripts/package/tests/test_package.py::TestClass -v   # single test
 ```
 
@@ -69,8 +72,8 @@ Functions in `function/prepare.cmake` are the framework's public API: `init_cann
 | `toolchain/` | `aarch64-hcc-toolchain.cmake` for device cross-compile |
 | `docs/` | Detailed architecture/integration docs (`architecture.md`, `framework/`, `superbuild/`) |
 | `scripts/package/` | Python packaging logic + pytest suite; invoked by CMake at `package` time |
-| `scripts/version/` | `check_build_dependencies.py`, `generate_version_info.py` — invoked by CMake functions |
-| `scripts/sign/` | Code signing scripts invoked by `add_cann_sign_file` |
+| `scripts/version/` | `check_build_dependencies.py`, `generate_version_info.py` — invoked by CMake functions; pytest suite in `tests/` |
+| `scripts/sign/` | Code signing scripts invoked by `add_cann_sign_file`; pytest suite in `tests/` |
 | `scripts/signtool/` | Python image pack/extract/ESBC-header tools used by the sign flow |
 | `scripts/build_analysis/` | IWYU log parser (`iwyu_log_parser.py`) + pytest suite in `tests/` |
 | `scripts/install/` | Shell install scripts shipped in the packages |

@@ -45,7 +45,7 @@
 
 ```bash
 # 运行全部测试（在仓库根目录执行）
-python3 -m pytest scripts/package/tests/
+python3 -m pytest scripts/
 
 # 运行单个测试
 python3 -m pytest scripts/package/tests/test_package.py::TestClass -v

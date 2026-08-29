@@ -16,9 +16,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
 
-from .. import generate_version_info
+import generate_version_info
 
 
 class TestGenVersionInfoContent:
@@ -41,7 +40,9 @@ class TestGenVersionInfoContent:
         """Test generating content with a single dependency pair."""
         monkeypatch.delenv("tagInfo", raising=False)
 
-        content = list(generate_version_info.gen_version_info_content("2.0.0", ["pkg1", "1.1.0"]))
+        content = list(
+            generate_version_info.gen_version_info_content("2.0.0", ["pkg1", "1.1.0"])
+        )
 
         assert content[0] == "Version=2.0.0"
         assert content[1] == "version_dir=cann"
@@ -122,8 +123,7 @@ class TestMain:
     def test_main_success_with_deps(tmp_path: Path, monkeypatch):
         """Test main function success with dependencies."""
         output_file = TestMain._setup_main_test(
-            monkeypatch, tmp_path, "1.2.3",
-            deps=["dep1", "1.0.0", "dep2", "2.0.0"]
+            monkeypatch, tmp_path, "1.2.3", deps=["dep1", "1.0.0", "dep2", "2.0.0"]
         )
 
         result = generate_version_info.main()
@@ -156,8 +156,10 @@ class TestMain:
     def test_main_error_odd_number_of_deps(tmp_path: Path, monkeypatch):
         """Test main function returns False when deps has odd number of elements."""
         output_file = TestMain._setup_main_test(
-            monkeypatch, tmp_path, "1.0.0",
-            deps=["dep1", "1.0.0", "dep2"]  # 3 elements - odd number
+            monkeypatch,
+            tmp_path,
+            "1.0.0",
+            deps=["dep1", "1.0.0", "dep2"],  # 3 elements - odd number
         )
 
         result = generate_version_info.main()
@@ -170,8 +172,7 @@ class TestMain:
     def test_main_with_single_dep_pair(tmp_path: Path, monkeypatch):
         """Test main with exactly one dependency pair."""
         output_file = TestMain._setup_main_test(
-            monkeypatch, tmp_path, "2.0.0",
-            deps=["single_dep", "1.5.0"]
+            monkeypatch, tmp_path, "2.0.0", deps=["single_dep", "1.5.0"]
         )
 
         result = generate_version_info.main()
@@ -192,7 +193,9 @@ class TestMain:
         assert content.endswith(b"\n")
 
     @staticmethod
-    def _setup_main_test(monkeypatch, tmp_path, version, deps=None, output_file_name="version.info"):
+    def _setup_main_test(
+        monkeypatch, tmp_path, version, deps=None, output_file_name="version.info"
+    ):
         """Helper method to setup main function test."""
         monkeypatch.delenv("tagInfo", raising=False)
         output_file = tmp_path / output_file_name
@@ -223,8 +226,10 @@ class TestMainEntryPoint:
     def test_main_entry_point_failure(tmp_path: Path, monkeypatch):
         """Test __main__ entry point with failed execution (odd deps)."""
         TestMainEntryPoint._run_main_entry_point(
-            monkeypatch, tmp_path, "1.0.0",
-            deps=["dep1", "1.0.0", "dep2"]  # odd number of deps
+            monkeypatch,
+            tmp_path,
+            "1.0.0",
+            deps=["dep1", "1.0.0", "dep2"],  # odd number of deps
         )
 
         result = generate_version_info.main()
@@ -255,14 +260,9 @@ class TestScriptAsMain:
         script_path = Path(generate_version_info.__file__)
 
         result = subprocess.run(
-            [
-                sys.executable,
-                str(script_path),
-                "1.0.0",
-                "--output", str(output_file)
-            ],
+            [sys.executable, str(script_path), "1.0.0", "--output", str(output_file)],
             capture_output=True,
-            text=True
+            text=True,
         )
 
         assert result.returncode == 0
@@ -279,11 +279,14 @@ class TestScriptAsMain:
                 sys.executable,
                 str(script_path),
                 "1.0.0",
-                "dep1", "1.0.0", "dep2",  # odd number of deps
-                "--output", str(output_file)
+                "dep1",
+                "1.0.0",
+                "dep2",  # odd number of deps
+                "--output",
+                str(output_file),
             ],
             capture_output=True,
-            text=True
+            text=True,
         )
 
         assert result.returncode == 1
