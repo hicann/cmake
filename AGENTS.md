@@ -70,18 +70,18 @@ Functions in `function/prepare.cmake` are the framework's public API: `init_cann
 | `third_party/` | `<name>.cmake` scripts for building external deps (abseil, boost, grpc, protobuf, ...), included via `add_cann_third_party(name)` |
 | `intf_pub/` | `intf_pub_linux.cmake` — shared compile/link flags (security hardening, sanitizers, ABI) applied via `add_cann_target_options` |
 | `toolchain/` | `aarch64-hcc-toolchain.cmake` for device cross-compile |
-| `docs/` | Detailed architecture/integration docs (`architecture.md`, `framework/`, `superbuild/`) |
+| `docs/` | Detailed architecture/integration docs (`architecture.md`, `framework/`, `superbuild/`, `install/`) |
 | `scripts/package/` | Python packaging logic + pytest suite; invoked by CMake at `package` time |
 | `scripts/version/` | `check_build_dependencies.py`, `generate_version_info.py` — invoked by CMake functions; pytest suite in `tests/` |
 | `scripts/sign/` | Code signing scripts invoked by `add_cann_sign_file`; pytest suite in `tests/` |
 | `scripts/signtool/` | Python image pack/extract/ESBC-header tools used by the sign flow |
 | `scripts/build_analysis/` | IWYU log parser (`iwyu_log_parser.py`) + pytest suite in `tests/` |
-| `scripts/install/` | Shell install scripts shipped in the packages |
+| `scripts/install/` | Shell install scripts shipped in the packages; permission behavior must follow `docs/install/permissions.md` (install permission spec) |
 
 ## Conventions
 
 - **License header required** on every source file (CANN-2.0), enforced by `OAT.xml`. Copy the header block from any existing file when creating new `.cmake`/`.py`/`.sh` files.
 - **C++ standard is C++17** (`CMAKE_CXX_STANDARD 17`, no extensions), set in `init_cann_project`.
 - Comments throughout the framework are in Chinese — match this when editing existing files.
-- **Docs must stay in sync with code changes:** when modifying `build.sh` parameters/options, `superbuild/CMakeLists.txt` behavior, `config.cmake` package mappings, or any public API in `function/prepare.cmake`, update the corresponding docs (`docs/superbuild/getting-started.md`, `docs/superbuild/internals.md`, `docs/framework/public-api.md`, `AGENTS.md` Build/Architecture sections) in the same change. Do not leave docs describing stale behavior.
+- **Docs must stay in sync with code changes:** when modifying `build.sh` parameters/options, `superbuild/CMakeLists.txt` behavior, `config.cmake` package mappings, or any public API in `function/prepare.cmake`, update the corresponding docs (`docs/superbuild/getting-started.md`, `docs/superbuild/internals.md`, `docs/framework/public-api.md`, `AGENTS.md` Build/Architecture sections) in the same change. Do not leave docs describing stale behavior. When changing install/permission logic in `scripts/install/**` or `scripts/package/**`, update `docs/install/permissions.md` in the same change.
 - Consumer integration pattern (see `README.md`): `fetch_cann_cmake.cmake` → `include(function/prepare.cmake)` → `init_cann_project()` after `project()`.

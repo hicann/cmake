@@ -33,6 +33,10 @@
 
 → [architecture.md](architecture.md)：模块分层、两种集成模式、host/device 双构建
 
+### 安装权限
+
+→ [install/permissions.md](install/permissions.md)：CANN 安装权限规范（安装场景、权限位对照、最小权限原则）
+
 ### 辅助工具
 
 → [scripts/build-analysis.md](scripts/build-analysis.md)：IWYU 头文件依赖分析
