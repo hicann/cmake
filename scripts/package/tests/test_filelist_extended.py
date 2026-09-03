@@ -51,10 +51,6 @@ class ItemSpec:
         )
 
 
-def _make_item(operation, rel_install, **kwargs) -> filelist.FileItem:
-    return ItemSpec(operation=operation, rel_install=rel_install, **kwargs).build()
-
-
 class TestCreateFileItemExtended:
     """Extended tests for create_file_item."""
 
