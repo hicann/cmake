@@ -1140,6 +1140,7 @@ set_install_permissions() {
         chmod "${opp_mod}" "${install_path_full}/opp/built-in" 2>/dev/null
         # 修改 built-in 目录下所有文件的权限
         find "${install_path_full}/opp/built-in" -type f -exec chmod "${file_mod}" {} + 2>/dev/null
+        find "${install_path_full}/opp/built-in" -type f \(  -name "*.py" -o -name "*.sh" \) -exec chmod "${exec_mod}" {} + 2>/dev/null
     fi
 }
 
