@@ -160,6 +160,31 @@ check_install_path() {
     fi
 }
 
+# 可执行文件判断
+is_executable_file() {
+    local file="$1"
+
+    # 前置检查：文件必须存在且是普通文件
+    [ -f "$file" ] || return 1
+
+    # 规则1：空文件 → 非可执行文件
+    [ -s "$file" ] || return 1
+
+    # 规则2：二进制文件 → 可执行
+    # grep -I 遇到二进制文件会跳过（返回非0），据此先分出二进制
+    if ! grep -Iq . "$file" 2>/dev/null; then
+        return 0
+    fi
+
+    # 规则3：脚本（shebang 开头）→ 可执行文件
+    if head -n 1 "$file" 2>/dev/null | grep -q '^#!'; then
+        return 0
+    fi
+
+    # 规则4：普通文本文件 → 非可执行文件
+    return 1
+}
+
 # 添加pkg对应的block_info
 add_pkg_blocks_info() {
     local install_path="$1"
@@ -977,10 +1002,12 @@ do_copy_files() {
         find ./tools -type f -path "*/bin/*" -exec chmod "${exec_mod}" {} +
 
         # 无后缀可执行文件 + bin后缀
-        find ./tools -type f \( ! -name "*.*" -o -name "*.bin" \) -exec file {} \; | \
-            grep -E 'ELF|executable|script' | \
-            cut -d: -f1 | \
-            xargs -r chmod "${exec_mod}"
+        find ./tools -type f -name "*.bin" -exec chmod "${exec_mod}" {} + 2>/dev/null
+        find ./tools -type f ! -name "*.*" -print0 | while IFS= read -r -d '' file; do
+            if is_executable_file "$file"; then
+                chmod "${exec_mod}" "$file"
+            fi
+        done
     fi
 
     if [ -d "./${PKG_ARCH}-linux/bin" ]; then
