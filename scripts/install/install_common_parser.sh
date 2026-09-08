@@ -1003,7 +1003,7 @@ do_copy_files() {
 
         # 无后缀可执行文件 + bin后缀
         find ./tools -type f -name "*.bin" -exec chmod "${exec_mod}" {} + 2>/dev/null
-        find ./tools -type f ! -name "*.*" -print0 | while IFS= read -r -d '' file; do
+        find ./tools -type f ! -name "*.*" | while read -r file; do
             if is_executable_file "$file"; then
                 chmod "${exec_mod}" "$file"
             fi
