@@ -23,10 +23,10 @@ function check_compatible_le(version_arr, len_version_arr, require_arr, len_requ
         if (i > len_version_arr) {
             return 1
         }
-        if (version_arr[i] < require_arr[i]) {
+        if (version_arr[i] + 0 < require_arr[i] + 0) {
             return 1
         }
-        if (version_arr[i] > require_arr[i]) {
+        if (version_arr[i] + 0 > require_arr[i] + 0) {
             return 0
         }
     }
@@ -46,10 +46,10 @@ function check_compatible_lt(version_arr, len_version_arr, require_arr, len_requ
         if (i > len_version_arr) {
             return 1
         }
-        if (version_arr[i] < require_arr[i]) {
+        if (version_arr[i] + 0 < require_arr[i] + 0) {
             return 1
         }
-        if (version_arr[i] > require_arr[i]) {
+        if (version_arr[i] + 0 > require_arr[i] + 0) {
             return 0
         }
     }
@@ -69,10 +69,10 @@ function check_compatible_ge(version_arr, len_version_arr, require_arr, len_requ
         if (i > len_version_arr) {
             return 0
         }
-        if (version_arr[i] < require_arr[i]) {
+        if (version_arr[i] + 0 < require_arr[i] + 0) {
             return 0
         }
-        if (version_arr[i] > require_arr[i]) {
+        if (version_arr[i] + 0 > require_arr[i] + 0) {
             return 1
         }
     }
@@ -92,10 +92,10 @@ function check_compatible_gt(version_arr, len_version_arr, require_arr, len_requ
         if (i > len_version_arr) {
             return 0
         }
-        if (version_arr[i] < require_arr[i]) {
+        if (version_arr[i] + 0 < require_arr[i] + 0) {
             return 0
         }
-        if (version_arr[i] > require_arr[i]) {
+        if (version_arr[i] + 0 > require_arr[i] + 0) {
             return 1
         }
     }
@@ -115,7 +115,7 @@ function check_compatible_eq(version_arr, len_version_arr, require_arr, len_requ
         if (i > len_version_arr) {
             return 0
         }
-        if (version_arr[i] != require_arr[i]) {
+        if (version_arr[i] + 0 != require_arr[i] + 0) {
             return 0
         }
     }
