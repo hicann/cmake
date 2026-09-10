@@ -28,36 +28,17 @@ fi
 # 创建临时目录，失败时立即退出
 WORK_DIR=$(mktemp -d) || { echo "Error: Failed to create temporary directory"; exit 1; }
 trap 'rm -rf "$WORK_DIR"' EXIT
-echo "Processing in working directory: $WORK_DIR"
+echo "Fix deb control in working directory: $WORK_DIR"
 
 # 保存原文件的绝对路径
-ORIGINAL_DEB=$(realpath "$DEB_FILE")
-ORIGINAL_DIR=$(dirname "$ORIGINAL_DEB")
-ORIGINAL_FILENAME=$(basename "$ORIGINAL_DEB")
+ORIGINAL_DEB="$(realpath "$DEB_FILE")"
+ORIGINAL_DIR="$(dirname "$ORIGINAL_DEB")"
+ORIGINAL_FILENAME="$(basename "$ORIGINAL_DEB")"
 
 cp "$DEB_FILE" "$WORK_DIR/"
 cd "$WORK_DIR"
 
 ar x "$ORIGINAL_FILENAME"
-
-# 解压 control
-if [ -f "control.tar.xz" ]; then
-    tar -xJf control.tar.xz
-elif [ -f "control.tar.gz" ]; then
-    tar -xzf control.tar.gz
-else
-    echo "Error: control.tar.xz or control.tar.gz not found"
-    exit 1
-fi
-
-# 修复：删除 control 文件末尾的所有空行（保留中间空行）
-sed -i -e :a -e '/^\n*$/{$d;N;ba' -e '}' control
-
-echo "Cleaned trailing blank lines in control file."
-
-# 重新打包 control
-rm -f control.tar.xz control.tar.gz
-tar -cJf control.tar.xz ./*
 
 # 自动识别 data 文件
 DATA_FILE=$(ls data.tar.* 2>/dev/null | head -1)
@@ -65,6 +46,25 @@ if [ -z "$DATA_FILE" ]; then
     echo "Error: data.tar.* file not found"
     exit 1
 fi
+
+mkdir -p control
+# 解压 control
+if [ -f "control.tar.xz" ]; then
+    tar -xJf control.tar.xz -C control
+elif [ -f "control.tar.gz" ]; then
+    tar -xzf control.tar.gz -C control
+else
+    echo "Error: control.tar.xz or control.tar.gz not found"
+    exit 1
+fi
+
+# 修复：删除 control 文件末尾的所有空行（保留中间空行）
+sed -i -e :a -e '/^\n*$/{$d;N;ba' -e '}' control/control
+
+# 重新打包 control
+rm -f control.tar.xz control.tar.gz
+tar -C control -cJf control.tar.xz .
+rm -rf control
 
 # 重新打包成临时文件
 TEMP_DEB="${ORIGINAL_FILENAME}.tmp"
@@ -79,7 +79,5 @@ fi
 # 用临时文件替换原文件
 mv "$TEMP_DEB" "$ORIGINAL_DIR/$ORIGINAL_FILENAME"
 
-echo "Fix completed! Original package replaced: $ORIGINAL_DEB"
-
 ELAPSED=$(($(date +%s) - START_TIME))
-echo "Time: ${ELAPSED}s"
+echo "Fix completed! Original package replaced: $ORIGINAL_DEB, elapsed time: ${ELAPSED}s"
