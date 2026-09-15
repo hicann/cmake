@@ -422,13 +422,13 @@ class TestRecordSoftlinks:
         assert paths.count("lib64/liba.so.1") == 1
 
     @staticmethod
-    def test_generate_record_file_includes_mkdir_softlinks(tmp_path):
-        """generate_record_file should include mkdir softlink paths."""
+    def test_generate_record_file_by_filelist_includes_mkdir_softlinks(tmp_path):
+        """generate_record_file_by_filelist should include mkdir softlink paths."""
         items = [
             _make_item("copy", "lib64/liba.so", softlink=["lib64/liba.so.1"]),
             _make_item("mkdir", "include", softlink=["include_link"]),
         ]
-        filelist.generate_record_file(items, str(tmp_path), "test_func")
+        filelist.generate_record_file_by_filelist(items, str(tmp_path), "test_func")
         record_file = (
             tmp_path / "share" / "info" / "test_func" / filelist.RECORD_FILE_NAME
         )

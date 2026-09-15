@@ -1669,7 +1669,7 @@ class TestGetCompressCmd:
 
         # Mock create_run_package_command
         monkeypatch.setattr(
-            package_module, "create_run_package_command", lambda x: ("cmd", None)
+            package_module, "create_run_package_command", lambda x: (["cmd"], None)
         )
 
         # Mock exec_pack_cmd

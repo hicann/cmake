@@ -532,22 +532,23 @@ transform_nested_path_in_filelist = pipe(
 )
 
 
-def generate_filelist(filelist: FileList, filename: str, build_dir: str):
+def generate_filelist(filelist: FileList, filepath: str):
     """生成文件列表文件。"""
+    build_dir = os.path.dirname(filepath)
+
+    if not os.path.exists(build_dir):
+        os.makedirs(build_dir)
+
     content_list = list(
         itertools.chain(
             [get_filelist_header_string()],
             [file_item_to_string(item) for item in filelist],
         )
     )
-    if not os.path.exists(build_dir):
-        os.makedirs(build_dir)
-
     content = "\n".join(content_list)
-    filepath = os.path.join(build_dir, filename)
 
     if os.path.exists(filepath):
-        os.chmod(filepath, 0o700)
+        os.chmod(filepath, 0o640)
 
     try:
         with open(filepath, "w", encoding="utf-8") as file:
@@ -555,9 +556,9 @@ def generate_filelist(filelist: FileList, filename: str, build_dir: str):
             # filelist.csv文件末尾补充一个换行符
             file.write("\n")
     except OSError as ex:
-        raise GenerateFilelistError(filename) from ex
+        raise GenerateFilelistError(filepath) from ex
 
-    os.chmod(filepath, 0o440)
+    os.chmod(filepath, 0o640)
 
 
 def get_transform_nested_path_func(parallel: bool) -> Callable[[FileList], FileList]:
@@ -627,7 +628,24 @@ def create_record_file_item(share_info_name: str) -> FileItem:
     )
 
 
-def generate_record_file(
+def generate_record_file(records: List[str], filepath: str):
+    """生成RECORD文件。"""
+    record_dir = os.path.dirname(filepath)
+    if not os.path.exists(record_dir):
+        os.makedirs(record_dir)
+
+    if os.path.exists(filepath):
+        os.chmod(filepath, 0o640)
+
+    content = "\n".join(records)
+    with open(filepath, "w", encoding="utf-8") as file:
+        file.write(content)
+        if content:
+            file.write("\n")
+    os.chmod(filepath, 0o640)
+
+
+def generate_record_file_by_filelist(
     filelist: FileList, delivery_dir: str, share_info_name: str
 ) -> FileItem:
     """生成share/info/{share_info_name}/RECORD文件并返回其filelist条目。
@@ -637,22 +655,66 @@ def generate_record_file(
     并将RECORD作为copy条目返回以便加入filelist.csv。
     """
     record_paths = get_record_install_paths(filelist)
-    record_dir = os.path.join(delivery_dir, "share", "info", share_info_name)
-    if not os.path.exists(record_dir):
-        os.makedirs(record_dir)
-    record_filepath = os.path.join(record_dir, RECORD_FILE_NAME)
-    if os.path.exists(record_filepath):
-        os.chmod(record_filepath, 0o700)
-    content = "\n".join(record_paths)
-    try:
-        with open(record_filepath, "w", encoding="utf-8") as f:
-            f.write(content)
-            if content:
-                f.write("\n")
-    except OSError as ex:
-        raise GenerateFilelistError(RECORD_FILE_NAME) from ex
-    os.chmod(record_filepath, 0o440)
+    record_filepath = os.path.join(
+        delivery_dir, "share", "info", share_info_name, RECORD_FILE_NAME
+    )
+    generate_record_file(record_paths, record_filepath)
+
     CommLog.cilog_info(
         "generate record file %s with %d entries", record_filepath, len(record_paths)
     )
     return create_record_file_item(share_info_name)
+
+
+def parse_filelist_content(lines: Iterator[str]) -> Iterator[FileItem]:
+    """解析filelist文件内容。"""
+
+    def trans_to_list(parts, idx):
+        value = parts[idx]
+        if value == "NA":
+            parts[idx] = []
+        else:
+            parts[idx] = value.split(";")
+
+    def trans_to_set(parts, idx):
+        value = parts[idx]
+        if value == "all":
+            parts[idx] = set()
+        else:
+            parts[idx] = set(value.split(";"))
+
+    line_iter = enumerate(lines, start=1)
+    next(line_iter)
+    for lineno, line in line_iter:
+        line = line.strip()
+        parts = line.split(",")
+
+        if len(parts) < 16:
+            msg = f"Parse filelist failed at line {lineno}, insufficient number of parameters."
+            raise FilelistError(msg)
+
+        trans_to_list(parts, 8)  # softlink
+        trans_to_list(parts, 14)  # pkg_inner_softlink
+
+        trans_to_set(parts, 9)  # feature
+        trans_to_set(parts, 15)  # chip
+
+        parts += [False]
+        yield FileItem(*parts)
+
+
+def parse_filelist(filepath: str) -> Iterator[FileItem]:
+    """解析filelist文件。"""
+    with open(filepath, encoding="utf-8") as file:
+        try:
+            yield from parse_filelist_content(file)
+        except FilelistError as ex:
+            CommLog.cilog_error(f"{ex} Filelist: {filepath}")
+            raise
+
+
+def parse_records(filepath: str) -> Iterator[str]:
+    """解析RECORD文件。"""
+    with open(filepath, encoding="utf-8") as file:
+        for line in file:
+            yield line.strip()

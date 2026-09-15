@@ -32,7 +32,7 @@ from filelist import (
     check_filelist,
     create_file_item,
     generate_filelist,
-    generate_record_file,
+    generate_record_file_by_filelist,
     get_transform_nested_path_func,
 )
 from packer import (
@@ -102,17 +102,18 @@ def get_compress_cmd(
         params = factory(
             pkg_args.makeself_dir, xml_config.package_attr, pkg_args.independent_pkg
         )
-        pack_cmd, err_msg = create_run_package_command(params)
+        pack_cmds, err_msg = create_run_package_command(params)
         if err_msg:
             CommLog.cilog_error(err_msg)
             CommLog.cilog_error("create_run_command failed!")
             raise CompressError(package_name.getvalue())
         if pkg_args.independent_pkg:
-            exec_pack_cmd(delivery_dir, pack_cmd, package_name.getvalue())
+            pack_cmds = ["TMPDIR=$pwd"] + pack_cmds
+            exec_pack_cmd(delivery_dir, " ".join(pack_cmds), package_name.getvalue())
         try:
             makeself_dir = os.path.join(build_dir, "makeself.txt")
             with open(makeself_dir, "w") as f:
-                f.write(pack_cmd)
+                f.write(" ".join(pack_cmds))
         except Exception as exception:
             CommLog.cilog_error(f"save makeself.txt failed!{str(exception)}")
             raise CompressError(package_name.getvalue()) from exception
@@ -857,12 +858,15 @@ def generate_filelist_file_by_xml_config(
         )
     # 生成RECORD文件(记录具体文件安装路径)，并将其作为copy条目加入filelist随包打包
     share_info_name = get_share_info_name(xml_config.package_attr)
-    record_item = generate_record_file(file_install_list, delivery_dir, share_info_name)
+    record_item = generate_record_file_by_filelist(
+        file_install_list, delivery_dir, share_info_name
+    )
     file_install_list.append(record_item)
     generate_filelist(
         file_install_list,
-        "filelist.csv",
-        os.path.join(delivery_dir, "share", "info", share_info_name, "script"),
+        os.path.join(
+            delivery_dir, "share", "info", share_info_name, "script", "filelist.csv"
+        ),
     )
     # 先生成再检查，有利于问题定位
     if package_check:
@@ -1204,9 +1208,9 @@ if __name__ == "__main__":
             args.build_type = "debug"
         else:
             args.build_type = args.build_type.lower()
-        status = main(args.pkg_name, args.xml_file, main_args=args)
+        g_status = main(args.pkg_name, args.xml_file, main_args=args)
     except Exception as e:
         CommLog.cilog_error("exception is occurred (%s)!", e)
         CommLog.cilog_info("%s", traceback.format_exc())
-        status = False
-    sys.exit(0 if status else 1)
+        g_status = False
+    sys.exit(0 if g_status else 1)

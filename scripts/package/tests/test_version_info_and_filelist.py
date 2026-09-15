@@ -11,7 +11,6 @@
 from pathlib import Path
 import os
 
-import itertools
 import xml.etree.ElementTree as ET
 import pytest
 
@@ -255,7 +254,9 @@ def test_print_helpers_and_move_safe_and_transform_funcs(tmp_path: Path):
     assert isinstance(res, tuple)
 
     # is_nested_file_item 关系判断
-    assert filelist.is_nested_file_item(fi1, None) == filelist.FileItemRelation.NOT_NESTED
+    assert (
+        filelist.is_nested_file_item(fi1, None) == filelist.FileItemRelation.NOT_NESTED
+    )
     assert filelist.is_nested_file_item(fi1, fi1) == filelist.FileItemRelation.SAME
     assert filelist.is_nested_file_item(fi2, fi1) == filelist.FileItemRelation.NESTED
 
@@ -277,14 +278,17 @@ def test_print_helpers_and_move_safe_and_transform_funcs(tmp_path: Path):
 
     # generate_filelist 输出文件
     out_dir = tmp_path
-    filelist.generate_filelist([fi1, fi2], "filelist.csv", str(out_dir))
     out_file = out_dir / "filelist.csv"
+    filelist.generate_filelist([fi1, fi2], str(out_file))
     assert out_file.exists()
     content = out_file.read_text(encoding="utf-8")
     assert "module,operation" in content.splitlines()[0]
 
     # get_transform_nested_path_func
-    assert filelist.get_transform_nested_path_func(True) is filelist.transform_nested_path_in_filelist
+    assert (
+        filelist.get_transform_nested_path_func(True)
+        is filelist.transform_nested_path_in_filelist
+    )
     # Test identity function behavior instead of object identity
     identity_func = filelist.get_transform_nested_path_func(False)
     test_list = [fi1, fi2]
@@ -302,7 +306,9 @@ def test_pkg_utils_basic_helpers_and_errors():
     merged = pkg_utils.merge_dict({"a": 1}, {"b": 2})
     assert merged == {"a": 1, "b": 2}
 
-    add = lambda x, y: x + y
+    def add(x, y):
+        return x + y
+
     sp = pkg_utils.star_pipe(lambda a, b: (a + 1, b + 1), add)
     assert sp(1, 2) == 5
 
@@ -329,7 +335,9 @@ def test_pkg_utils_basic_helpers_and_errors():
     assert pairs == [(1, 2), (2, 3)]
 
     assert pkg_utils.path_join(None, "a") is None
-    assert pkg_utils.path_join("base", "a", "b").endswith("base" + os.sep + "a" + os.sep + "b")
+    assert pkg_utils.path_join("base", "a", "b").endswith(
+        "base" + os.sep + "a" + os.sep + "b"
+    )
 
     yielded = list(pkg_utils.yield_if(1, lambda x: x == 1))
     assert yielded == [1]
@@ -339,8 +347,12 @@ def test_funcbase_basic_helpers_and_high_order():
     const_f = funcbase.constant(10)
     assert const_f() == 10
 
-    plus1 = lambda x: x + 1
-    mul2 = lambda x: x * 2
+    def plus1(x):
+        return x + 1
+
+    def mul2(x):
+        return x * 2
+
     pipe_f = funcbase.pipe(plus1, mul2)
     assert pipe_f(3) == 8
 
