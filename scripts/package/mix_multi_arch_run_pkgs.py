@@ -83,7 +83,7 @@ class Prepare:
     def get_scene_info(self) -> SceneInfo:
         """获取包场景。"""
         scene_info_paths = glob(
-            os.path.join(self.extract_path, "**", "scene.info"), recursive=True
+            os.path.join(self.extract_path, "share", "info", "*", "scene.info")
         )
         if len(scene_info_paths) == 0:
             self.logger.error(f"File scene.info not found in {self.filepath}!")
@@ -204,6 +204,7 @@ class Mix:
             other.scene_info.arch,
         )
         if not os.path.isdir(other_artifact_path):
+            self.logger.error(f"Arch artifact {other_artifact_path} not found!")
             return False
 
         remove(self_artifact_path)
@@ -248,7 +249,6 @@ class Mix:
         pack_cmds = ["bash"] + pack_cmds
         self.logger.info(f"Repack run command: {shlex.join(pack_cmds)}")
         subprocess.run(pack_cmds, check=True, cwd=self.extract_path)
-
         os.replace(self.filepath_new, self.filepath)
         return True
 
@@ -294,23 +294,21 @@ def check_args(args: Namespace) -> bool:
         )
         return False
 
+    if args.arch:
+        for arch in args.arch:
+            if not arch:
+                CommLog.cilog_error("The value of the --arch option cannot be empty!")
+                return False
+
     if not check_makeself_tools(args.makeself):
         return False
     return True
 
 
-def main(argv: list[str]) -> int:
-    """主流程。"""
-    parser = argparse.ArgumentParser()
-    parser.add_argument("pkga")
-    parser.add_argument("pkgb")
-    parser.add_argument("--arch", nargs="+")
-    parser.add_argument("--makeself", required=True)
-    parser.add_argument("--clean", action="store_true", help="Clean after repack.")
-    args = parser.parse_args(argv)
-
+def mix_command(args: Namespace) -> bool:
+    """混合命令流程。"""
     if not check_args(args):
-        return 1
+        return False
 
     logger = Logger(CommLog.cilog_error, CommLog.cilog_warning, CommLog.cilog_info)
 
@@ -325,27 +323,67 @@ def main(argv: list[str]) -> int:
         try:
             scene_infos = [prepare.get_scene_info() for prepare in prepares]
         except PackageError:
-            return 1
+            return False
 
         if scene_infos[0].arch == scene_infos[1].arch:
             CommLog.cilog_error(f"Packages arch is the same {scene_infos[0].arch}.")
-            return 1
+            return False
 
         mixes = [
             Mix(prepare, scene_info, args.makeself)
             for prepare, scene_info in zip(prepares, scene_infos)
         ]
+        ret = True
         for idx in range(len(mixes)):
-            if not args.arch or mixes[idx].scene_info.arch in args.arch:
-                mix = mixes[idx]
+            mix = mixes[idx]
+            if not args.arch or mix.scene_info.arch in args.arch:
                 other_mix = mixes[1 - idx]  # 1-idx即另一个Mix元素
-                if mix.mix_artifacts(other_mix):
-                    mix.repack_run()
+                if not mix.mix_artifacts(other_mix):
+                    ret = False
+                    continue
+                mix.repack_run()
+        return ret
     finally:
         if args.clean:
             for prepare in prepares:
                 prepare.remove_extract()
 
+
+class MixCommand:
+    """混合命令。"""
+
+    @classmethod
+    def add_parser(cls, subparsers):
+        """配置命令行解析。"""
+        parser = subparsers.add_parser("mix")
+        parser.add_argument("pkga")
+        parser.add_argument("pkgb")
+        parser.add_argument("--arch", nargs="+")
+        parser.add_argument("--makeself", required=True, help="Path of makeself tool.")
+        parser.add_argument(
+            "--clean",
+            action="store_true",
+            help="Clean extract directories after repack.",
+        )
+        parser.set_defaults(func=cls.command)
+
+    @staticmethod
+    def command(args) -> bool:
+        """执行命令。"""
+        return mix_command(args)
+
+
+def main(argv: list[str]) -> int:
+    """主流程。"""
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers()
+    MixCommand.add_parser(subparsers)
+    args = parser.parse_args(argv)
+    if not getattr(args, "func", None):
+        parser.print_usage()
+        return 1
+    if not args.func(args):
+        return 1
     return 0
 
 
