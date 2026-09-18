@@ -22,7 +22,9 @@ import shutil
 import subprocess
 import sys
 from argparse import Namespace
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from glob import glob
+from itertools import islice
 from typing import NamedTuple, Optional
 
 from filelist import (
@@ -253,111 +255,38 @@ class Mix:
         return True
 
 
-def check_makeself_tools(makeself_dir: str) -> bool:
-    """检查makeself工具是否存在。"""
-    if not os.path.exists(makeself_dir):
-        CommLog.cilog_error(f"{makeself_dir} doesn't exist!")
-        return False
+def batched(iterable, n, *, strict=True):
+    """batched('ABCDEFG', 3) -> ABC DEF G
 
-    makeself_main = os.path.join(makeself_dir, "makeself.sh")
-    if not os.path.exists(makeself_main):
-        CommLog.cilog_error(f"{makeself_main} doesn't exist!")
-        return False
-
-    makeself_header = os.path.join(makeself_dir, "makeself-header.sh")
-    if not os.path.exists(makeself_header):
-        CommLog.cilog_error(f"{makeself_header} doesn't exist!")
-        return False
-
-    return True
-
-
-def check_args(args: Namespace) -> bool:
-    """检查参数。"""
-    if not os.path.exists(args.pkga):
-        CommLog.cilog_error(f"Package {args.pkga} doesn't exist!")
-        return False
-
-    if not os.path.exists(args.pkgb):
-        CommLog.cilog_error(f"Package {args.pkgb} doesn't exist!")
-        return False
-
-    if not args.pkga.endswith(RUN_SUFFIX):
-        CommLog.cilog_error(
-            f"Package {args.pkga} needs to be a run package(end with {RUN_SUFFIX})!"
-        )
-        return False
-
-    if not args.pkgb.endswith(RUN_SUFFIX):
-        CommLog.cilog_error(
-            f"Package {args.pkgb} needs to be a run package(end with {RUN_SUFFIX})!"
-        )
-        return False
-
-    if args.arch:
-        for arch in args.arch:
-            if not arch:
-                CommLog.cilog_error("The value of the --arch option cannot be empty!")
-                return False
-
-    if not check_makeself_tools(args.makeself):
-        return False
-    return True
-
-
-def mix_command(args: Namespace) -> bool:
-    """混合命令流程。"""
-    if not check_args(args):
-        return False
-
-    logger = Logger(CommLog.cilog_error, CommLog.cilog_warning, CommLog.cilog_info)
-
-    prepares = [
-        Prepare(args.pkga, logger),
-        Prepare(args.pkgb, logger),
-    ]
-    try:
-        for prepare in prepares:
-            prepare.decompress_run()
-
-        try:
-            scene_infos = [prepare.get_scene_info() for prepare in prepares]
-        except PackageError:
-            return False
-
-        if scene_infos[0].arch == scene_infos[1].arch:
-            CommLog.cilog_error(f"Packages arch is the same {scene_infos[0].arch}.")
-            return False
-
-        mixes = [
-            Mix(prepare, scene_info, args.makeself)
-            for prepare, scene_info in zip(prepares, scene_infos)
-        ]
-        ret = True
-        for idx in range(len(mixes)):
-            mix = mixes[idx]
-            if not args.arch or mix.scene_info.arch in args.arch:
-                other_mix = mixes[1 - idx]  # 1-idx即另一个Mix元素
-                if not mix.mix_artifacts(other_mix):
-                    ret = False
-                    continue
-                mix.repack_run()
-        return ret
-    finally:
-        if args.clean:
-            for prepare in prepares:
-                prepare.remove_extract()
+    python3.12的itertools标准库中的函数。在这里重定义兼容python3.6版本。
+    参考python Documentation itertools中的实现。
+    """
+    if n < 1:
+        raise ValueError("n must be at least one")
+    iterator = iter(iterable)
+    batch = tuple(islice(iterator, n))
+    while batch:
+        if strict and len(batch) != n:
+            raise ValueError("batched(): incomplete batch")
+        yield batch
+        batch = tuple(islice(iterator, n))
 
 
 class MixCommand:
     """混合命令。"""
 
+    def __init__(self, args: Namespace):
+        self.args = args
+        # TODO: 多线程日志打印乱序，后续处理
+        self.logger = Logger(
+            CommLog.cilog_error, CommLog.cilog_warning, CommLog.cilog_info
+        )
+
     @classmethod
     def add_parser(cls, subparsers):
         """配置命令行解析。"""
         parser = subparsers.add_parser("mix")
-        parser.add_argument("pkga")
-        parser.add_argument("pkgb")
+        parser.add_argument("pkgs", nargs="+")
         parser.add_argument("--arch", nargs="+")
         parser.add_argument("--makeself", required=True, help="Path of makeself tool.")
         parser.add_argument(
@@ -365,12 +294,124 @@ class MixCommand:
             action="store_true",
             help="Clean extract directories after repack.",
         )
+        parser.add_argument(
+            "--parallel",
+            action="store_true",
+            help="Parallel mix multi-group packages.",
+        )
         parser.set_defaults(func=cls.command)
 
-    @staticmethod
-    def command(args) -> bool:
+    @classmethod
+    def command(cls, args) -> bool:
         """执行命令。"""
-        return mix_command(args)
+        return cls(args).run()
+
+    def check_makeself_tools(self, makeself_dir: str) -> bool:
+        """检查makeself工具是否存在。"""
+        if not os.path.exists(makeself_dir):
+            self.logger.error(f"{makeself_dir} doesn't exist!")
+            return False
+
+        ret = True
+        makeself_main = os.path.join(makeself_dir, "makeself.sh")
+        if not os.path.exists(makeself_main):
+            self.logger.error(f"{makeself_main} doesn't exist!")
+            ret = False
+
+        makeself_header = os.path.join(makeself_dir, "makeself-header.sh")
+        if not os.path.exists(makeself_header):
+            self.logger.error(f"{makeself_header} doesn't exist!")
+            ret = False
+
+        return ret
+
+    def check_args(self) -> bool:
+        """检查参数。"""
+        ret = True
+
+        len_pkgs = len(self.args.pkgs)
+        if len_pkgs % 2 != 0:
+            self.logger.error(
+                f"The input packages must be in pairs! Number of packages is {len_pkgs}."
+            )
+            ret = False
+
+        for pkg in self.args.pkgs:
+            if not os.path.exists(pkg):
+                self.logger.error(f"Package {pkg} doesn't exist!")
+                ret = False
+            if not pkg.endswith(RUN_SUFFIX):
+                self.logger.error(
+                    f"Package {pkg} needs to be a run package(end with {RUN_SUFFIX})!"
+                )
+                ret = False
+
+        if self.args.arch:
+            for arch in self.args.arch:
+                if not arch:
+                    self.logger.error("The value of the --arch option cannot be empty!")
+                    ret = False
+
+        if not self.check_makeself_tools(self.args.makeself):
+            ret = False
+        return ret
+
+    def mix_process(self, pkga: str, pkgb: str):
+        prepares = [
+            Prepare(pkga, self.logger),
+            Prepare(pkgb, self.logger),
+        ]
+        try:
+            for prepare in prepares:
+                prepare.decompress_run()
+
+            try:
+                scene_infos = [prepare.get_scene_info() for prepare in prepares]
+            except PackageError:
+                return False
+
+            if scene_infos[0].arch == scene_infos[1].arch:
+                self.logger.error(f"Packages arch is the same {scene_infos[0].arch}.")
+                return False
+
+            mixes = [
+                Mix(prepare, scene_info, self.args.makeself)
+                for prepare, scene_info in zip(prepares, scene_infos)
+            ]
+            ret = True
+            for idx in range(len(mixes)):
+                mix = mixes[idx]
+                if not self.args.arch or mix.scene_info.arch in self.args.arch:
+                    other_mix = mixes[1 - idx]  # 1-idx即另一个Mix元素
+                    if not mix.mix_artifacts(other_mix):
+                        ret = False
+                        continue
+                    mix.repack_run()
+            return ret
+        finally:
+            if self.args.clean:
+                for prepare in prepares:
+                    prepare.remove_extract()
+
+    def run(self) -> bool:
+        """混合命令流程。"""
+        if not self.check_args():
+            return False
+
+        if self.args.parallel:
+            max_workers = min(32, len(self.args.pkgs) / 2)
+        else:
+            max_workers = 1
+
+        ret = True
+        with ThreadPoolExecutor(max_workers) as executor:
+            futures = [
+                executor.submit(self.mix_process, pkga, pkgb)
+                for pkga, pkgb in batched(self.args.pkgs, 2)
+            ]
+            for future in as_completed(futures, timeout=60):
+                ret &= future.result()
+        return ret
 
 
 def main(argv: list[str]) -> int:
